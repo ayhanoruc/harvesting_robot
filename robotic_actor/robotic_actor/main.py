@@ -51,9 +51,13 @@ class RoboticActorNode(Node):
         self.position = (0.0, 0.0, 0.0)
         self.reservoir_level = 0.0
 
-        # Four-bar linkage joint states
-        self.joint_names = ['joint1', 'joint2', 'joint3', 'joint4']
-        self.joint_positions = [0.0, 0.0, 0.0, 0.0]
+        # Reservoir gate joint state
+        self.joint_names = ['gate_joint']
+        self.joint_positions = [0.0]
+
+        # Gate control state (for periodic open/close)
+        self.gate_state = 'closed'  # 'closed' or 'open'
+        self.state_counter = 0  # counts timer callbacks to track 2-second period
 
     def move_callback(self, request, response):
         """Simulate movement and gripping routine."""
@@ -80,15 +84,21 @@ class RoboticActorNode(Node):
         self.get_logger().info(f"Reservoir level: {msg.data:.1f}%")
 
     def publish_joint_states(self):
-        """Publish random joint states for the four-bar linkage."""
-        # Update joint1 (crank) with random angle within limits [-1.57, 1.57]
-        self.joint_positions[0] = random.uniform(-1.57, 1.57)
+        """Publish joint states for the reservoir gate (periodic open/close)."""
+        # Increment counter (timer runs at 10 Hz, so 20 callbacks = 2 seconds)
+        self.state_counter += 1
 
-        # For a real four-bar linkage, joints 2-4 would be kinematically constrained
-        # For now, set them to random values for visualization
-        self.joint_positions[1] = random.uniform(-1.57, 1.57)
-        self.joint_positions[2] = random.uniform(-3.14, 3.14)
-        self.joint_positions[3] = random.uniform(-3.14, 3.14)
+        # Toggle gate state every 2 seconds (20 callbacks at 10 Hz)
+        if self.state_counter >= 20:
+            self.state_counter = 0
+            if self.gate_state == 'closed':
+                self.gate_state = 'open'
+                self.joint_positions[0] = 1.57  # 90 degrees (π/2 radians)
+                self.get_logger().info('Gate opening...')
+            else:
+                self.gate_state = 'closed'
+                self.joint_positions[0] = 0.0  # 0 degrees (closed)
+                self.get_logger().info('Gate closing...')
 
         # Create and publish JointState message
         joint_state = JointState()
