@@ -1,0 +1,1897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Cotton Harvest Monitor - Interactive Demo</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#2d5016",
+            "background-light": "#f5f5f5",
+            "background-dark": "#181f13",
+          },
+          fontFamily: {
+            "display": ["Inter", "sans-serif"]
+          },
+          borderRadius: {"DEFAULT": "0.5rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+        },
+      },
+    }
+  </script>
+  <style>
+    body {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      min-height: max(884px, 100dvh);
+    }
+
+    /* Smooth transitions for all dynamic elements */
+    .status-banner-transition {
+      transition: background-color 0.5s ease;
+    }
+
+    .metric-transition {
+      transition: all 0.3s ease;
+    }
+
+    .progress-bar-transition {
+      transition: width 0.5s ease;
+    }
+
+    .pipeline-step {
+      transition: all 0.4s ease;
+    }
+
+    .pipeline-step.completed {
+      color: #4CAF50;
+    }
+
+    .pipeline-step.active {
+      color: #FF9800;
+      font-weight: bold;
+    }
+
+    .pipeline-step.pending {
+      color: #9CA3AF;
+    }
+
+    .alert-item {
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body class="font-display">
+<div class="relative flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root overflow-x-hidden">
+
+  <!-- HEADER BAR -->
+  <div class="sticky top-0 z-10 flex h-[60px] items-center bg-primary p-4 shadow-md justify-between">
+    <button class="flex items-center justify-center rounded-full h-10 w-10 text-white">
+      <span class="material-symbols-outlined text-2xl">settings</span>
+    </button>
+    <h1 class="text-white text-xl font-bold">Cotton Harvest Monitor</h1>
+    <button class="relative flex items-center justify-center rounded-full h-10 w-10 text-white">
+      <span class="material-symbols-outlined text-2xl">notifications</span>
+      <span id="alert-badge" class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">0</span>
+    </button>
+  </div>
+
+  <main class="flex-grow pb-[260px] p-4">
+    <div class="flex flex-col gap-3">
+
+      <!-- STATUS BANNER -->
+      <div id="status-banner" class="status-banner-transition flex items-center gap-4 rounded-lg bg-gray-400 p-4 text-white shadow-sm">
+        <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-white/20">
+          <span class="material-symbols-outlined text-3xl">agriculture</span>
+        </div>
+        <div class="flex flex-col">
+          <p id="status-state" class="text-lg font-bold leading-tight tracking-[-0.015em]">IDLE</p>
+          <p id="status-substate" class="text-base font-normal leading-normal opacity-90">Waiting to start</p>
+        </div>
+      </div>
+
+      <!-- METRICS CARD -->
+      <div class="flex flex-col items-stretch justify-start rounded-lg bg-white p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)] dark:bg-gray-800">
+        <p class="mb-3 text-base font-semibold leading-tight tracking-[-0.015em] text-gray-800 dark:text-gray-200">📊 Session Metrics</p>
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div class="flex flex-col">
+            <span class="text-sm text-gray-500 dark:text-gray-400">Bolls</span>
+            <span id="bolls-count" class="metric-transition text-2xl font-bold text-gray-900 dark:text-white">42</span>
+          </div>
+          <div class="flex flex-col">
+            <span class="text-sm text-gray-500 dark:text-gray-400">Success</span>
+            <span id="success-rate" class="metric-transition text-2xl font-bold text-gray-900 dark:text-white">94%</span>
+          </div>
+        </div>
+        <div class="flex flex-col gap-1">
+          <div class="flex justify-between text-sm">
+            <p class="text-gray-500 dark:text-gray-400">Reservoir Fill</p>
+            <p id="reservoir-level" class="font-semibold text-gray-700 dark:text-gray-300">45%</p>
+          </div>
+          <div class="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+            <div id="reservoir-bar" class="progress-bar-transition h-full rounded-full bg-gradient-to-r from-green-500 via-yellow-500 to-red-500" style="width: 45%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CURRENT OPERATION CARD -->
+      <div class="flex flex-col items-stretch justify-start rounded-lg bg-white p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)] dark:bg-gray-800">
+        <p class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">🎯 Current Operation</p>
+        <div class="flex flex-col gap-1">
+          <p id="main-state" class="text-base font-bold text-gray-900 dark:text-white">IDLE</p>
+          <p id="sub-state" class="text-sm text-gray-500 dark:text-gray-400">└→ System ready</p>
+        </div>
+        <div class="mt-3 flex flex-col gap-1">
+          <p class="text-sm text-gray-500 dark:text-gray-400">ML Confidence: <span id="ml-confidence-text" class="font-bold text-gray-600 dark:text-gray-400">0.00</span></p>
+          <div class="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-700">
+            <div id="ml-confidence-bar" class="progress-bar-transition h-full rounded-full bg-green-500" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PIPELINE VISUALIZATION CARD -->
+      <div class="flex flex-col items-stretch justify-start rounded-lg bg-white p-4 shadow-[0_2px_4px_rgba(0,0,0,0.1)] dark:bg-gray-800">
+        <p class="mb-4 text-base font-semibold text-gray-800 dark:text-gray-200">🔄 Pipeline Flow</p>
+        <div class="flex items-center justify-between text-xs">
+
+          <div id="pipeline-detect" class="pipeline-step flex flex-col items-center gap-1 pending">
+            <div class="pipeline-icon h-5 w-5 rounded-full border-2 border-gray-400"></div>
+            <span>Detect</span>
+          </div>
+          <div class="flex-1 border-t-2 border-dashed border-gray-300 dark:border-gray-600 -translate-y-[14px]"></div>
+
+          <div id="pipeline-view" class="pipeline-step flex flex-col items-center gap-1 pending">
+            <div class="pipeline-icon h-5 w-5 rounded-full border-2 border-gray-400"></div>
+            <span>View</span>
+          </div>
+          <div class="flex-1 border-t-2 border-dashed border-gray-300 dark:border-gray-600 -translate-y-[14px]"></div>
+
+          <div id="pipeline-harvest" class="pipeline-step flex flex-col items-center gap-1 pending">
+            <div class="pipeline-icon h-5 w-5 rounded-full border-2 border-gray-400"></div>
+            <span>Harvest</span>
+          </div>
+          <div class="flex-1 border-t-2 border-dashed border-gray-300 dark:border-gray-600 -translate-y-[14px]"></div>
+
+          <div id="pipeline-transfer" class="pipeline-step flex flex-col items-center gap-1 pending">
+            <div class="pipeline-icon h-5 w-5 rounded-full border-2 border-gray-400"></div>
+            <span>Transfer</span>
+          </div>
+          <div class="flex-1 border-t-2 border-dashed border-gray-300 dark:border-gray-600 -translate-y-[14px]"></div>
+
+          <div id="pipeline-compress" class="pipeline-step flex flex-col items-center gap-1 pending">
+            <div class="pipeline-icon h-5 w-5 rounded-full border-2 border-gray-400"></div>
+            <span>Compress</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- CAMERA TOGGLE BUTTON -->
+      <button class="flex w-full items-center justify-center gap-2 rounded-lg border border-primary/50 bg-transparent py-3 text-base font-bold text-primary dark:border-primary/70 dark:text-primary/90">
+        <span class="material-symbols-outlined">photo_camera</span>
+        <span>Show Camera Feed</span>
+      </button>
+
+      <!-- ALERTS SECTION -->
+      <div class="rounded-lg bg-[#FFF9E6] dark:bg-yellow-900/30">
+        <button class="flex w-full items-center justify-between p-4 text-left font-semibold text-yellow-800 dark:text-yellow-300">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined">warning</span>
+            <span id="alerts-header">Recent Alerts (<span id="alerts-count">0</span>)</span>
+          </div>
+          <span class="material-symbols-outlined">expand_more</span>
+        </button>
+        <div class="px-4 pb-4">
+          <ul id="alerts-list" class="flex flex-col gap-2 text-sm text-yellow-900 dark:text-yellow-200">
+            <!-- Alerts will be dynamically inserted here -->
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- CONTROL PANEL -->
+  <div class="fixed bottom-0 left-0 right-0 z-10 bg-white/80 p-4 backdrop-blur-sm dark:bg-gray-900/80" style="box-shadow: 0 -2px 10px rgba(0,0,0,0.1);">
+    <div class="flex flex-col gap-2">
+      <div class="grid grid-cols-2 gap-2">
+        <button id="start-btn" class="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#4CAF50] text-lg font-bold text-white shadow-sm">
+          <span class="material-symbols-outlined">play_arrow</span>
+          <span id="start-btn-text">START</span>
+        </button>
+        <button id="pause-btn" disabled class="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#FFC107] text-lg font-bold text-gray-800 shadow-sm">
+          <span class="material-symbols-outlined">pause</span>
+          <span>PAUSE</span>
+        </button>
+      </div>
+      <button id="skip-btn" disabled class="flex h-12 w-full items-center justify-center gap-2 rounded-full border-2 border-gray-400 bg-transparent text-lg font-bold text-gray-600 dark:border-gray-500 dark:text-gray-400">
+        <span class="material-symbols-outlined">skip_next</span>
+        <span>SKIP CLUSTER</span>
+      </button>
+      <button id="emergency-btn" class="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#D32F2F] text-lg font-bold text-white shadow-md">
+        <span class="material-symbols-outlined">stop_circle</span>
+        <span>EMERGENCY STOP</span>
+      </button>
+      <button id="reset-btn" style="display: none;" class="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary text-lg font-bold text-white shadow-md">
+        <span class="material-symbols-outlined">replay</span>
+        <span>RESTART DEMO</span>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- TIMELINE DATA -->
+<script id="timeline-data" type="application/json">
+{
+  "timeline": [
+    {
+      "timestamp": 0,
+      "statusBanner": {
+        "state": "IDLE",
+        "substate": "Waiting to start",
+        "cluster": 0,
+        "boll": 0,
+        "totalBolls": 0,
+        "color": "#9CA3AF"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 42,
+        "successRate": 94,
+        "reservoirLevel": 45
+      },
+      "currentOperation": {
+        "mainState": "IDLE",
+        "substate": "System ready",
+        "mlConfidence": 0.0
+      },
+      "pipelineFlow": {
+        "currentStep": null,
+        "completedSteps": []
+      },
+      "alerts": {
+        "items": [],
+        "count": 0
+      },
+      "controls": {
+        "startEnabled": true,
+        "pauseEnabled": false,
+        "skipEnabled": false,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 2,
+      "statusBanner": {
+        "state": "DETECTING",
+        "substate": "Scanning field for clusters",
+        "cluster": 0,
+        "boll": 0,
+        "totalBolls": 0,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 42,
+        "successRate": 94,
+        "reservoirLevel": 45
+      },
+      "currentOperation": {
+        "mainState": "DETECTING_CLUSTERS",
+        "substate": "ML model scanning field",
+        "mlConfidence": 0.68
+      },
+      "pipelineFlow": {
+        "currentStep": "detect",
+        "completedSteps": []
+      },
+      "alerts": {
+        "items": [
+          {"icon": "info", "message": "System started - harvesting initiated"}
+        ],
+        "count": 1
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": false,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 4,
+      "statusBanner": {
+        "state": "DETECTING",
+        "substate": "Cluster #5 identified",
+        "cluster": 5,
+        "boll": 0,
+        "totalBolls": 0,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 42,
+        "successRate": 94,
+        "reservoirLevel": 46
+      },
+      "currentOperation": {
+        "mainState": "DETECTING_CLUSTERS",
+        "substate": "Found cotton cluster",
+        "mlConfidence": 0.82
+      },
+      "pipelineFlow": {
+        "currentStep": "detect",
+        "completedSteps": []
+      },
+      "alerts": {
+        "items": [
+          {"icon": "info", "message": "System started - harvesting initiated"},
+          {"icon": "check_circle", "message": "Cluster #5 detected with high confidence"}
+        ],
+        "count": 2
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": false,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 6,
+      "statusBanner": {
+        "state": "POSITIONING",
+        "substate": "Moving to cluster view",
+        "cluster": 5,
+        "boll": 0,
+        "totalBolls": 0,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 42,
+        "successRate": 94,
+        "reservoirLevel": 46
+      },
+      "currentOperation": {
+        "mainState": "CLUSTER_VIEW_POSITION",
+        "substate": "Arm positioning for full view",
+        "mlConfidence": 0.85
+      },
+      "pipelineFlow": {
+        "currentStep": "view",
+        "completedSteps": ["detect"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "info", "message": "System started - harvesting initiated"},
+          {"icon": "check_circle", "message": "Cluster #5 detected with high confidence"}
+        ],
+        "count": 2
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 8,
+      "statusBanner": {
+        "state": "ANALYZING",
+        "substate": "Counting and labeling bolls",
+        "cluster": 5,
+        "boll": 0,
+        "totalBolls": 7,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 42,
+        "successRate": 94,
+        "reservoirLevel": 47
+      },
+      "currentOperation": {
+        "mainState": "DETECTING_BOLLS",
+        "substate": "Found 7 bolls in cluster",
+        "mlConfidence": 0.88
+      },
+      "pipelineFlow": {
+        "currentStep": "view",
+        "completedSteps": ["detect"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "info", "message": "System started - harvesting initiated"},
+          {"icon": "check_circle", "message": "Cluster #5 detected with high confidence"},
+          {"icon": "visibility", "message": "7 bolls identified in cluster #5"}
+        ],
+        "count": 3
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 10,
+      "statusBanner": {
+        "state": "HARVESTING",
+        "substate": "Approaching boll",
+        "cluster": 5,
+        "boll": 1,
+        "totalBolls": 7,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 42,
+        "successRate": 94,
+        "reservoirLevel": 47
+      },
+      "currentOperation": {
+        "mainState": "HARVESTING",
+        "substate": "Moving to Boll 1",
+        "mlConfidence": 0.85
+      },
+      "pipelineFlow": {
+        "currentStep": "harvest",
+        "completedSteps": ["detect", "view"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "info", "message": "System started - harvesting initiated"},
+          {"icon": "check_circle", "message": "Cluster #5 detected with high confidence"},
+          {"icon": "visibility", "message": "7 bolls identified in cluster #5"}
+        ],
+        "count": 3
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 12,
+      "statusBanner": {
+        "state": "HARVESTING",
+        "substate": "Gripping boll",
+        "cluster": 5,
+        "boll": 1,
+        "totalBolls": 7,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 42,
+        "successRate": 94,
+        "reservoirLevel": 48
+      },
+      "currentOperation": {
+        "mainState": "HARVESTING",
+        "substate": "Gripping Boll 1",
+        "mlConfidence": 0.89
+      },
+      "pipelineFlow": {
+        "currentStep": "harvest",
+        "completedSteps": ["detect", "view"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "info", "message": "System started - harvesting initiated"},
+          {"icon": "check_circle", "message": "Cluster #5 detected with high confidence"},
+          {"icon": "visibility", "message": "7 bolls identified in cluster #5"}
+        ],
+        "count": 3
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 14,
+      "statusBanner": {
+        "state": "TRANSFERRING",
+        "substate": "Moving to reservoir",
+        "cluster": 5,
+        "boll": 1,
+        "totalBolls": 7,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 43,
+        "successRate": 95,
+        "reservoirLevel": 50
+      },
+      "currentOperation": {
+        "mainState": "TRANSFERRING",
+        "substate": "Boll 1 secured, transferring",
+        "mlConfidence": 0.92
+      },
+      "pipelineFlow": {
+        "currentStep": "transfer",
+        "completedSteps": ["detect", "view", "harvest"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "info", "message": "System started - harvesting initiated"},
+          {"icon": "check_circle", "message": "Cluster #5 detected with high confidence"},
+          {"icon": "visibility", "message": "7 bolls identified in cluster #5"},
+          {"icon": "agriculture", "message": "Boll 1 harvested successfully"}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 16,
+      "statusBanner": {
+        "state": "HARVESTING",
+        "substate": "Approaching boll",
+        "cluster": 5,
+        "boll": 2,
+        "totalBolls": 7,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 43,
+        "successRate": 95,
+        "reservoirLevel": 52
+      },
+      "currentOperation": {
+        "mainState": "HARVESTING",
+        "substate": "Moving to Boll 2",
+        "mlConfidence": 0.91
+      },
+      "pipelineFlow": {
+        "currentStep": "harvest",
+        "completedSteps": ["detect", "view", "harvest"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "info", "message": "System started - harvesting initiated"},
+          {"icon": "check_circle", "message": "Cluster #5 detected with high confidence"},
+          {"icon": "visibility", "message": "7 bolls identified in cluster #5"},
+          {"icon": "agriculture", "message": "Boll 1 harvested successfully"}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 18,
+      "statusBanner": {
+        "state": "HARVESTING",
+        "substate": "Gripping boll",
+        "cluster": 5,
+        "boll": 2,
+        "totalBolls": 7,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 43,
+        "successRate": 95,
+        "reservoirLevel": 53
+      },
+      "currentOperation": {
+        "mainState": "HARVESTING",
+        "substate": "Gripping Boll 2",
+        "mlConfidence": 0.88
+      },
+      "pipelineFlow": {
+        "currentStep": "harvest",
+        "completedSteps": ["detect", "view", "harvest"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "info", "message": "System started - harvesting initiated"},
+          {"icon": "check_circle", "message": "Cluster #5 detected with high confidence"},
+          {"icon": "visibility", "message": "7 bolls identified in cluster #5"},
+          {"icon": "agriculture", "message": "Boll 1 harvested successfully"}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 20,
+      "statusBanner": {
+        "state": "TRANSFERRING",
+        "substate": "Moving to reservoir",
+        "cluster": 5,
+        "boll": 2,
+        "totalBolls": 7,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 44,
+        "successRate": 95,
+        "reservoirLevel": 55
+      },
+      "currentOperation": {
+        "mainState": "TRANSFERRING",
+        "substate": "Boll 2 secured, transferring",
+        "mlConfidence": 0.90
+      },
+      "pipelineFlow": {
+        "currentStep": "transfer",
+        "completedSteps": ["detect", "view", "harvest"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "check_circle", "message": "Cluster #5 detected with high confidence"},
+          {"icon": "visibility", "message": "7 bolls identified in cluster #5"},
+          {"icon": "agriculture", "message": "Boll 1 harvested successfully"},
+          {"icon": "agriculture", "message": "Boll 2 harvested successfully"}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 22,
+      "statusBanner": {
+        "state": "HARVESTING",
+        "substate": "Approaching boll",
+        "cluster": 5,
+        "boll": 3,
+        "totalBolls": 7,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 44,
+        "successRate": 95,
+        "reservoirLevel": 57
+      },
+      "currentOperation": {
+        "mainState": "HARVESTING",
+        "substate": "Moving to Boll 3",
+        "mlConfidence": 0.93
+      },
+      "pipelineFlow": {
+        "currentStep": "harvest",
+        "completedSteps": ["detect", "view", "harvest"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "check_circle", "message": "Cluster #5 detected with high confidence"},
+          {"icon": "visibility", "message": "7 bolls identified in cluster #5"},
+          {"icon": "agriculture", "message": "Boll 1 harvested successfully"},
+          {"icon": "agriculture", "message": "Boll 2 harvested successfully"}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 24,
+      "statusBanner": {
+        "state": "HARVESTING",
+        "substate": "Gripping boll",
+        "cluster": 5,
+        "boll": 3,
+        "totalBolls": 7,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 44,
+        "successRate": 95,
+        "reservoirLevel": 58
+      },
+      "currentOperation": {
+        "mainState": "HARVESTING",
+        "substate": "Gripping Boll 3",
+        "mlConfidence": 0.91
+      },
+      "pipelineFlow": {
+        "currentStep": "harvest",
+        "completedSteps": ["detect", "view", "harvest"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "check_circle", "message": "Cluster #5 detected with high confidence"},
+          {"icon": "visibility", "message": "7 bolls identified in cluster #5"},
+          {"icon": "agriculture", "message": "Boll 2 harvested successfully"},
+          {"icon": "agriculture", "message": "Boll 3 gripping in progress"}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 26,
+      "statusBanner": {
+        "state": "TRANSFERRING",
+        "substate": "Moving to reservoir",
+        "cluster": 5,
+        "boll": 3,
+        "totalBolls": 7,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 45,
+        "successRate": 96,
+        "reservoirLevel": 61
+      },
+      "currentOperation": {
+        "mainState": "TRANSFERRING",
+        "substate": "Boll 3 secured, transferring",
+        "mlConfidence": 0.94
+      },
+      "pipelineFlow": {
+        "currentStep": "transfer",
+        "completedSteps": ["detect", "view", "harvest"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "visibility", "message": "7 bolls identified in cluster #5"},
+          {"icon": "agriculture", "message": "Boll 2 harvested successfully"},
+          {"icon": "agriculture", "message": "Boll 3 harvested successfully"},
+          {"icon": "info", "message": "Reservoir level increasing - 61%"}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 28,
+      "statusBanner": {
+        "state": "HARVESTING",
+        "substate": "Approaching boll",
+        "cluster": 5,
+        "boll": 4,
+        "totalBolls": 7,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 45,
+        "successRate": 96,
+        "reservoirLevel": 63
+      },
+      "currentOperation": {
+        "mainState": "HARVESTING",
+        "substate": "Moving to Boll 4",
+        "mlConfidence": 0.67
+      },
+      "pipelineFlow": {
+        "currentStep": "harvest",
+        "completedSteps": ["detect", "view", "harvest"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "visibility", "message": "7 bolls identified in cluster #5"},
+          {"icon": "agriculture", "message": "Boll 3 harvested successfully"},
+          {"icon": "info", "message": "Reservoir level increasing - 63%"},
+          {"icon": "warning", "message": "Lower confidence on Boll 4 - 0.67"}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 30,
+      "statusBanner": {
+        "state": "EVALUATING",
+        "substate": "Re-checking ripeness",
+        "cluster": 5,
+        "boll": 4,
+        "totalBolls": 7,
+        "color": "#FFC107"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 45,
+        "successRate": 96,
+        "reservoirLevel": 64
+      },
+      "currentOperation": {
+        "mainState": "EVALUATING_RIPENESS",
+        "substate": "Confidence below threshold",
+        "mlConfidence": 0.58
+      },
+      "pipelineFlow": {
+        "currentStep": "harvest",
+        "completedSteps": ["detect", "view", "harvest"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "agriculture", "message": "Boll 3 harvested successfully"},
+          {"icon": "info", "message": "Reservoir level increasing - 64%"},
+          {"icon": "warning", "message": "Lower confidence on Boll 4 - 0.67"},
+          {"icon": "report", "message": "Boll 4 re-evaluation: confidence 0.58"}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 32,
+      "statusBanner": {
+        "state": "SKIPPING",
+        "substate": "Boll not ripe enough",
+        "cluster": 5,
+        "boll": 4,
+        "totalBolls": 7,
+        "color": "#FF9800"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 45,
+        "successRate": 95,
+        "reservoirLevel": 64
+      },
+      "currentOperation": {
+        "mainState": "SKIP_BOLL",
+        "substate": "Moving to next boll",
+        "mlConfidence": 0.58
+      },
+      "pipelineFlow": {
+        "currentStep": "harvest",
+        "completedSteps": ["detect", "view", "harvest"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "info", "message": "Reservoir level increasing - 64%"},
+          {"icon": "warning", "message": "Lower confidence on Boll 4 - 0.67"},
+          {"icon": "report", "message": "Boll 4 re-evaluation: confidence 0.58"},
+          {"icon": "skip_next", "message": "Boll 4 skipped - insufficient ripeness"}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 34,
+      "statusBanner": {
+        "state": "HARVESTING",
+        "substate": "Approaching boll",
+        "cluster": 5,
+        "boll": 5,
+        "totalBolls": 7,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 45,
+        "successRate": 95,
+        "reservoirLevel": 65
+      },
+      "currentOperation": {
+        "mainState": "HARVESTING",
+        "substate": "Moving to Boll 5",
+        "mlConfidence": 0.87
+      },
+      "pipelineFlow": {
+        "currentStep": "harvest",
+        "completedSteps": ["detect", "view", "harvest"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "warning", "message": "Lower confidence on Boll 4 - 0.67"},
+          {"icon": "report", "message": "Boll 4 re-evaluation: confidence 0.58"},
+          {"icon": "skip_next", "message": "Boll 4 skipped - insufficient ripeness"},
+          {"icon": "agriculture", "message": "Resuming harvest - Boll 5"}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 36,
+      "statusBanner": {
+        "state": "HARVESTING",
+        "substate": "Gripping boll",
+        "cluster": 5,
+        "boll": 5,
+        "totalBolls": 7,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 45,
+        "successRate": 95,
+        "reservoirLevel": 66
+      },
+      "currentOperation": {
+        "mainState": "HARVESTING",
+        "substate": "Gripping Boll 5",
+        "mlConfidence": 0.90
+      },
+      "pipelineFlow": {
+        "currentStep": "harvest",
+        "completedSteps": ["detect", "view", "harvest"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "report", "message": "Boll 4 re-evaluation: confidence 0.58"},
+          {"icon": "skip_next", "message": "Boll 4 skipped - insufficient ripeness"},
+          {"icon": "agriculture", "message": "Resuming harvest - Boll 5"},
+          {"icon": "agriculture", "message": "Boll 5 gripping in progress"}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 38,
+      "statusBanner": {
+        "state": "TRANSFERRING",
+        "substate": "Moving to reservoir",
+        "cluster": 5,
+        "boll": 5,
+        "totalBolls": 7,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 46,
+        "successRate": 95,
+        "reservoirLevel": 69
+      },
+      "currentOperation": {
+        "mainState": "TRANSFERRING",
+        "substate": "Boll 5 secured, transferring",
+        "mlConfidence": 0.92
+      },
+      "pipelineFlow": {
+        "currentStep": "transfer",
+        "completedSteps": ["detect", "view", "harvest"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "skip_next", "message": "Boll 4 skipped - insufficient ripeness"},
+          {"icon": "agriculture", "message": "Resuming harvest - Boll 5"},
+          {"icon": "agriculture", "message": "Boll 5 harvested successfully"},
+          {"icon": "info", "message": "Reservoir level: 69%"}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 40,
+      "statusBanner": {
+        "state": "HARVESTING",
+        "substate": "Approaching boll",
+        "cluster": 5,
+        "boll": 6,
+        "totalBolls": 7,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 46,
+        "successRate": 95,
+        "reservoirLevel": 71
+      },
+      "currentOperation": {
+        "mainState": "HARVESTING",
+        "substate": "Moving to Boll 6",
+        "mlConfidence": 0.88
+      },
+      "pipelineFlow": {
+        "currentStep": "harvest",
+        "completedSteps": ["detect", "view", "harvest"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "agriculture", "message": "Resuming harvest - Boll 5"},
+          {"icon": "agriculture", "message": "Boll 5 harvested successfully"},
+          {"icon": "info", "message": "Reservoir level: 71%"},
+          {"icon": "agriculture", "message": "Approaching Boll 6"}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 42,
+      "statusBanner": {
+        "state": "HARVESTING",
+        "substate": "Gripping boll",
+        "cluster": 5,
+        "boll": 6,
+        "totalBolls": 7,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 46,
+        "successRate": 95,
+        "reservoirLevel": 72
+      },
+      "currentOperation": {
+        "mainState": "HARVESTING",
+        "substate": "Gripping Boll 6",
+        "mlConfidence": 0.91
+      },
+      "pipelineFlow": {
+        "currentStep": "harvest",
+        "completedSteps": ["detect", "view", "harvest"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "agriculture", "message": "Boll 5 harvested successfully"},
+          {"icon": "info", "message": "Reservoir level: 72%"},
+          {"icon": "agriculture", "message": "Approaching Boll 6"},
+          {"icon": "agriculture", "message": "Boll 6 gripping in progress"}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 44,
+      "statusBanner": {
+        "state": "TRANSFERRING",
+        "substate": "Moving to reservoir",
+        "cluster": 5,
+        "boll": 6,
+        "totalBolls": 7,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 47,
+        "successRate": 96,
+        "reservoirLevel": 75
+      },
+      "currentOperation": {
+        "mainState": "TRANSFERRING",
+        "substate": "Boll 6 secured, transferring",
+        "mlConfidence": 0.93
+      },
+      "pipelineFlow": {
+        "currentStep": "transfer",
+        "completedSteps": ["detect", "view", "harvest"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "info", "message": "Reservoir level: 75%"},
+          {"icon": "agriculture", "message": "Boll 6 harvested successfully"},
+          {"icon": "warning", "message": "Reservoir approaching capacity"},
+          {"icon": "agriculture", "message": "1 boll remaining in cluster #5"}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 46,
+      "statusBanner": {
+        "state": "HARVESTING",
+        "substate": "Approaching boll",
+        "cluster": 5,
+        "boll": 7,
+        "totalBolls": 7,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 47,
+        "successRate": 96,
+        "reservoirLevel": 77
+      },
+      "currentOperation": {
+        "mainState": "HARVESTING",
+        "substate": "Moving to Boll 7 (final)",
+        "mlConfidence": 0.92
+      },
+      "pipelineFlow": {
+        "currentStep": "harvest",
+        "completedSteps": ["detect", "view", "harvest"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "agriculture", "message": "Boll 6 harvested successfully"},
+          {"icon": "warning", "message": "Reservoir approaching capacity - 77%"},
+          {"icon": "agriculture", "message": "1 boll remaining in cluster #5"},
+          {"icon": "agriculture", "message": "Final boll approach - Boll 7"}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 48,
+      "statusBanner": {
+        "state": "HARVESTING",
+        "substate": "Gripping final boll",
+        "cluster": 5,
+        "boll": 7,
+        "totalBolls": 7,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 47,
+        "successRate": 96,
+        "reservoirLevel": 78
+      },
+      "currentOperation": {
+        "mainState": "HARVESTING",
+        "substate": "Gripping Boll 7",
+        "mlConfidence": 0.94
+      },
+      "pipelineFlow": {
+        "currentStep": "harvest",
+        "completedSteps": ["detect", "view", "harvest"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "warning", "message": "Reservoir approaching capacity - 78%"},
+          {"icon": "agriculture", "message": "Final boll approach - Boll 7"},
+          {"icon": "agriculture", "message": "Boll 7 gripping in progress"},
+          {"icon": "check_circle", "message": "High confidence grip - 0.94"}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 50,
+      "statusBanner": {
+        "state": "TRANSFERRING",
+        "substate": "Moving to reservoir",
+        "cluster": 5,
+        "boll": 7,
+        "totalBolls": 7,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 48,
+        "successRate": 96,
+        "reservoirLevel": 81
+      },
+      "currentOperation": {
+        "mainState": "TRANSFERRING",
+        "substate": "Boll 7 secured, transferring",
+        "mlConfidence": 0.95
+      },
+      "pipelineFlow": {
+        "currentStep": "transfer",
+        "completedSteps": ["detect", "view", "harvest"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "agriculture", "message": "Boll 7 harvested successfully"},
+          {"icon": "check_circle", "message": "Cluster #5 complete - 6/7 bolls harvested"},
+          {"icon": "warning", "message": "Reservoir at 81% capacity"},
+          {"icon": "report", "message": "Compression recommended"}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 52,
+      "statusBanner": {
+        "state": "FINAL_CHECK",
+        "substate": "Re-scanning cluster",
+        "cluster": 5,
+        "boll": 0,
+        "totalBolls": 7,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 48,
+        "successRate": 96,
+        "reservoirLevel": 82
+      },
+      "currentOperation": {
+        "mainState": "CLUSTER_VERIFICATION",
+        "substate": "Double-checking for missed bolls",
+        "mlConfidence": 0.86
+      },
+      "pipelineFlow": {
+        "currentStep": "view",
+        "completedSteps": ["detect", "view", "harvest", "transfer"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "check_circle", "message": "Cluster #5 complete - 6/7 bolls harvested"},
+          {"icon": "warning", "message": "Reservoir at 82% capacity"},
+          {"icon": "report", "message": "Compression recommended"},
+          {"icon": "visibility", "message": "Final verification scan initiated"}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 54,
+      "statusBanner": {
+        "state": "COMPRESSING",
+        "substate": "Reservoir compression active",
+        "cluster": 5,
+        "boll": 0,
+        "totalBolls": 0,
+        "color": "#FF9800"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 48,
+        "successRate": 96,
+        "reservoirLevel": 82
+      },
+      "currentOperation": {
+        "mainState": "COMPRESSION",
+        "substate": "Compacting reservoir contents",
+        "mlConfidence": 0.0
+      },
+      "pipelineFlow": {
+        "currentStep": "compress",
+        "completedSteps": ["detect", "view", "harvest", "transfer"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "warning", "message": "Reservoir at 82% capacity"},
+          {"icon": "report", "message": "Compression recommended"},
+          {"icon": "visibility", "message": "Final verification scan initiated"},
+          {"icon": "compress", "message": "Compression in progress..."}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": false,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 56,
+      "statusBanner": {
+        "state": "COMPRESSING",
+        "substate": "Compression complete",
+        "cluster": 5,
+        "boll": 0,
+        "totalBolls": 0,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 48,
+        "successRate": 96,
+        "reservoirLevel": 65
+      },
+      "currentOperation": {
+        "mainState": "COMPRESSION_COMPLETE",
+        "substate": "Reservoir level reduced to 65%",
+        "mlConfidence": 0.0
+      },
+      "pipelineFlow": {
+        "currentStep": "compress",
+        "completedSteps": ["detect", "view", "harvest", "transfer"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "visibility", "message": "Final verification scan initiated"},
+          {"icon": "compress", "message": "Compression complete"},
+          {"icon": "check_circle", "message": "Reservoir reduced from 82% to 65%"},
+          {"icon": "info", "message": "Ready to continue harvesting"}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 58,
+      "statusBanner": {
+        "state": "CLUSTER_COMPLETE",
+        "substate": "Moving to next cluster",
+        "cluster": 5,
+        "boll": 0,
+        "totalBolls": 0,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 48,
+        "successRate": 96,
+        "reservoirLevel": 65
+      },
+      "currentOperation": {
+        "mainState": "CLUSTER_COMPLETE",
+        "substate": "Transitioning to cluster #6",
+        "mlConfidence": 0.0
+      },
+      "pipelineFlow": {
+        "currentStep": null,
+        "completedSteps": ["detect", "view", "harvest", "transfer", "compress"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "compress", "message": "Compression complete"},
+          {"icon": "check_circle", "message": "Reservoir reduced from 82% to 65%"},
+          {"icon": "info", "message": "Ready to continue harvesting"},
+          {"icon": "check_circle", "message": "Cluster #5 harvesting complete"}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 60,
+      "statusBanner": {
+        "state": "DETECTING",
+        "substate": "Scanning for next cluster",
+        "cluster": 0,
+        "boll": 0,
+        "totalBolls": 0,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 48,
+        "successRate": 96,
+        "reservoirLevel": 66
+      },
+      "currentOperation": {
+        "mainState": "DETECTING_CLUSTERS",
+        "substate": "ML scanning for cluster #6",
+        "mlConfidence": 0.73
+      },
+      "pipelineFlow": {
+        "currentStep": "detect",
+        "completedSteps": []
+      },
+      "alerts": {
+        "items": [
+          {"icon": "check_circle", "message": "Reservoir reduced from 82% to 65%"},
+          {"icon": "info", "message": "Ready to continue harvesting"},
+          {"icon": "check_circle", "message": "Cluster #5 harvesting complete"},
+          {"icon": "info", "message": "Scanning for next cluster..."}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": false,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 62,
+      "statusBanner": {
+        "state": "DETECTING",
+        "substate": "Cluster #6 identified",
+        "cluster": 6,
+        "boll": 0,
+        "totalBolls": 0,
+        "color": "#4CAF50"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 48,
+        "successRate": 96,
+        "reservoirLevel": 67
+      },
+      "currentOperation": {
+        "mainState": "DETECTING_CLUSTERS",
+        "substate": "Found cotton cluster #6",
+        "mlConfidence": 0.84
+      },
+      "pipelineFlow": {
+        "currentStep": "detect",
+        "completedSteps": []
+      },
+      "alerts": {
+        "items": [
+          {"icon": "info", "message": "Ready to continue harvesting"},
+          {"icon": "check_circle", "message": "Cluster #5 harvesting complete"},
+          {"icon": "info", "message": "Scanning for next cluster..."},
+          {"icon": "check_circle", "message": "Cluster #6 detected"}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": true,
+        "skipEnabled": true,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 64,
+      "statusBanner": {
+        "state": "PAUSED",
+        "substate": "Reservoir capacity warning",
+        "cluster": 6,
+        "boll": 0,
+        "totalBolls": 0,
+        "color": "#FFC107"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 48,
+        "successRate": 96,
+        "reservoirLevel": 85
+      },
+      "currentOperation": {
+        "mainState": "PAUSED",
+        "substate": "Waiting for operator action",
+        "mlConfidence": 0.0
+      },
+      "pipelineFlow": {
+        "currentStep": "detect",
+        "completedSteps": []
+      },
+      "alerts": {
+        "items": [
+          {"icon": "check_circle", "message": "Cluster #6 detected"},
+          {"icon": "warning", "message": "ALERT: Reservoir at 85% capacity!"},
+          {"icon": "report", "message": "System auto-paused - emptying required"},
+          {"icon": "info", "message": "Resume after reservoir emptied"}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": true,
+        "pauseEnabled": false,
+        "skipEnabled": false,
+        "emergencyEnabled": true
+      }
+    },
+    {
+      "timestamp": 66,
+      "statusBanner": {
+        "state": "DEMO_COMPLETE",
+        "substate": "Interactive demo finished",
+        "cluster": 0,
+        "boll": 0,
+        "totalBolls": 0,
+        "color": "#2D5016"
+      },
+      "sessionMetrics": {
+        "bollsHarvested": 48,
+        "successRate": 96,
+        "reservoirLevel": 85
+      },
+      "currentOperation": {
+        "mainState": "DEMO_COMPLETE",
+        "substate": "Click RESTART to replay",
+        "mlConfidence": 0.0
+      },
+      "pipelineFlow": {
+        "currentStep": null,
+        "completedSteps": ["detect", "view", "harvest", "transfer", "compress"]
+      },
+      "alerts": {
+        "items": [
+          {"icon": "check_circle", "message": "Demo showcased complete workflow"},
+          {"icon": "check_circle", "message": "6 bolls harvested from cluster #5"},
+          {"icon": "check_circle", "message": "Compression system demonstrated"},
+          {"icon": "info", "message": "System paused for reservoir management"}
+        ],
+        "count": 4
+      },
+      "controls": {
+        "startEnabled": false,
+        "pauseEnabled": false,
+        "skipEnabled": false,
+        "emergencyEnabled": false
+      }
+    }
+  ]
+}
+</script>
+
+<!-- DEMO CONTROLLER JAVASCRIPT -->
+<script>
+// Parse timeline data
+const timelineData = JSON.parse(document.getElementById('timeline-data').textContent);
+const timeline = timelineData.timeline;
+
+// State Updaters (modular, one per UI section)
+const StateUpdaters = {
+
+  // 1. Status Banner Updater
+  updateStatusBanner: (state) => {
+    const banner = document.getElementById('status-banner');
+    const stateText = document.getElementById('status-state');
+    const substateText = document.getElementById('status-substate');
+
+    // Update background color
+    banner.style.backgroundColor = state.color;
+
+    // Update text
+    stateText.textContent = state.state;
+
+    if (state.cluster > 0 && state.totalBolls > 0) {
+      substateText.textContent = `Cluster #${state.cluster} • Boll ${state.boll}/${state.totalBolls}`;
+    } else if (state.cluster > 0) {
+      substateText.textContent = `Cluster #${state.cluster} • ${state.substate}`;
+    } else {
+      substateText.textContent = state.substate;
+    }
+  },
+
+  // 2. Session Metrics Updater
+  updateSessionMetrics: (state) => {
+    document.getElementById('bolls-count').textContent = state.bollsHarvested;
+    document.getElementById('success-rate').textContent = `${state.successRate}%`;
+    document.getElementById('reservoir-level').textContent = `${state.reservoirLevel}%`;
+    document.getElementById('reservoir-bar').style.width = `${state.reservoirLevel}%`;
+  },
+
+  // 3. Current Operation Updater
+  updateCurrentOperation: (state) => {
+    document.getElementById('main-state').textContent = state.mainState;
+    document.getElementById('sub-state').textContent = `└→ ${state.substate}`;
+    document.getElementById('ml-confidence-text').textContent = state.mlConfidence.toFixed(2);
+
+    const confidenceBar = document.getElementById('ml-confidence-bar');
+    confidenceBar.style.width = `${state.mlConfidence * 100}%`;
+
+    // Color-code confidence bar
+    if (state.mlConfidence >= 0.8) {
+      confidenceBar.style.backgroundColor = '#4CAF50'; // Green
+    } else if (state.mlConfidence >= 0.6) {
+      confidenceBar.style.backgroundColor = '#FFC107'; // Yellow
+    } else {
+      confidenceBar.style.backgroundColor = '#F44336'; // Red
+    }
+  },
+
+  // 4. Pipeline Flow Updater
+  updatePipelineFlow: (state) => {
+    const steps = ['detect', 'view', 'harvest', 'transfer', 'compress'];
+
+    steps.forEach(step => {
+      const element = document.getElementById(`pipeline-${step}`);
+      const icon = element.querySelector('.pipeline-icon');
+
+      // Reset classes
+      element.classList.remove('completed', 'active', 'pending');
+
+      if (state.completedSteps.includes(step)) {
+        element.classList.add('completed');
+        icon.innerHTML = '<span class="material-symbols-outlined text-sm">check</span>';
+        icon.style.backgroundColor = '#4CAF50';
+        icon.style.borderColor = '#4CAF50';
+        icon.style.color = 'white';
+      } else if (state.currentStep === step) {
+        element.classList.add('active');
+        icon.innerHTML = '<div class="h-2 w-2 rounded-full bg-white"></div>';
+        icon.style.backgroundColor = '#FF9800';
+        icon.style.borderColor = '#FF9800';
+      } else {
+        element.classList.add('pending');
+        icon.innerHTML = '';
+        icon.style.backgroundColor = 'transparent';
+        icon.style.borderColor = '#9CA3AF';
+      }
+    });
+  },
+
+  // 5. Alerts Updater
+  updateAlerts: (state) => {
+    const alertsList = document.getElementById('alerts-list');
+    const alertBadge = document.getElementById('alert-badge');
+    const alertsCount = document.getElementById('alerts-count');
+
+    alertBadge.textContent = state.count;
+    alertsCount.textContent = state.count;
+
+    alertsList.innerHTML = state.items.map(alert => `
+      <li class="alert-item flex items-start gap-2">
+        <span class="material-symbols-outlined mt-0.5 text-base">${alert.icon}</span>
+        <span>${alert.message}</span>
+      </li>
+    `).join('');
+  },
+
+  // 6. Controls Updater
+  updateControls: (state) => {
+    document.getElementById('start-btn').disabled = !state.startEnabled;
+    document.getElementById('pause-btn').disabled = !state.pauseEnabled;
+    document.getElementById('skip-btn').disabled = !state.skipEnabled;
+    document.getElementById('emergency-btn').disabled = !state.emergencyEnabled;
+  }
+};
+
+// Timeline Controller
+class TimelineController {
+  constructor(timelineData) {
+    this.timeline = timelineData;
+    this.currentIndex = 0;
+    this.isPlaying = false;
+    this.isPaused = false;
+    this.intervalId = null;
+  }
+
+  start() {
+    if (this.isPlaying) return;
+
+    this.isPlaying = true;
+    this.isPaused = false;
+
+    // Update button text
+    document.getElementById('start-btn-text').textContent = 'RESUME';
+
+    this.intervalId = setInterval(() => this.tick(), 2000);
+    this.tick(); // Execute first frame immediately
+  }
+
+  pause() {
+    this.isPaused = true;
+    this.isPlaying = false;
+    clearInterval(this.intervalId);
+
+    // Add pause alert
+    const currentFrame = this.timeline[this.currentIndex];
+    if (currentFrame) {
+      const pausedFrame = JSON.parse(JSON.stringify(currentFrame)); // Deep clone
+      pausedFrame.alerts.items.push({
+        icon: "pause",
+        message: "System paused by operator"
+      });
+      pausedFrame.alerts.count++;
+      pausedFrame.statusBanner.color = "#FFC107";
+      pausedFrame.statusBanner.state = "PAUSED";
+      pausedFrame.currentOperation.mainState = "PAUSED";
+      pausedFrame.currentOperation.substate = "Operator intervention";
+
+      // Enable RESUME button, disable PAUSE button
+      pausedFrame.controls.startEnabled = true;
+      pausedFrame.controls.pauseEnabled = false;
+
+      this.applyFrame(pausedFrame);
+    }
+  }
+
+  skip() {
+    // Find next cluster frame
+    for (let i = this.currentIndex + 1; i < this.timeline.length; i++) {
+      if (this.timeline[i].statusBanner.cluster > this.timeline[this.currentIndex].statusBanner.cluster) {
+        this.currentIndex = i;
+        this.tick();
+        return;
+      }
+    }
+  }
+
+  emergencyStop() {
+    this.pause();
+    clearInterval(this.intervalId);
+
+    // Show emergency state
+    const emergencyFrame = {
+      statusBanner: {
+        state: "EMERGENCY STOP",
+        substate: "All operations halted",
+        cluster: 0,
+        boll: 0,
+        totalBolls: 0,
+        color: "#D32F2F"
+      },
+      sessionMetrics: this.timeline[this.currentIndex].sessionMetrics,
+      currentOperation: {
+        mainState: "EMERGENCY",
+        substate: "System halted - requires reset",
+        mlConfidence: 0.0
+      },
+      pipelineFlow: {
+        currentStep: null,
+        completedSteps: []
+      },
+      alerts: {
+        items: [
+          {icon: "error", message: "EMERGENCY STOP ACTIVATED"},
+          {icon: "warning", message: "All robotic operations halted"},
+          {icon: "info", "message": "Refresh page to restart demo"}
+        ],
+        count: 3
+      },
+      controls: {
+        startEnabled: false,
+        pauseEnabled: false,
+        skipEnabled: false,
+        emergencyEnabled: false
+      }
+    };
+
+    this.applyFrame(emergencyFrame);
+  }
+
+  tick() {
+    if (this.currentIndex >= this.timeline.length) {
+      this.complete();
+      return;
+    }
+
+    const frame = this.timeline[this.currentIndex];
+    this.applyFrame(frame);
+    this.currentIndex++;
+  }
+
+  applyFrame(frame) {
+    // Update each UI section independently
+    StateUpdaters.updateStatusBanner(frame.statusBanner);
+    StateUpdaters.updateSessionMetrics(frame.sessionMetrics);
+    StateUpdaters.updateCurrentOperation(frame.currentOperation);
+    StateUpdaters.updatePipelineFlow(frame.pipelineFlow);
+    StateUpdaters.updateAlerts(frame.alerts);
+    StateUpdaters.updateControls(frame.controls);
+  }
+
+  complete() {
+    this.isPlaying = false;
+    clearInterval(this.intervalId);
+
+    // Hide control buttons, show reset
+    document.getElementById('start-btn').style.display = 'none';
+    document.getElementById('pause-btn').style.display = 'none';
+    document.getElementById('skip-btn').style.display = 'none';
+    document.getElementById('emergency-btn').style.display = 'none';
+    document.getElementById('reset-btn').style.display = 'flex';
+  }
+
+  reset() {
+    this.currentIndex = 0;
+    this.isPlaying = false;
+    this.isPaused = false;
+
+    // Show control buttons, hide reset
+    document.getElementById('start-btn').style.display = 'flex';
+    document.getElementById('pause-btn').style.display = 'flex';
+    document.getElementById('skip-btn').style.display = 'flex';
+    document.getElementById('emergency-btn').style.display = 'flex';
+    document.getElementById('reset-btn').style.display = 'none';
+    document.getElementById('start-btn-text').textContent = 'START';
+
+    // Apply first frame
+    this.applyFrame(this.timeline[0]);
+  }
+}
+
+// Initialize controller
+const controller = new TimelineController(timeline);
+
+// Button event listeners
+document.getElementById('start-btn').addEventListener('click', () => {
+  controller.start();
+});
+
+document.getElementById('pause-btn').addEventListener('click', () => {
+  controller.pause();
+});
+
+document.getElementById('skip-btn').addEventListener('click', () => {
+  controller.skip();
+});
+
+document.getElementById('emergency-btn').addEventListener('click', () => {
+  controller.emergencyStop();
+});
+
+document.getElementById('reset-btn').addEventListener('click', () => {
+  controller.reset();
+});
+
+// Initialize with first frame
+controller.applyFrame(timeline[0]);
+</script>
+
+</body>
+</html>
