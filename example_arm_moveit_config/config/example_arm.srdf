@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    SRDF - Semantic Robot Description Format
+
+    This file adds semantic information on top of the URDF:
+    - Planning groups: which joints move together
+    - End-effectors: which links are tools
+    - Virtual joints: how robot connects to world
+    - Disabled collisions: pairs that don't need checking
+-->
+<robot name="robot">
+
+    <!-- ==================== -->
+    <!-- PLANNING GROUPS      -->
+    <!-- ==================== -->
+
+    <!-- The "arm" group contains all joints we want to plan for -->
+    <!-- This is what MoveIt will move when you request motion planning -->
+    <group name="arm">
+        <joint name="slider_joint"/>   <!-- prismatic: slides along X -->
+        <joint name="arm_joint"/>      <!-- revolute: rotates arm up/down -->
+    </group>
+
+    <!-- You can also define a group by chain (from base to tip) -->
+    <!-- <group name="arm">
+        <chain base_link="base_link" tip_link="tcp"/>
+    </group> -->
+
+    <!-- ==================== -->
+    <!-- END-EFFECTOR         -->
+    <!-- ==================== -->
+
+    <!-- Define tcp as the end-effector of the arm group -->
+    <!-- This tells MoveIt where to position when you give a target pose -->
+    <end_effector name="tcp" parent_link="tcp" group="arm"/>
+
+    <!-- ==================== -->
+    <!-- VIRTUAL JOINTS       -->
+    <!-- ==================== -->
+
+    <!-- How the robot base connects to the world -->
+    <!-- For a fixed-base arm, this is a fixed joint -->
+    <!-- For a mobile robot, this could be "planar" or "floating" -->
+    <virtual_joint name="virtual_joint" type="fixed" parent_frame="world" child_link="base_link"/>
+
+    <!-- ==================== -->
+    <!-- DISABLED COLLISIONS  -->
+    <!-- ==================== -->
+
+    <!-- These pairs will NOT be checked for collision -->
+    <!-- Reason: "Adjacent" = connected by a joint, "Never" = geometry never collides -->
+    <disable_collisions link1="base_link" link2="slider_link" reason="Adjacent"/>
+    <disable_collisions link1="slider_link" link2="arm_link" reason="Adjacent"/>
+    <disable_collisions link1="arm_link" link2="camera_link" reason="Adjacent"/>
+    <disable_collisions link1="camera_link" link2="tool0" reason="Adjacent"/>
+    <disable_collisions link1="tool0" link2="tcp" reason="Adjacent"/>
+
+    <!-- Base and arm can't collide due to geometry -->
+    <disable_collisions link1="base_link" link2="arm_link" reason="Never"/>
+    <disable_collisions link1="base_link" link2="camera_link" reason="Never"/>
+
+</robot>

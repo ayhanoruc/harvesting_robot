@@ -1,0 +1,46 @@
+# Target Positions Configuration
+#
+# Using JOINT SPACE goals for this 2-DOF arm (more reliable than Cartesian)
+# slider_joint: 0 to 2 meters (prismatic)
+# arm_joint: 0 to 1.57 radians (0 to 90 degrees)
+#
+# Current TCP at joints [0, 0] is approximately (1.61, 1.0, 0.43)
+
+reference_frame: world
+
+targets:
+
+  # Home position - both joints at zero
+  HOME:
+    joints: [0.0, 0.0]
+    description: "Home position - joints at zero"
+
+  # Slider extended, arm down
+  EXTENDED_LOW:
+    joints: [1.5, 0.0]
+    description: "Slider extended, arm horizontal"
+
+  # Slider retracted, arm up 45 deg
+  RETRACTED_MID:
+    joints: [0.0, 0.785]
+    description: "Slider home, arm at 45 degrees"
+
+  # Slider mid, arm up 90 deg
+  MID_HIGH:
+    joints: [1.0, 1.57]
+    description: "Slider mid, arm vertical"
+
+  # Full extension
+  FULL_REACH:
+    joints: [2.0, 0.3]
+    description: "Maximum slider, slight arm angle"
+
+  # Scan left (slider retracted)
+  SCAN_LEFT:
+    joints: [0.0, 0.5]
+    description: "Left scan position"
+
+  # Scan right (slider extended)
+  SCAN_RIGHT:
+    joints: [2.0, 0.5]
+    description: "Right scan position"

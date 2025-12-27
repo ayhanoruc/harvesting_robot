@@ -1,0 +1,34 @@
+# OMPL (Open Motion Planning Library) Configuration
+#
+# OMPL provides various sampling-based planners.
+# These planners find collision-free paths through configuration space.
+
+planner_configs:
+  RRTConnect:
+    type: geometric::RRTConnect
+    range: 0.0  # Max distance between states (0 = auto)
+
+  RRT:
+    type: geometric::RRT
+    range: 0.0
+    goal_bias: 0.05  # Probability of sampling goal
+
+  PRM:
+    type: geometric::PRM
+    max_nearest_neighbors: 10
+
+  RRTstar:
+    type: geometric::RRTstar
+    range: 0.0
+    goal_bias: 0.05
+    delay_collision_checking: true
+
+# Default planner for each group
+arm:
+  default_planner_config: RRTConnect
+  planner_configs:
+    - RRTConnect
+    - RRT
+    - PRM
+    - RRTstar
+  projection_evaluator: joints(slider_joint,arm_joint)

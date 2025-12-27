@@ -1,0 +1,23 @@
+# Kinematics Configuration
+#
+# This configures the Inverse Kinematics solver for each planning group.
+# The solver takes a target pose and finds joint angles that achieve it.
+#
+# Available solvers in MoveIt 2:
+# - kdl_kinematics_plugin/KDLKinematicsPlugin (default, numerical)
+# - lma_kinematics_plugin/LMAKinematicsPlugin (Levenberg-Marquardt)
+# - cached_ik_kinematics_plugin (caches solutions for speed)
+# - ikfast_kinematics_plugin (analytical, must be generated per-robot)
+
+arm:
+  kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+
+  # Solver timeout in seconds - how long to try before giving up
+  kinematics_solver_search_resolution: 0.005
+
+  # Timeout for single IK solution attempt
+  kinematics_solver_timeout: 0.05
+
+  # Number of random restarts if initial attempt fails
+  # Higher = more likely to find solution, but slower
+  kinematics_solver_attempts: 3
