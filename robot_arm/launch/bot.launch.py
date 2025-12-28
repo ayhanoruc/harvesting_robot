@@ -2,7 +2,7 @@
 ROS2 Launch file for 4-DOF Robot Arm in Gazebo
 
 Launches:
-  - Gazebo with empty world
+  - Gazebo with cotton_field world
   - robot_state_publisher (publishes URDF and TF)
   - Spawns robot in Gazebo (gazebo_ros2_control plugin handles hardware)
   - joint_state_broadcaster
@@ -28,6 +28,9 @@ def generate_launch_description():
     pkg_path = get_package_share_directory('robot_arm')
     pkg_gazebo_ros = get_package_share_directory('gazebo_ros')
 
+    # World file
+    world_file = os.path.join(pkg_path, 'worlds', 'cotton_field.world')
+
     # Process xacro file
     xacro_file = os.path.join(pkg_path, 'urdf', 'mybot.urdf.xacro')
     robot_description_content = xacro.process_file(xacro_file).toxml()
@@ -37,12 +40,15 @@ def generate_launch_description():
     # Launch arguments
     use_sim_time = LaunchConfiguration('use_sim_time', default='true')
 
-    # Gazebo launch
+    # Gazebo launch with cotton field world
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(pkg_gazebo_ros, 'launch', 'gazebo.launch.py')
         ),
-        launch_arguments={'verbose': 'true'}.items()
+        launch_arguments={
+            'world': world_file,
+            'verbose': 'true'
+        }.items()
     )
 
     # Robot State Publisher

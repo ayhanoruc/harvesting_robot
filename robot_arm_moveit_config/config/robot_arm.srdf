@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot name="arm">
+    <!-- Planning group for the 4-DOF arm (explicit joints, not chain) -->
+    <group name="arm">
+        <joint name="hip"/>
+        <joint name="shoulder"/>
+        <joint name="elbow"/>
+        <joint name="wrist"/>
+    </group>
+
+    <!-- TCP end effector for the arm group -->
+    <end_effector name="tcp" parent_link="tcp" group="arm"/>
+
+    <!-- Planning group for the gripper -->
+    <group name="gripper">
+        <joint name="l_g_base"/>
+        <joint name="r_g_base"/>
+    </group>
+
+    <!-- Named poses for the arm -->
+    <group_state name="home" group="arm">
+        <joint name="hip" value="0.0"/>
+        <joint name="shoulder" value="0.0"/>
+        <joint name="elbow" value="0.0"/>
+        <joint name="wrist" value="0.0"/>
+    </group_state>
+
+    <group_state name="ready" group="arm">
+        <joint name="hip" value="0.0"/>
+        <joint name="shoulder" value="-0.3"/>
+        <joint name="elbow" value="0.5"/>
+        <joint name="wrist" value="0.0"/>
+    </group_state>
+
+    <!-- Named poses for gripper -->
+    <group_state name="open" group="gripper">
+        <joint name="l_g_base" value="0.0"/>
+        <joint name="r_g_base" value="0.0"/>
+    </group_state>
+
+    <group_state name="closed" group="gripper">
+        <joint name="l_g_base" value="0.5"/>
+        <joint name="r_g_base" value="-0.5"/>
+    </group_state>
+
+    <!-- Disable collisions between adjacent links -->
+    <disable_collisions link1="base_link" link2="torso" reason="Adjacent"/>
+    <disable_collisions link1="torso" link2="upper_arm" reason="Adjacent"/>
+    <disable_collisions link1="upper_arm" link2="lower_arm" reason="Adjacent"/>
+    <disable_collisions link1="lower_arm" link2="hand" reason="Adjacent"/>
+    <disable_collisions link1="hand" link2="left_gripper_base" reason="Adjacent"/>
+    <disable_collisions link1="hand" link2="right_gripper_base" reason="Adjacent"/>
+    <disable_collisions link1="left_gripper_base" link2="left_gripper_finger" reason="Adjacent"/>
+    <disable_collisions link1="right_gripper_base" link2="right_gripper_finger" reason="Adjacent"/>
+    <disable_collisions link1="hand" link2="tool0" reason="Adjacent"/>
+    <disable_collisions link1="tool0" link2="tcp" reason="Adjacent"/>
+
+    <!-- Disable collisions between gripper parts -->
+    <disable_collisions link1="left_gripper_base" link2="right_gripper_base" reason="Adjacent"/>
+    <disable_collisions link1="left_gripper_finger" link2="right_gripper_finger" reason="Never"/>
+    <disable_collisions link1="hand" link2="left_gripper_finger" reason="Never"/>
+    <disable_collisions link1="hand" link2="right_gripper_finger" reason="Never"/>
+
+    <!-- Disable collisions for TCP (it's just a marker) -->
+    <disable_collisions link1="tcp" link2="left_gripper_base" reason="Never"/>
+    <disable_collisions link1="tcp" link2="right_gripper_base" reason="Never"/>
+    <disable_collisions link1="tcp" link2="left_gripper_finger" reason="Never"/>
+    <disable_collisions link1="tcp" link2="right_gripper_finger" reason="Never"/>
+    <disable_collisions link1="tcp" link2="hand" reason="Never"/>
+    <disable_collisions link1="tool0" link2="left_gripper_base" reason="Never"/>
+    <disable_collisions link1="tool0" link2="right_gripper_base" reason="Never"/>
+</robot>

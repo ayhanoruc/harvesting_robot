@@ -153,7 +153,8 @@
 	<link name="left_gripper_base">
 		<inertial>
 			<mass value="0.01"/>
-			<inertia ixx="8.23e-8" iyy="8.23e-8" izz="3.47e-7" ixy="0" ixz="0" iyz="0"/>
+			<!-- Box approx: 0.005 x 0.005 x 0.02 (see visual). Keep inertia physically consistent. -->
+			<inertia ixx="3.54e-7" iyy="3.54e-7" izz="4.17e-8" ixy="0" ixz="0" iyz="0"/>
 		</inertial>
 		<visual>
 			<geometry>
@@ -180,7 +181,8 @@
 	<link name="right_gripper_base">
 		<inertial>
 			<mass value="0.01"/>
-			<inertia ixx="8.23e-8" iyy="8.23e-8" izz="3.47e-7" ixy="0" ixz="0" iyz="0"/>
+			<!-- Box approx: 0.005 x 0.005 x 0.02 (see visual). Keep inertia physically consistent. -->
+			<inertia ixx="3.54e-7" iyy="3.54e-7" izz="4.17e-8" ixy="0" ixz="0" iyz="0"/>
 		</inertial>
 		<visual>
 			<geometry>
