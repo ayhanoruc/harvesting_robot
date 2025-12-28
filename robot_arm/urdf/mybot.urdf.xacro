@@ -253,6 +253,34 @@
 		<child link="right_gripper_finger"/>
 	</joint>
 
+	<!-- TCP frames -->
+	<joint name="tool0_joint" type="fixed">
+		<origin xyz="0 0 0.025" rpy="0 0 0"/>
+		<parent link="hand"/>
+		<child link="tool0"/>
+	</joint>
+	<link name="tool0"/>
+
+	<joint name="tcp_joint" type="fixed">
+		<origin xyz="0 0 0.045" rpy="0 0 0"/>
+		<parent link="tool0"/>
+		<child link="tcp"/>
+	</joint>
+	<link name="tcp">
+		<visual>
+			<geometry>
+				<sphere radius="0.01"/>
+			</geometry>
+			<material name="tcp_red">
+				<color rgba="1 0 0 1"/>
+			</material>
+		</visual>
+	</link>
+
+	<gazebo reference="tcp">
+		<material>Gazebo/Red</material>
+	</gazebo>
+
 	<!-- ==================== ros2_control ==================== -->
 	<ros2_control name="robot_arm_control" type="system">
 		<hardware>
