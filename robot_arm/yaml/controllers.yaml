@@ -1,0 +1,47 @@
+# ROS2 Controller Configuration for 4-DOF Robot Arm
+
+controller_manager:
+  ros__parameters:
+    update_rate: 100  # Hz
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+# Joint State Broadcaster - publishes joint states from hardware
+joint_state_broadcaster:
+  ros__parameters:
+    joints:
+      - hip
+      - shoulder
+      - elbow
+      - wrist
+      - l_g_base
+      - r_g_base
+
+# Arm Controller - receives trajectory commands
+arm_controller:
+  ros__parameters:
+    joints:
+      - hip
+      - shoulder
+      - elbow
+      - wrist
+      - l_g_base
+      - r_g_base
+
+    command_interfaces:
+      - position
+
+    state_interfaces:
+      - position
+      - velocity
+
+    state_publish_rate: 50.0
+    action_monitor_rate: 20.0
+
+    allow_partial_joints_goal: false
+    open_loop_control: true
+    allow_integration_in_goal_trajectories: true
