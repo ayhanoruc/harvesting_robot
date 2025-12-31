@@ -61,7 +61,7 @@ def generate_launch_description():
         'moveit_manage_controllers': False,  # Gazebo manages controllers
         'trajectory_execution.allowed_execution_duration_scaling': 1.2,
         'trajectory_execution.allowed_goal_duration_margin': 0.5,
-        'trajectory_execution.allowed_start_tolerance': 0.01,
+        'trajectory_execution.allowed_start_tolerance': 0.1,  # Increased from 0.01 to handle gravity sag
         'moveit_controller_manager': 'moveit_simple_controller_manager/MoveItSimpleControllerManager',
     }
 
