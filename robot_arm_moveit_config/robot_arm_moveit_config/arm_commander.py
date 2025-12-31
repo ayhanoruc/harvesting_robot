@@ -69,7 +69,7 @@ class ArmCommander(Node):
 
         # Add home position (always available)
         if 'home' not in self.named_targets:
-            self.named_targets['home'] = [0.0, 0.0, 0.5]  # Default home
+            self.named_targets['home'] = [0.3, 0.0, 0.6]  # Safe home (forward and up)
 
         # Joint names for the "arm" planning group (4 joints only, no gripper)
         self.arm_joint_names = ['hip', 'shoulder', 'elbow', 'wrist']
@@ -172,7 +172,7 @@ class ArmCommander(Node):
             'cluster_2': [0.85, 0.0, 0.52],
             'cluster_3': [0.75, 0.45, 0.46],
             'reservoir': [0.0, 0.6, 0.2],
-            'home': [0.0, 0.0, 0.5],
+            'home': [0.3, 0.0, 0.6],
         }
 
     def go_to_pose_callback(self, request, response):

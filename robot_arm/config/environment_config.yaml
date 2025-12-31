@@ -40,20 +40,20 @@ landmarks:
 # Cotton clusters (approximate positions - vision will refine)
 # Positions are boll centers (what we want to reach)
 clusters:
-  cluster_1:
+  cluster_3:
     position: [0.75, -0.45, 0.42]  # Right side
     stem_height: 0.40
-    description: "Plant 1 - right"
+    description: "Plant 3 - right"
 
   cluster_2:
     position: [0.85, 0.0, 0.52]    # Center
     stem_height: 0.50
     description: "Plant 2 - center"
 
-  cluster_3:
+  cluster_1:
     position: [0.75, 0.45, 0.46]   # Left side
     stem_height: 0.44
-    description: "Plant 3 - left"
+    description: "Plant 1 - left"
 
 # Exploration parameters
 exploration:
