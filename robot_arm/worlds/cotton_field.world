@@ -247,5 +247,43 @@
       </link>
     </model>
 
+    <!-- Explore Start marker (cyan) - Left side -->
+    <model name="explore_start">
+      <static>true</static>
+      <pose>0.5 0.55 0.55 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <sphere>
+              <radius>0.025</radius>
+            </sphere>
+          </geometry>
+          <material>
+            <ambient>0.0 0.8 0.8 1</ambient>
+            <diffuse>0.0 1.0 1.0 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Explore End marker (magenta) - Right side -->
+    <model name="explore_end">
+      <static>true</static>
+      <pose>0.5 -0.55 0.55 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <sphere>
+              <radius>0.025</radius>
+            </sphere>
+          </geometry>
+          <material>
+            <ambient>0.8 0.0 0.8 1</ambient>
+            <diffuse>1.0 0.0 1.0 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
   </world>
 </sdf>

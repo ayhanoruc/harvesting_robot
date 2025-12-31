@@ -1,0 +1,79 @@
+# Environment Configuration - Single Source of Truth
+# All positions in world frame (Gazebo world coordinates)
+# Robot base_link is at (0, 0, 0.1) due to spawn offset
+
+environment:
+  name: "cotton_field_v1"
+  frame_id: "world"
+
+  # Workspace bounds (meters) - defines reachable area
+  bounds:
+    x_min: -0.3
+    x_max: 1.2
+    y_min: -0.8
+    y_max: 0.8
+    z_min: 0.0
+    z_max: 1.0
+
+# Robot configuration
+robot:
+  spawn_position: [0.0, 0.0, 0.1]  # Where robot is spawned in world
+  base_frame: "base_link"
+  tcp_frame: "tcp"
+
+# Fixed landmarks (positions in world frame)
+landmarks:
+  reservoir:
+    position: [0.0, 0.6, 0.2]      # Top center of reservoir box
+    dimensions: [0.3, 0.3, 0.2]    # For collision object (x, y, z size)
+    description: "Cotton drop zone"
+
+  # Exploration path endpoints (where camera looks from)
+  explore_start:
+    position: [0.5, 0.55, 0.55]    # Left side, elevated
+    description: "Begin scan - left edge"
+
+  explore_end:
+    position: [0.5, -0.55, 0.55]   # Right side, elevated
+    description: "End scan - right edge"
+
+# Cotton clusters (approximate positions - vision will refine)
+# Positions are boll centers (what we want to reach)
+clusters:
+  cluster_1:
+    position: [0.75, -0.45, 0.42]  # Right side
+    stem_height: 0.40
+    description: "Plant 1 - right"
+
+  cluster_2:
+    position: [0.85, 0.0, 0.52]    # Center
+    stem_height: 0.50
+    description: "Plant 2 - center"
+
+  cluster_3:
+    position: [0.75, 0.45, 0.46]   # Left side
+    stem_height: 0.44
+    description: "Plant 3 - left"
+
+# Exploration parameters
+exploration:
+  strategy: "linear_sweep"         # Y+ to Y- sweep
+  num_viewpoints: 5                # Number of scan positions
+  scan_height: 0.55                # Z height during scanning
+  scan_distance: 0.5               # X distance from base during scan
+
+# Collision objects for MoveIt planning scene
+collision_objects:
+  reservoir:
+    type: "box"
+    frame_id: "world"
+    position: [0.0, 0.6, 0.1]      # Center of box
+    dimensions: [0.3, 0.3, 0.2]
+
+  # Optional: plant stems as collision cylinders
+  # plant_1_stem:
+  #   type: "cylinder"
+  #   frame_id: "world"
+  #   position: [0.75, -0.45, 0.2]
+  #   radius: 0.03
+  #   height: 0.4

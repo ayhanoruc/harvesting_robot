@@ -3,17 +3,25 @@
 Arm Commander Node - Cartesian Goals with MoveIt 2
 
 Moves the robot TCP to specified Cartesian positions using MoveIt IK.
+Loads targets from environment_config.yaml (single source of truth).
 
 Services:
-    /go_to_pose (std_srvs/SetBool) - Move to current target position
+    /go_to_pose (std_srvs/SetBool) - Move to target_x/y/z position
+    /go_to_named (std_srvs/SetBool) - Move to named target from config
 
 Parameters:
-    target_x, target_y, target_z - Target position in world frame
+    config_file - Path to environment_config.yaml
+    target_x, target_y, target_z - Custom target position
+    target_name - Named target (cluster_1, reservoir, explore_start, etc.)
 
 Usage:
-    ros2 run robot_arm_moveit_config arm_commander.py
+    ros2 run robot_arm_moveit_config arm_commander
 
-    # Move to plant 1
+    # Move to named target
+    ros2 param set /arm_commander target_name cluster_1
+    ros2 service call /go_to_named std_srvs/srv/SetBool "{data: true}"
+
+    # Move to custom position
     ros2 param set /arm_commander target_x 0.75
     ros2 param set /arm_commander target_y -0.45
     ros2 param set /arm_commander target_z 0.42
@@ -30,13 +38,13 @@ from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import (
     Constraints,
     PositionConstraint,
-    OrientationConstraint,
     BoundingVolume,
 )
 from shape_msgs.msg import SolidPrimitive
 from geometry_msgs.msg import PoseStamped, Pose, Point, Quaternion
 
-import math
+import yaml
+import os
 
 
 class ArmCommander(Node):
@@ -47,24 +55,27 @@ class ArmCommander(Node):
 
         self.callback_group = ReentrantCallbackGroup()
 
-        # Parameters for target position
+        # Parameter for config file
+        self.declare_parameter('config_file', '')
+
+        # Parameters for custom target position
         self.declare_parameter('target_x', 0.75)
         self.declare_parameter('target_y', 0.0)
         self.declare_parameter('target_z', 0.45)
-
-        # Named targets with pre-computed joint angles (IK solved manually)
-        # Format: {'x': ..., 'y': ..., 'z': ..., 'joints': [hip, shoulder, elbow, wrist]}
-        self.named_targets = {
-            'plant_1': {'x': 0.75, 'y': -0.45, 'z': 0.42, 'joints': [-0.55, -0.5, 0.7, 0.0]},
-            'plant_2': {'x': 0.85, 'y': 0.0, 'z': 0.52, 'joints': [0.0, -0.4, 0.6, 0.0]},
-            'plant_3': {'x': 0.75, 'y': 0.45, 'z': 0.46, 'joints': [0.55, -0.5, 0.7, 0.0]},
-            'reservoir': {'x': 0.0, 'y': 0.6, 'z': 0.25, 'joints': [1.57, -0.2, 0.3, 0.0]},
-            'home': {'x': 0.83, 'y': 0.0, 'z': 0.40, 'joints': [0.0, 0.0, 0.0, 0.0]},
-        }
         self.declare_parameter('target_name', '')
+
+        # Load named targets from config file
+        self.named_targets = self.load_targets_from_config()
+
+        # Add home position (always available)
+        if 'home' not in self.named_targets:
+            self.named_targets['home'] = [0.0, 0.0, 0.5]  # Default home
 
         # Joint names for the "arm" planning group (4 joints only, no gripper)
         self.arm_joint_names = ['hip', 'shoulder', 'elbow', 'wrist']
+
+        # Planning frame (use base_link for MoveIt)
+        self.planning_frame = "world"  # or "base_link" if preferred
 
         # MoveGroup action client
         self._action_client = ActionClient(
@@ -98,22 +109,71 @@ class ArmCommander(Node):
 
         # Print info
         self.get_logger().info("=" * 60)
-        self.get_logger().info("ARM COMMANDER READY (Cartesian Mode)")
+        self.get_logger().info("ARM COMMANDER READY (Cartesian IK Mode)")
         self.get_logger().info("=" * 60)
-        self.get_logger().info("Named targets:")
+        self.get_logger().info(f"Loaded {len(self.named_targets)} targets from config:")
         for name, pos in self.named_targets.items():
-            self.get_logger().info(f"  {name}: ({pos['x']}, {pos['y']}, {pos['z']})")
+            self.get_logger().info(f"  {name}: ({pos[0]:.2f}, {pos[1]:.2f}, {pos[2]:.2f})")
+        self.get_logger().info("-" * 60)
+        self.get_logger().info("Usage (named target):")
+        self.get_logger().info("  ros2 param set /arm_commander target_name cluster_1")
+        self.get_logger().info("  ros2 service call /go_to_named std_srvs/srv/SetBool \"{data: true}\"")
         self.get_logger().info("-" * 60)
         self.get_logger().info("Usage (custom position):")
         self.get_logger().info("  ros2 param set /arm_commander target_x 0.75")
         self.get_logger().info("  ros2 param set /arm_commander target_y -0.45")
         self.get_logger().info("  ros2 param set /arm_commander target_z 0.42")
         self.get_logger().info("  ros2 service call /go_to_pose std_srvs/srv/SetBool \"{data: true}\"")
-        self.get_logger().info("-" * 60)
-        self.get_logger().info("Usage (named target):")
-        self.get_logger().info("  ros2 param set /arm_commander target_name plant_1")
-        self.get_logger().info("  ros2 service call /go_to_named std_srvs/srv/SetBool \"{data: true}\"")
         self.get_logger().info("=" * 60)
+
+    def load_targets_from_config(self):
+        """Load named targets from environment_config.yaml."""
+        config_file = self.get_parameter('config_file').value
+
+        if not config_file:
+            # Try default path
+            try:
+                from ament_index_python.packages import get_package_share_directory
+                pkg_path = get_package_share_directory('robot_arm')
+                config_file = os.path.join(pkg_path, 'config', 'environment_config.yaml')
+            except Exception:
+                self.get_logger().warn("Could not find default config, using hardcoded targets")
+                return self._fallback_targets()
+
+        if not os.path.exists(config_file):
+            self.get_logger().warn(f"Config file not found: {config_file}")
+            return self._fallback_targets()
+
+        try:
+            with open(config_file, 'r') as f:
+                config = yaml.safe_load(f)
+
+            targets = {}
+
+            # Load clusters
+            for name, data in config.get('clusters', {}).items():
+                targets[name] = data['position']
+
+            # Load landmarks
+            for name, data in config.get('landmarks', {}).items():
+                targets[name] = data['position']
+
+            self.get_logger().info(f"Loaded targets from: {config_file}")
+            return targets
+
+        except Exception as e:
+            self.get_logger().error(f"Failed to load config: {e}")
+            return self._fallback_targets()
+
+    def _fallback_targets(self):
+        """Fallback hardcoded targets if config not available."""
+        return {
+            'cluster_1': [0.75, -0.45, 0.42],
+            'cluster_2': [0.85, 0.0, 0.52],
+            'cluster_3': [0.75, 0.45, 0.46],
+            'reservoir': [0.0, 0.6, 0.2],
+            'home': [0.0, 0.0, 0.5],
+        }
 
     def go_to_pose_callback(self, request, response):
         """Service callback for custom position."""
@@ -135,7 +195,7 @@ class ArmCommander(Node):
         return response
 
     def go_to_named_callback(self, request, response):
-        """Service callback for named targets - uses joint-space goals."""
+        """Service callback for named targets - uses Cartesian IK goals."""
         if not request.data:
             response.success = False
             response.message = "Set data=true to trigger"
@@ -148,14 +208,14 @@ class ArmCommander(Node):
             response.message = f"Unknown target: {target_name}. Available: {list(self.named_targets.keys())}"
             return response
 
-        target = self.named_targets[target_name]
-        joints = target['joints']
-        self.get_logger().info(f"Moving to {target_name}")
-        self.get_logger().info(f"  Position: ({target['x']}, {target['y']}, {target['z']})")
-        self.get_logger().info(f"  Joints: {joints}")
+        # Targets are now [x, y, z] lists from config
+        pos = self.named_targets[target_name]
+        x, y, z = pos[0], pos[1], pos[2]
 
-        # Use joint-space goal (reliable for 4-DOF arm)
-        success = self.send_joint_goal(joints)
+        self.get_logger().info(f"Moving to '{target_name}' at ({x:.2f}, {y:.2f}, {z:.2f})")
+
+        # Use Cartesian IK goal (let MoveIt solve IK)
+        success = self.send_pose_goal(x, y, z)
 
         response.success = success
         response.message = f"{'Success' if success else 'Failed'}: {target_name}"
@@ -250,7 +310,7 @@ class ArmCommander(Node):
         bounding_volume = BoundingVolume()
         sphere = SolidPrimitive()
         sphere.type = SolidPrimitive.SPHERE
-        sphere.dimensions = [0.05]  # 5cm tolerance
+        sphere.dimensions = [0.08]  # 8cm tolerance for easier sampling
         bounding_volume.primitives.append(sphere)
 
         primitive_pose = Pose()
@@ -261,17 +321,9 @@ class ArmCommander(Node):
         position_constraint.constraint_region = bounding_volume
         goal_constraints.position_constraints.append(position_constraint)
 
-        # Add loose orientation constraint (allow any orientation)
-        # This helps KDL find valid IK solutions for 4-DOF arm
-        orientation_constraint = OrientationConstraint()
-        orientation_constraint.header.frame_id = "world"
-        orientation_constraint.link_name = "tcp"
-        orientation_constraint.orientation.w = 1.0  # Identity quaternion
-        orientation_constraint.absolute_x_axis_tolerance = 3.15  # ~180 degrees
-        orientation_constraint.absolute_y_axis_tolerance = 3.15
-        orientation_constraint.absolute_z_axis_tolerance = 3.15
-        orientation_constraint.weight = 0.1  # Low weight - position is more important
-        goal_constraints.orientation_constraints.append(orientation_constraint)
+        # NOTE: Do NOT add orientation constraints for 4-DOF arm
+        # The arm can only control position, not orientation
+        # KDL position_only_ik mode handles this automatically
 
         goal_msg.request.goal_constraints.append(goal_constraints)
 

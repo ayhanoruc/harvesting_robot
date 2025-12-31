@@ -108,6 +108,21 @@ def generate_launch_description():
         ],
     )
 
+    # Environment config file (from robot_arm package)
+    env_config_file = os.path.join(robot_arm_pkg, 'config', 'environment_config.yaml')
+
+    # Arm Commander node
+    arm_commander_node = Node(
+        package='robot_arm_moveit_config',
+        executable='arm_commander.py',
+        name='arm_commander',
+        output='screen',
+        parameters=[
+            {'use_sim_time': use_sim_time},
+            {'config_file': env_config_file},
+        ],
+    )
+
     return LaunchDescription([
         DeclareLaunchArgument(
             'use_sim_time',
@@ -116,4 +131,5 @@ def generate_launch_description():
         ),
         move_group_node,
         rviz_node,
+        arm_commander_node,
     ])

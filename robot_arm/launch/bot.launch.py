@@ -7,6 +7,7 @@ Launches:
   - Spawns robot in Gazebo (gazebo_ros2_control plugin handles hardware)
   - joint_state_broadcaster
   - arm_controller (joint trajectory controller)
+  - landmark_publisher (static TF + collision objects)
 
 Note: The gazebo_ros2_control plugin in the URDF creates the controller_manager
 inside Gazebo, so we don't need a separate ros2_control_node.
@@ -31,9 +32,25 @@ def generate_launch_description():
     # World file
     world_file = os.path.join(pkg_path, 'worlds', 'cotton_field.world')
 
-    # Process xacro file
+    # Controllers yaml file (injected into xacro)
+    controllers_yaml = os.path.join(pkg_path, 'yaml', 'controllers.yaml')
+
+    # Process xacro file with mappings
     xacro_file = os.path.join(pkg_path, 'urdf', 'mybot.urdf.xacro')
-    robot_description_content = xacro.process_file(xacro_file).toxml()
+    robot_description_content = xacro.process_file(
+        xacro_file,
+        mappings={'controllers_yaml': controllers_yaml}
+    ).toxml()
+
+    # CRITICAL FIX: Clean up URDF to prevent parser errors in gazebo_ros2_control
+    # The plugin passes robot_description as a CLI arg, which fails with large/complex XML
+    import re
+    # Remove XML declaration (causes parser confusion with '?' and '=')
+    robot_description_content = re.sub(r'<\?xml.*?\?>', '', robot_description_content)
+    # Remove comments (reduces size significantly)
+    robot_description_content = re.sub(r'<!--.*?-->', '', robot_description_content, flags=re.DOTALL)
+    # Collapse whitespace (further reduces size)
+    robot_description_content = re.sub(r'\s+', ' ', robot_description_content).strip()
 
     robot_description = {'robot_description': robot_description_content}
 
@@ -108,6 +125,29 @@ def generate_launch_description():
         )
     )
 
+    # Environment config file
+    config_file = os.path.join(pkg_path, 'config', 'environment_config.yaml')
+
+    # Landmark publisher (TF frames + collision objects)
+    landmark_publisher = Node(
+        package='robot_arm',
+        executable='landmark_publisher.py',
+        name='landmark_publisher',
+        output='screen',
+        parameters=[
+            {'use_sim_time': use_sim_time},
+            {'config_file': config_file}
+        ]
+    )
+
+    # Delay landmark publisher until arm_controller is ready
+    delay_landmark_publisher = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=arm_controller_spawner,
+            on_exit=[landmark_publisher],
+        )
+    )
+
     return LaunchDescription([
         DeclareLaunchArgument(
             'use_sim_time',
@@ -119,4 +159,5 @@ def generate_launch_description():
         spawn_entity,
         delay_joint_state_broadcaster,
         delay_arm_controller,
+        delay_landmark_publisher,
     ])

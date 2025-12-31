@@ -20,6 +20,7 @@ setup(
     entry_points={
         'console_scripts': [
             'write_pos = robot_arm.write_pos:main',
+            'landmark_publisher = robot_arm.landmark_publisher:main',
         ],
     },
 )

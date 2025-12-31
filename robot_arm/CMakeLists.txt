@@ -17,6 +17,7 @@ ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
   src/write_pos.py
   src/tcp_monitor.py
+  robot_arm/landmark_publisher.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -26,11 +27,12 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}
 )
 
-# Install URDF and config files
+# Install URDF, config, and world files
 install(DIRECTORY
   urdf
   yaml
   worlds
+  config
   DESTINATION share/${PROJECT_NAME}
 )
 
