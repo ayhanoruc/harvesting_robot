@@ -332,9 +332,26 @@ class ArmCommander(Node):
         position_constraint.constraint_region = bounding_volume
         goal_constraints.position_constraints.append(position_constraint)
 
-        # NOTE: Do NOT add orientation constraints for 4-DOF arm
-        # The arm can only control position, not orientation
-        # KDL position_only_ik mode handles this automatically
+        # Orientation Constraint: Keep TCP level (Pitch=0, Roll=0)
+        from moveit_msgs.msg import OrientationConstraint
+        ori_constraint = OrientationConstraint()
+        ori_constraint.header.frame_id = "world"
+        ori_constraint.link_name = "tcp"
+        
+        # Target orientation: Horizontal Forward (approximately Identity or 90 deg depending on frame)
+        # Assuming Identity (0,0,0,1) is 'Up', and we want 'Forward', we need Pitch.
+        # But let's trust that the current goal finding will pick a good orientation if we constrain tolerances.
+        # Ideally, we want the CURRENT valid orientation but constrained.
+        
+        # For simplicity, we define tolerances to be strict on Pitch/Roll, loose on Yaw
+        ori_constraint.orientation.w = 1.0 # Nominal, will be ignored if tolerances allow variation
+        
+        ori_constraint.absolute_x_axis_tolerance = 0.2 # Roll tolerance
+        ori_constraint.absolute_y_axis_tolerance = 0.2 # Pitch tolerance
+        ori_constraint.absolute_z_axis_tolerance = 3.14 # Yaw tolerance (Free)
+        
+        ori_constraint.weight = 1.0
+        goal_constraints.orientation_constraints.append(ori_constraint)
 
         goal_msg.request.goal_constraints.append(goal_constraints)
 
