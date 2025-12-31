@@ -203,6 +203,17 @@ class ArmCommander(Node):
 
         target_name = self.get_parameter('target_name').value
 
+        # SPECIAL CASE: 'home' uses joint goal for reliability
+        if target_name == 'home':
+            # Use "home" pose: Retracted safe position (pulled back)
+            # Hip=0, Shoulder=-1.0 (back), Elbow=1.8 (folded), Wrist=0
+            joint_values = [0.0, -1.0, 1.8, 0.0]
+            self.get_logger().info(f"Moving to '{target_name}' using JOINT goal: {joint_values}")
+            success = self.send_joint_goal(joint_values)
+            response.success = success
+            response.message = f"{'Success' if success else 'Failed'}: {target_name} (Joint Goal)"
+            return response
+
         if target_name not in self.named_targets:
             response.success = False
             response.message = f"Unknown target: {target_name}. Available: {list(self.named_targets.keys())}"
