@@ -2,14 +2,8 @@
 <robot name="arm">
     <!-- Planning group for the 4-DOF arm (explicit joints, not chain) -->
     <group name="arm">
-        <joint name="hip"/>
-        <joint name="shoulder"/>
-        <joint name="elbow"/>
-        <joint name="wrist"/>
+        <chain base_link="base_link" tip_link="tcp"/>
     </group>
-
-    <!-- TCP end effector for the arm group -->
-    <end_effector name="tcp" parent_link="tcp" group="arm"/>
 
     <!-- Planning group for the gripper -->
     <group name="gripper">

@@ -280,6 +280,11 @@
 				<color rgba="1 0 0 1"/>
 			</material>
 		</visual>
+		<collision>
+			<geometry>
+				<sphere radius="0.01"/>
+			</geometry>
+		</collision>
 	</link>
 
 	<gazebo reference="tcp">
