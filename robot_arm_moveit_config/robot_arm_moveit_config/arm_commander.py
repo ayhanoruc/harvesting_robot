@@ -242,8 +242,8 @@ class ArmCommander(Node):
         goal_msg.request.group_name = "arm"
         goal_msg.request.num_planning_attempts = 10
         goal_msg.request.allowed_planning_time = 5.0
-        goal_msg.request.max_velocity_scaling_factor = 0.5
-        goal_msg.request.max_acceleration_scaling_factor = 0.5
+        goal_msg.request.max_velocity_scaling_factor = 0.2
+        goal_msg.request.max_acceleration_scaling_factor = 0.2
 
         # Joint constraints (4 arm joints only)
         goal_constraints = Constraints()
@@ -300,8 +300,8 @@ class ArmCommander(Node):
         goal_msg.request.group_name = "arm"
         goal_msg.request.num_planning_attempts = 20
         goal_msg.request.allowed_planning_time = 10.0
-        goal_msg.request.max_velocity_scaling_factor = 0.5
-        goal_msg.request.max_acceleration_scaling_factor = 0.5
+        goal_msg.request.max_velocity_scaling_factor = 0.2
+        goal_msg.request.max_acceleration_scaling_factor = 0.2
 
         # Position constraint
         goal_constraints = Constraints()

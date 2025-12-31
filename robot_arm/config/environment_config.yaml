@@ -30,11 +30,11 @@ landmarks:
 
   # Exploration path endpoints (where camera looks from)
   explore_start:
-    position: [0.5, 0.55, 0.55]    # Left side, elevated
+    position: [0.5, 0.55, 0.45]    # Left side, lowered for better view
     description: "Begin scan - left edge"
 
   explore_end:
-    position: [0.5, -0.55, 0.55]   # Right side, elevated
+    position: [0.5, -0.55, 0.45]   # Right side, lowered for better view
     description: "End scan - right edge"
 
 # Cotton clusters (approximate positions - vision will refine)
