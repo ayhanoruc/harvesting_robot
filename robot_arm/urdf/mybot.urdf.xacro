@@ -292,13 +292,13 @@
 	</gazebo>
 
 	<!-- ==================== Wrist-Mounted Camera ==================== -->
-	<!-- Camera link attached to lower_arm (forearm), providing a stable view -->
+	<!-- Camera link attached to tool0 - camera looks same direction as gripper -->
+	<!-- Gazebo camera looks along +X of sensor link, so rotate to align with tool0 +Z -->
 	<joint name="camera_joint" type="fixed">
-		<parent link="lower_arm"/>
+		<parent link="tool0"/>
 		<child link="camera_link"/>
-		<!-- Position: On "top" of the lower_arm (Negative X based on visual feedback), near the end -->
-		<!-- Orientation: Pitch -90 (-1.57) to point forward along the arm -->
-		<origin xyz="-0.08 0.0 0.35" rpy="0 -1.57 0"/> 
+		<!-- Position: Above gripper (-X), Rotation: -90° pitch so camera X aligns with tool0 Z -->
+		<origin xyz="-0.04 0 0" rpy="0 -1.5708 0"/>
 	</joint>
 	<link name="camera_link">
 		<visual>
