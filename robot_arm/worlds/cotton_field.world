@@ -248,9 +248,10 @@
     </model>
 
     <!-- Explore Start marker (cyan) - Left side -->
+    <!-- Matches environment_config.yaml: [0.4, 0.45, 0.55] -->
     <model name="explore_start">
       <static>true</static>
-      <pose>0.5 0.55 0.55 0 0 0</pose>
+      <pose>0.4 0.45 0.55 0 0 0</pose>
       <link name="link">
         <visual name="visual">
           <geometry>
@@ -267,9 +268,10 @@
     </model>
 
     <!-- Explore End marker (magenta) - Right side -->
+    <!-- Matches environment_config.yaml: [0.4, -0.45, 0.55] -->
     <model name="explore_end">
       <static>true</static>
-      <pose>0.5 -0.55 0.55 0 0 0</pose>
+      <pose>0.4 -0.45 0.55 0 0 0</pose>
       <link name="link">
         <visual name="visual">
           <geometry>

@@ -29,12 +29,13 @@ landmarks:
     description: "Cotton drop zone"
 
   # Exploration path endpoints (where camera looks from)
+  # Adjusted for 4-DOF arm reachability - pulled back and raised for natural poses
   explore_start:
-    position: [0.5, 0.55, 0.45]    # Left side, lowered for better view
+    position: [0.4, 0.45, 0.55]    # Left side - closer, higher for stable camera
     description: "Begin scan - left edge"
 
   explore_end:
-    position: [0.5, -0.55, 0.45]   # Right side, lowered for better view
+    position: [0.4, -0.45, 0.55]   # Right side - closer, higher for stable camera
     description: "End scan - right edge"
 
 # Cotton clusters (approximate positions - vision will refine)
@@ -59,8 +60,8 @@ clusters:
 exploration:
   strategy: "linear_sweep"         # Y+ to Y- sweep
   num_viewpoints: 5                # Number of scan positions
-  scan_height: 0.55                # Z height during scanning
-  scan_distance: 0.5               # X distance from base during scan
+  scan_height: 0.55                # Z height during scanning (matches explore positions)
+  scan_distance: 0.4               # X distance from base during scan (matches explore positions)
 
 # Collision objects for MoveIt planning scene
 collision_objects:

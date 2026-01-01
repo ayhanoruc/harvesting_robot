@@ -226,7 +226,9 @@ class ArmCommander(Node):
         self.get_logger().info(f"Moving to '{target_name}' at ({x:.2f}, {y:.2f}, {z:.2f})")
 
         # Use Cartesian IK goal (let MoveIt solve IK)
-        success = self.send_pose_goal(x, y, z)
+        # Only constrain orientation for exploration paths
+        constrain_orientation = target_name.startswith('explore')
+        success = self.send_pose_goal(x, y, z, orientation_constraint=constrain_orientation)
 
         response.success = success
         response.message = f"{'Success' if success else 'Failed'}: {target_name}"
@@ -292,7 +294,7 @@ class ArmCommander(Node):
             self.get_logger().error(f"Failed: error_code={result.result.error_code.val}")
             return False
 
-    def send_pose_goal(self, x, y, z):
+    def send_pose_goal(self, x, y, z, orientation_constraint=False, wrist_constraint=True):
         """Send Cartesian pose goal to MoveGroup."""
         goal_msg = MoveGroup.Goal()
 
@@ -303,9 +305,10 @@ class ArmCommander(Node):
         goal_msg.request.max_velocity_scaling_factor = 0.2
         goal_msg.request.max_acceleration_scaling_factor = 0.2
 
-        # Position constraint
+        # Constraints container
         goal_constraints = Constraints()
 
+        # 1. Position Constraint (Target)
         position_constraint = PositionConstraint()
         position_constraint.header.frame_id = "world"
         position_constraint.link_name = "tcp"
@@ -317,11 +320,11 @@ class ArmCommander(Node):
         target_point.y = y
         target_point.z = z
 
-        # Bounding volume (sphere around target) - larger tolerance
+        # Bounding volume
         bounding_volume = BoundingVolume()
         sphere = SolidPrimitive()
         sphere.type = SolidPrimitive.SPHERE
-        sphere.dimensions = [0.08]  # 8cm tolerance for easier sampling
+        sphere.dimensions = [0.08]
         bounding_volume.primitives.append(sphere)
 
         primitive_pose = Pose()
@@ -332,26 +335,43 @@ class ArmCommander(Node):
         position_constraint.constraint_region = bounding_volume
         goal_constraints.position_constraints.append(position_constraint)
 
-        # Orientation Constraint: Keep TCP level (Pitch=0, Roll=0)
-        from moveit_msgs.msg import OrientationConstraint
-        ori_constraint = OrientationConstraint()
-        ori_constraint.header.frame_id = "world"
-        ori_constraint.link_name = "tcp"
-        
-        # Target orientation: Horizontal Forward (approximately Identity or 90 deg depending on frame)
-        # Assuming Identity (0,0,0,1) is 'Up', and we want 'Forward', we need Pitch.
-        # But let's trust that the current goal finding will pick a good orientation if we constrain tolerances.
-        # Ideally, we want the CURRENT valid orientation but constrained.
-        
-        # For simplicity, we define tolerances to be strict on Pitch/Roll, loose on Yaw
-        ori_constraint.orientation.w = 1.0 # Nominal, will be ignored if tolerances allow variation
-        
-        ori_constraint.absolute_x_axis_tolerance = 0.2 # Roll tolerance
-        ori_constraint.absolute_y_axis_tolerance = 0.2 # Pitch tolerance
-        ori_constraint.absolute_z_axis_tolerance = 3.14 # Yaw tolerance (Free)
-        
-        ori_constraint.weight = 1.0
-        goal_constraints.orientation_constraints.append(ori_constraint)
+        # 2. Orientation Constraint for camera_link (if requested)
+        # Camera is now mounted on lower_arm, so we constrain camera_link orientation
+        # to keep the view stable during exploration sweeps
+        if orientation_constraint:
+            from moveit_msgs.msg import OrientationConstraint
+            ori_constraint = OrientationConstraint()
+            ori_constraint.header.frame_id = "world"
+            # Constrain camera_link (mounted on lower_arm) instead of tcp
+            ori_constraint.link_name = "camera_link"
+            # Target: camera pointing forward (along world X)
+            # Camera is mounted with pitch -90° on lower_arm, so when lower_arm
+            # is horizontal, camera looks forward. Identity quaternion works.
+            ori_constraint.orientation.x = 0.0
+            ori_constraint.orientation.y = 0.0
+            ori_constraint.orientation.z = 0.0
+            ori_constraint.orientation.w = 1.0
+            # Loose tolerances - 4DOF arm can't fully control orientation
+            # Allow ~30° variation on each axis for feasibility
+            ori_constraint.absolute_x_axis_tolerance = 0.5
+            ori_constraint.absolute_y_axis_tolerance = 0.5
+            ori_constraint.absolute_z_axis_tolerance = 3.14  # Allow yaw freedom
+            ori_constraint.weight = 0.8  # Lower weight for soft constraint
+            goal_constraints.orientation_constraints.append(ori_constraint)
+
+        # 3. Wrist Joint Constraint (Prevent flipping)
+        # Always apply to keep gripper in predictable orientation
+        # This is independent of camera since camera is on lower_arm now
+        if wrist_constraint:
+            from moveit_msgs.msg import JointConstraint
+            jc = JointConstraint()
+            jc.joint_name = "wrist"
+            # Keep wrist near neutral to prevent gripper from flipping wildly
+            jc.position = 0.0
+            jc.tolerance_above = 1.0  # ~57 degrees
+            jc.tolerance_below = 1.0
+            jc.weight = 0.5  # Soft constraint
+            goal_constraints.joint_constraints.append(jc)
 
         goal_msg.request.goal_constraints.append(goal_constraints)
 
