@@ -23,8 +23,9 @@ setup(
         ],
     },
     entry_points={
-    'console_scripts': [
-        'orchestrator_node = orchestrator.main:main',
-    ],
-},
+        'console_scripts': [
+            'orchestrator_node = orchestrator.main:main',
+            'explorer = orchestrator.explorer:main',
+        ],
+    },
 )
