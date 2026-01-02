@@ -27,6 +27,7 @@ setup(
             'orchestrator_node = orchestrator.main:main',
             'explorer = orchestrator.explorer:main',
             'depth_processor = orchestrator.depth_processor:main',
+            'camera_focus = orchestrator.camera_focus:main',
         ],
     },
 )
