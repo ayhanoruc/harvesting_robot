@@ -1,0 +1,10 @@
+# Request: Pixel coordinates to center on
+int32 u                       # Horizontal pixel coordinate
+int32 v                       # Vertical pixel coordinate
+float64 view_distance         # Distance from target to position camera (default: 0.35m if 0)
+---
+# Response: TCP pose to achieve centering
+geometry_msgs/Point tcp_position   # Where TCP should move to
+float64 target_distance            # Distance from TCP to target
+bool success
+string message

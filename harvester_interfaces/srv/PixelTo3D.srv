@@ -1,0 +1,8 @@
+# Request: Pixel coordinates in the image
+int32 u  # Horizontal pixel coordinate (column)
+int32 v  # Vertical pixel coordinate (row)
+---
+# Response: 3D position in world frame
+geometry_msgs/Point position  # x, y, z in world frame
+bool success                  # True if conversion succeeded
+string message                # Error message if failed

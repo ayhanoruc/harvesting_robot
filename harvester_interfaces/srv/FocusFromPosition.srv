@@ -1,0 +1,9 @@
+# Request: World position to center camera on
+geometry_msgs/Point target        # Target position in world frame (x, y, z)
+float64 view_distance             # Distance from target to position camera (default: 0.35m if 0)
+---
+# Response: TCP pose to achieve centering
+geometry_msgs/Point tcp_position  # Where TCP should move to
+float64 target_distance           # Distance from TCP to target
+bool success
+string message

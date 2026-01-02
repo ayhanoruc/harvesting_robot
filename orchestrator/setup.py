@@ -26,6 +26,7 @@ setup(
         'console_scripts': [
             'orchestrator_node = orchestrator.main:main',
             'explorer = orchestrator.explorer:main',
+            'depth_processor = orchestrator.depth_processor:main',
         ],
     },
 )
