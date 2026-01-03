@@ -1,0 +1,30 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <model name="car">
+    <static>true</static>
+    <link name="link">
+      <collision name="collision">
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://car/meshes/cotton.stl</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="visual">
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://car/meshes/cotton.stl</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>1.0 1.0 1.0 1</ambient>
+          <diffuse>1.0 1.0 1.0 1</diffuse>
+          <specular>1.0 1.0 1.0 1</specular>
+          <emissive>0.3 0.3 0.3 1</emissive>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>

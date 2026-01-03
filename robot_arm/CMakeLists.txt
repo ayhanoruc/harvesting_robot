@@ -27,12 +27,13 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}
 )
 
-# Install URDF, config, and world files
+# Install URDF, config, world files, and models
 install(DIRECTORY
   urdf
   yaml
   worlds
   config
+  models
   DESTINATION share/${PROJECT_NAME}
 )
 
@@ -41,5 +42,8 @@ install(DIRECTORY
   pictures
   DESTINATION share/${PROJECT_NAME}
 )
+
+# Environment hooks for Gazebo resource paths
+ament_environment_hooks("${CMAKE_CURRENT_SOURCE_DIR}/env-hooks/${PROJECT_NAME}.dsv.in")
 
 ament_package()

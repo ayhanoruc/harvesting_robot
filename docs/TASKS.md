@@ -1,10 +1,42 @@
 cool, now lets get back to our tasks, we want to achieve:\
 
 - add the 3D models of cotton clusters to the world. clone https://github.com/denzo-ferrari/Cotton-Tracking-YOLO/  with a side note for 3D model: İki farklı fotodan oluşturduğumuz GLB modellerini Object0 ve Object1 olarak repoya ekledik, hangisi uygunsa onu kullanın
-    1. GLB to Gazebo Conversion
-        - Gazebo uses SDF/URDF with DAE/STL meshes, not GLB directly
-        - Need: GLB → GLTF → DAE conversion (Blender or gltf2dae tool)
-        - Or use gz-sim 8+ which has native GLTF support (check your Gazebo version)
+    - GLB is now supported in new fortess version
+    - Repository Structure
+        
+        Cotton-Tracking-YOLO/
+        ├── [best.pt](http://best.pt/)                     # Trained YOLO model (cotton detection)
+        ├── object_0.glb               # 3D cotton cluster model #1
+        ├── object_1.glb               # 3D cotton cluster model #2
+        ├── sticky_tracker.yaml        # BEST: BoT-SORT "sticky" tracking config
+        ├── custom_tracker.yaml        # ByteTrack alternative
+        ├── robust_botsort.yaml        # BoT-SORT "shape shifter" variant
+        ├── track_webcam_v3.py        # BEST: Live webcam tracking
+        ├── track_mp4_v2.py           # BEST: Video file tracking
+        ├── [train.py](http://train.py/)                   # Training script (Roboflow + YOLO11)
+        └── Cotton-boll-and-cluster-2/ # Training dataset from Roboflow
+        └── data.yaml              # 2 classes: cotton_boll, cotton_boll-cluster
+        
+        - nc: 2 , names: ['cotton_boll', 'cotton_boll-cluster']
+    
+    ---
+    
+    Tracker Comparison
+    
+    | Config | Type | track_buffer | Key Feature |
+    | --- | --- | --- | --- |
+    | sticky_tracker.yaml | BoT-SORT | 120 (4s) | Best for stable IDs - with Re-ID |
+    | robust_botsort.yaml | BoT-SORT | 120 | Handles shape changes (lower match_thresh) |
+    | custom_tracker.yaml | ByteTrack | 60 | Simpler, no Re-ID |
+    
+    Recommended: sticky_tracker.yaml with:
+    
+    - with_reid: True - Visual appearance matching
+    - track_buffer: 120 - 4-second memory for ID persistence
+    - fuse_score: True - Critical for crash prevention
+
+
+
 - lets have the YOLO running succesfully in our environment: Repoya README eklemedik ama en iyi çalışan dosyalar track_webcam_v3 ve track_mp4_v2 (ortak config: sticky_track.yaml); geri kalan dosyalar eski denemeler veya anlık testler için, biraz dağınık oldu.
     1. Multi-Frame Cluster Identification
         - YOLO detects per-frame, doesn't track identity across frames
