@@ -21,3 +21,6 @@ colcon build --packages-select robot_arm robot_arm_moveit_config orchestrator
 ros2 run orchestrator explorer
 
  ros2 service call /explorer/start_scan std_srvs/srv/Trigger "{}"
+
+
+ colcon build --packages-select harvester_interfaces robot_arm robot_arm_moveit_config

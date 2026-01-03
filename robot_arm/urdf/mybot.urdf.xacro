@@ -287,9 +287,7 @@
 		</collision>
 	</link>
 
-	<gazebo reference="tcp">
-		<material>Gazebo/Red</material>
-	</gazebo>
+	<!-- TCP uses material from URDF visual (tcp_red) -->
 
 	<!-- ==================== Wrist-Mounted Camera ==================== -->
 	<!-- Camera link attached to tool0 - camera looks same direction as gripper -->
@@ -328,12 +326,13 @@
 	</joint>
 	<link name="camera_optical_frame"/>
 
-	<!-- Gazebo camera (material + RGB-D sensor) -->
+	<!-- Gazebo Sim camera (RGB-D sensor - generic, ROS bridge handles communication) -->
 	<gazebo reference="camera_link">
-		<material>Gazebo/Black</material>
-		<sensor type="depth" name="wrist_rgbd_camera">
+		<sensor type="rgbd_camera" name="wrist_rgbd_camera">
 			<always_on>true</always_on>
 			<update_rate>30.0</update_rate>
+			<topic>camera</topic>
+			<ignition_frame_id>camera_optical_frame</ignition_frame_id>
 			<camera name="wrist_camera">
 				<horizontal_fov>1.047</horizontal_fov>
 				<image>
@@ -345,34 +344,25 @@
 					<near>0.05</near>
 					<far>3.0</far>
 				</clip>
+				<depth_camera>
+					<clip>
+						<near>0.05</near>
+						<far>3.0</far>
+					</clip>
+				</depth_camera>
 				<noise>
 					<type>gaussian</type>
 					<mean>0.0</mean>
 					<stddev>0.007</stddev>
 				</noise>
 			</camera>
-			<plugin name="camera_plugin" filename="libgazebo_ros_camera.so">
-				<ros>
-					<namespace>/camera</namespace>
-					<remapping>image_raw:=color/image_raw</remapping>
-					<remapping>camera_info:=color/camera_info</remapping>
-					<remapping>depth/image_raw:=depth/image_raw</remapping>
-					<remapping>depth/camera_info:=depth/camera_info</remapping>
-					<remapping>points:=depth/points</remapping>
-				</ros>
-				<camera_name>wrist</camera_name>
-				<frame_name>camera_optical_frame</frame_name>
-				<hack_baseline>0.07</hack_baseline>
-				<min_depth>0.05</min_depth>
-				<max_depth>3.0</max_depth>
-			</plugin>
 		</sensor>
 	</gazebo>
 
 	<!-- ==================== ros2_control ==================== -->
 	<ros2_control name="robot_arm_control" type="system">
 		<hardware>
-			<plugin>gazebo_ros2_control/GazeboSystem</plugin>
+			<plugin>ign_ros2_control/IgnitionSystem</plugin>
 		</hardware>
 		<joint name="hip">
 			<command_interface name="position">
@@ -424,40 +414,14 @@
 		</joint>
 	</ros2_control>
 
-	<!-- ==================== Gazebo ROS2 Control Plugin ==================== -->
+	<!-- ==================== Gazebo Sim ROS2 Control Plugin (Ignition Fortress) ==================== -->
 	<gazebo>
-		<plugin filename="libgazebo_ros2_control.so" name="gazebo_ros2_control">
+		<plugin filename="ign_ros2_control-system" name="ign_ros2_control::IgnitionROS2ControlPlugin">
 			<parameters>$(arg controllers_yaml)</parameters>
 		</plugin>
 	</gazebo>
 
-	<!-- Gazebo material colors -->
-	<gazebo reference="base_link">
-		<material>Gazebo/Grey</material>
-	</gazebo>
-	<gazebo reference="torso">
-		<material>Gazebo/Grey</material>
-	</gazebo>
-	<gazebo reference="upper_arm">
-		<material>Gazebo/Grey</material>
-	</gazebo>
-	<gazebo reference="lower_arm">
-		<material>Gazebo/Grey</material>
-	</gazebo>
-	<gazebo reference="hand">
-		<material>Gazebo/Grey</material>
-	</gazebo>
-	<gazebo reference="left_gripper_base">
-		<material>Gazebo/Grey</material>
-	</gazebo>
-	<gazebo reference="right_gripper_base">
-		<material>Gazebo/Grey</material>
-	</gazebo>
-	<gazebo reference="left_gripper_finger">
-		<material>Gazebo/Grey</material>
-	</gazebo>
-	<gazebo reference="right_gripper_finger">
-		<material>Gazebo/Grey</material>
-	</gazebo>
+	<!-- Note: Gazebo Sim uses materials from URDF visuals directly -->
+	<!-- Old Gazebo/Grey references removed - not needed in Ignition -->
 
 </robot>

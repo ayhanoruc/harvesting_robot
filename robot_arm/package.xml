@@ -31,12 +31,13 @@
   <depend>joint_state_broadcaster</depend>
   <depend>joint_trajectory_controller</depend>
 
-  <!-- Gazebo -->
-  <depend>gazebo_ros</depend>
-  <depend>gazebo_ros2_control</depend>
+  <!-- Gazebo Sim (Ignition Fortress) -->
+  <depend>ros_gz_bridge</depend>
+  <depend>ros_gz_image</depend>
+  <depend>ros_gz_sim</depend>
+  <depend>gz_ros2_control</depend>
 
   <export>
     <build_type>ament_cmake</build_type>
-    <gazebo_ros gazebo_model_path="${prefix}/.."/>
   </export>
 </package>
