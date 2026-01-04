@@ -107,6 +107,14 @@ class ArmCommander(Node):
             return
         self.get_logger().info("Connected to MoveGroup!")
 
+        # Auto-home on startup: move arm to safe home position
+        self.get_logger().info("Moving to HOME position on startup...")
+        home_joints = [0.0, -1.3, 1.5, 0.0]  # hip, shoulder, elbow, wrist
+        if self.send_joint_goal(home_joints):
+            self.get_logger().info("HOME position reached!")
+        else:
+            self.get_logger().warn("Failed to reach HOME position on startup")
+
         # Print info
         self.get_logger().info("=" * 60)
         self.get_logger().info("ARM COMMANDER READY (Cartesian IK Mode)")
@@ -205,9 +213,9 @@ class ArmCommander(Node):
 
         # SPECIAL CASE: 'home' uses joint goal for reliability
         if target_name == 'home':
-            # Use "home" pose: Retracted safe position (pulled back)
-            # Hip=0, Shoulder=-1.0 (back), Elbow=1.8 (folded), Wrist=0
-            joint_values = [0.0, -1.0, 1.8, 0.0]
+            # Use "home" pose: Retracted safe position (pulled back, elbow down)
+            # Hip=0, Shoulder=-1.3 (back ~75deg), Elbow=1.5 (bend down), Wrist=0
+            joint_values = [0.0, -1.3, 1.5, 0.0]
             self.get_logger().info(f"Moving to '{target_name}' using JOINT goal: {joint_values}")
             success = self.send_joint_goal(joint_values)
             response.success = success

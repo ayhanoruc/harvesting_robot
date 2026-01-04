@@ -32,7 +32,7 @@
                 <param name="max">1.5708</param>  <!-- pi/2 -->
             </command_interface>
             <state_interface name="position">
-                <param name="initial_value">0.0</param>
+                <param name="initial_value">0.4</param>  <!-- ~23 degrees up for better camera view -->
             </state_interface>
             <state_interface name="velocity"/>
         </joint>

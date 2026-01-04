@@ -12,13 +12,16 @@
     </group>
 
     <!-- Named poses for the arm -->
+    <!-- Home: Retracted, arm pulled back for safe position and wide camera view -->
+    <!-- shoulder=-1.3 (back ~75deg), elbow=0.4 (slight bend down ~23deg) -->
     <group_state name="home" group="arm">
         <joint name="hip" value="0.0"/>
-        <joint name="shoulder" value="0.0"/>
-        <joint name="elbow" value="0.0"/>
+        <joint name="shoulder" value="-1.3"/>
+        <joint name="elbow" value="1.5"/>
         <joint name="wrist" value="0.0"/>
     </group_state>
 
+    <!-- Ready: Arm extended slightly toward work area -->
     <group_state name="ready" group="arm">
         <joint name="hip" value="0.0"/>
         <joint name="shoulder" value="-0.3"/>

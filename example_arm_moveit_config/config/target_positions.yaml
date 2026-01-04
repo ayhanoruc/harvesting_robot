@@ -10,10 +10,10 @@ reference_frame: world
 
 targets:
 
-  # Home position - both joints at zero
+  # Home position - arm tilted up for better camera view
   HOME:
-    joints: [0.0, 0.0]
-    description: "Home position - joints at zero"
+    joints: [0.0, 0.4]
+    description: "Home position - arm at 23 degrees for better camera view"
 
   # Slider extended, arm down
   EXTENDED_LOW:
