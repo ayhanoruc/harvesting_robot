@@ -36,6 +36,9 @@ from std_msgs.msg import String
 from std_srvs.srv import Trigger, SetBool
 from rcl_interfaces.srv import SetParameters
 from rcl_interfaces.msg import Parameter, ParameterValue, ParameterType
+from sensor_msgs.msg import JointState, Image, CameraInfo
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+from builtin_interfaces.msg import Duration
 
 import yaml
 import os
@@ -53,6 +56,15 @@ class ScanState(Enum):
     CAPTURING = "CAPTURING"
     COMPLETE = "COMPLETE"
     ERROR = "ERROR"
+
+
+@dataclass
+class ScanPosition:
+    """Represents a single scan position in joint space."""
+    name: str
+    joints: List[float]  # [hip, shoulder, elbow, wrist]
+    row: int  # 0=upper, 1=middle, 2=lower
+    col: int  # 0=left, 1=center, 2=right
 
 
 @dataclass
@@ -83,6 +95,14 @@ class ExplorerNode(Node):
         self.declare_parameter('height_variation', 0.06)   # Z variation across arc
         self.declare_parameter('pause_at_viewpoint', 1.5)  # Pause duration
 
+        # Panoramic scan parameters
+        # 5 columns at 20° steps: -40°, -20°, 0°, +20°, +40° (in radians)
+        self.declare_parameter('pan_hip_angles', [-0.70, -0.35, 0.0, 0.35, 0.70])
+        # 2 rows: middle (home) and lower (camera tilts DOWN via elbow only)
+        self.declare_parameter('pan_shoulder_range', [-1.3, -1.3])  # Both same shoulder
+        self.declare_parameter('pan_elbow_range', [1.5, 1.8])        # Middle, lower (more elbow = look down)
+        self.declare_parameter('pan_pause_duration', 2.0)  # Pause at each position for capture
+
         # Load config and generate viewpoints
         self.config = self._load_config()
         self.viewpoints = self._generate_viewpoints()
@@ -97,6 +117,11 @@ class ExplorerNode(Node):
         self.viewpoint_pub = self.create_publisher(String, '/explorer/viewpoint_reached', 10)
         self.status_pub = self.create_publisher(String, '/explorer/scan_status', 10)
 
+        # Panoramic scan publishers
+        self.scan_position_pub = self.create_publisher(String, '/explorer/scan_position', 10)
+        self.joint_trajectory_pub = self.create_publisher(
+            JointTrajectory, '/arm_controller/joint_trajectory', 10)
+
         # Service clients for arm_commander
         self.go_to_pose_client = self.create_client(
             SetBool, '/go_to_pose',
@@ -107,7 +132,7 @@ class ExplorerNode(Node):
             callback_group=self.client_cb_group
         )
 
-        # Service to trigger scan
+        # Service to trigger scan (arc sweep around clusters)
         self.create_service(
             Trigger,
             '/explorer/start_scan',
@@ -115,10 +140,27 @@ class ExplorerNode(Node):
             callback_group=self.service_cb_group
         )
 
-        # Print scan plan
+        # Service to trigger panoramic scan (joint-space sweep)
+        self.create_service(
+            Trigger,
+            '/explorer/panoramic_scan',
+            self.panoramic_scan_callback,
+            callback_group=self.service_cb_group
+        )
+
+        # Generate panoramic scan positions
+        self.pan_positions = self._generate_panoramic_positions()
+        self.pan_scan_in_progress = False
+
+        # Print scan plans
         self._print_scan_plan()
+        self._print_panoramic_plan()
         self._publish_status(ScanState.IDLE)
         self.get_logger().info("Explorer node ready!")
+        self.get_logger().info("")
+        self.get_logger().info("Available services:")
+        self.get_logger().info("  /explorer/start_scan     - Arc sweep around known clusters")
+        self.get_logger().info("  /explorer/panoramic_scan - Full field-of-view joint-space sweep")
 
     def _load_config(self) -> dict:
         """Load environment configuration."""
@@ -450,6 +492,207 @@ class ExplorerNode(Node):
 
         response.success = True
         response.message = f"Scan started - {len(self.viewpoints)} viewpoints (arc sweep)"
+        return response
+
+    # ==================== PANORAMIC SCAN METHODS ====================
+
+    def _generate_panoramic_positions(self) -> List[ScanPosition]:
+        """
+        Generate a grid of scan positions for panoramic coverage.
+
+        Scan pattern (snake/boustrophedon for efficiency):
+          Row 0 (middle): LEFT → ... → RIGHT
+          Row 1 (lower):  RIGHT → ... → LEFT
+
+        This minimizes travel distance between positions.
+        """
+        positions = []
+
+        # Get parameters (use defaults if not set properly)
+        try:
+            hip_angles = self.get_parameter('pan_hip_angles').value
+            shoulder_vals = self.get_parameter('pan_shoulder_range').value
+            elbow_vals = self.get_parameter('pan_elbow_range').value
+        except Exception:
+            # Fallback defaults (5 columns × 2 rows)
+            hip_angles = [-0.70, -0.35, 0.0, 0.35, 0.70]
+            shoulder_vals = [-1.3, -1.5]
+            elbow_vals = [1.5, 1.7]
+
+        num_rows = len(shoulder_vals)
+        num_cols = len(hip_angles)
+
+        # Dynamic row names based on count
+        row_names = ['middle', 'lower'] if num_rows == 2 else ['upper', 'middle', 'lower']
+
+        # Dynamic column names based on count
+        if num_cols == 5:
+            col_names = ['far_left', 'left', 'center', 'right', 'far_right']
+        elif num_cols == 3:
+            col_names = ['left', 'center', 'right']
+        else:
+            col_names = [f'col_{i}' for i in range(num_cols)]
+
+        for row in range(num_rows):
+            # Snake pattern: even rows go left-to-right, odd rows go right-to-left
+            cols = range(num_cols) if row % 2 == 0 else range(num_cols - 1, -1, -1)
+
+            for col in cols:
+                hip = hip_angles[col]
+                shoulder = shoulder_vals[row]
+                elbow = elbow_vals[row]
+                wrist = 0.0
+
+                name = f"{row_names[row]}_{col_names[col]}"
+                positions.append(ScanPosition(
+                    name=name,
+                    joints=[hip, shoulder, elbow, wrist],
+                    row=row,
+                    col=col
+                ))
+
+        return positions
+
+    def _print_panoramic_plan(self):
+        """Print the panoramic scan plan."""
+        num_positions = len(self.pan_positions)
+        self.get_logger().info("=" * 70)
+        self.get_logger().info("PANORAMIC SCAN PLAN")
+        self.get_logger().info("=" * 70)
+        self.get_logger().info("Scan grid (5 columns × 2 rows, snake pattern):")
+        self.get_logger().info("")
+        self.get_logger().info("       -40°    -20°     0°    +20°    +40°")
+        self.get_logger().info("MIDDLE  [1] ──► [2] ──► [3] ──► [4] ──► [5]")
+        self.get_logger().info("                                         │")
+        self.get_logger().info("LOWER  [10] ◄── [9] ◄── [8] ◄── [7] ◄── [6]")
+        self.get_logger().info("")
+        self.get_logger().info(f"Total positions: {num_positions}")
+        self.get_logger().info("")
+
+        for i, pos in enumerate(self.pan_positions):
+            hip_deg = pos.joints[0] * 57.3  # rad to deg
+            joints_str = f"hip={hip_deg:+5.0f}° sh={pos.joints[1]:+.2f} el={pos.joints[2]:+.2f}"
+            self.get_logger().info(f"  {i+1:2d}. {pos.name:20s} {joints_str}")
+
+        self.get_logger().info("=" * 70)
+
+    def _move_to_joints_sync(self, joints: List[float], duration_sec: float = 2.0) -> bool:
+        """
+        Send joint trajectory command and wait for completion.
+
+        Args:
+            joints: [hip, shoulder, elbow, wrist] target positions
+            duration_sec: Time to reach the target
+
+        Returns:
+            True if movement likely succeeded (we don't have feedback, so we wait)
+        """
+        # Joint names must match controller config
+        joint_names = ['hip', 'shoulder', 'elbow', 'wrist', 'l_g_base', 'r_g_base']
+
+        # Create trajectory message
+        traj_msg = JointTrajectory()
+        traj_msg.joint_names = joint_names
+
+        # Single point trajectory
+        point = JointTrajectoryPoint()
+        # Add gripper joints (keep at 0)
+        point.positions = joints + [0.0, 0.0]
+        point.time_from_start = Duration(sec=int(duration_sec), nanosec=int((duration_sec % 1) * 1e9))
+
+        traj_msg.points = [point]
+
+        # Publish trajectory
+        self.joint_trajectory_pub.publish(traj_msg)
+
+        # Wait for movement to complete (no feedback available, so just wait)
+        import time
+        time.sleep(duration_sec + 0.5)  # Extra buffer
+
+        return True
+
+    def _execute_panoramic_scan_thread(self):
+        """Execute panoramic scan in a separate thread."""
+        pause_duration = self.get_parameter('pan_pause_duration').value
+
+        self.get_logger().info("=" * 65)
+        self.get_logger().info("STARTING PANORAMIC SCAN")
+        self.get_logger().info("=" * 65)
+
+        # Print the plan (arm_commander already moved to HOME on startup)
+        self._print_panoramic_plan()
+
+        successful = 0
+        total = len(self.pan_positions)
+
+        for i, pos in enumerate(self.pan_positions):
+            with self._scan_lock:
+                if not self.pan_scan_in_progress:
+                    self.get_logger().info("Panoramic scan cancelled")
+                    self._publish_status(ScanState.IDLE)
+                    return
+
+            progress = f"[{i+1}/{total}]"
+            self.get_logger().info(f"{progress} Moving to: {pos.name}")
+            self._publish_status(ScanState.MOVING)
+
+            # Move to position
+            success = self._move_to_joints_sync(pos.joints, duration_sec=2.0)
+
+            if success:
+                successful += 1
+                self._publish_status(ScanState.CAPTURING)
+
+                # Publish scan position info (for data capture nodes)
+                msg = String()
+                # Format: name|row|col|hip|shoulder|elbow|wrist
+                msg.data = f"{pos.name}|{pos.row}|{pos.col}|{pos.joints[0]:.3f}|{pos.joints[1]:.3f}|{pos.joints[2]:.3f}|{pos.joints[3]:.3f}"
+                self.scan_position_pub.publish(msg)
+
+                self.get_logger().info(f"{progress} CAPTURING at {pos.name} for {pause_duration}s")
+                self.get_logger().info(f"         joints: [{pos.joints[0]:+.2f}, {pos.joints[1]:+.2f}, {pos.joints[2]:+.2f}, {pos.joints[3]:+.2f}]")
+
+                # Pause for capture (vision nodes can subscribe to /explorer/scan_position)
+                import time
+                time.sleep(pause_duration)
+            else:
+                self.get_logger().warn(f"{progress} FAILED to reach {pos.name}")
+
+        # Scan complete - return to home
+        self.get_logger().info("Returning to HOME position...")
+        home_joints = [0.0, -1.3, 1.5, 0.0]
+        self._move_to_joints_sync(home_joints, duration_sec=2.0)
+
+        with self._scan_lock:
+            self.pan_scan_in_progress = False
+
+        self._publish_status(ScanState.COMPLETE)
+        self.get_logger().info("=" * 65)
+        self.get_logger().info("PANORAMIC SCAN COMPLETE!")
+        self.get_logger().info(f"  Positions visited: {successful}/{total}")
+        self.get_logger().info("=" * 65)
+
+    def panoramic_scan_callback(self, request, response):
+        """Service callback to start the panoramic scan."""
+        with self._scan_lock:
+            if self.pan_scan_in_progress or self.scan_in_progress:
+                response.success = False
+                response.message = "A scan is already in progress"
+                return response
+
+            if not self.pan_positions:
+                response.success = False
+                response.message = "No panoramic positions configured"
+                return response
+
+            self.pan_scan_in_progress = True
+
+        # Start scan in a separate thread
+        scan_thread = threading.Thread(target=self._execute_panoramic_scan_thread, daemon=True)
+        scan_thread.start()
+
+        response.success = True
+        response.message = f"Panoramic scan started - {len(self.pan_positions)} positions"
         return response
 
 
