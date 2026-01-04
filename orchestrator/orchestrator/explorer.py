@@ -96,12 +96,13 @@ class ExplorerNode(Node):
         self.declare_parameter('pause_at_viewpoint', 1.5)  # Pause duration
 
         # Panoramic scan parameters
-        # 5 columns at 20° steps: -40°, -20°, 0°, +20°, +40° (in radians)
-        self.declare_parameter('pan_hip_angles', [-0.70, -0.35, 0.0, 0.35, 0.70])
+        # 7 columns at 15° steps: -45°, -30°, -15°, 0°, +15°, +30°, +45° (in radians)
+        self.declare_parameter('pan_hip_angles', [-0.78, -0.52, -0.26, 0.0, 0.26, 0.52, 0.78])
         # 3 rows: middle (home), lower, and lowest (camera tilts DOWN via elbow only)
         self.declare_parameter('pan_shoulder_range', [-1.3, -1.3, -1.3])  # All same shoulder
         self.declare_parameter('pan_elbow_range', [1.5, 1.7, 1.9])        # Middle, lower, lowest
-        self.declare_parameter('pan_pause_duration', 2.0)  # Pause at each position for capture
+        self.declare_parameter('pan_pause_duration', 1.0)  # Pause at each position for capture
+        self.declare_parameter('pan_move_duration', 1.5)   # Time to move between positions
 
         # Load config and generate viewpoints
         self.config = self._load_config()
@@ -531,7 +532,9 @@ class ExplorerNode(Node):
             row_names = [f'row_{i}' for i in range(num_rows)]
 
         # Dynamic column names based on count
-        if num_cols == 5:
+        if num_cols == 7:
+            col_names = ['far_left', 'left', 'mid_left', 'center', 'mid_right', 'right', 'far_right']
+        elif num_cols == 5:
             col_names = ['far_left', 'left', 'center', 'right', 'far_right']
         elif num_cols == 3:
             col_names = ['left', 'center', 'right']
@@ -619,6 +622,7 @@ class ExplorerNode(Node):
     def _execute_panoramic_scan_thread(self):
         """Execute panoramic scan in a separate thread."""
         pause_duration = self.get_parameter('pan_pause_duration').value
+        move_duration = self.get_parameter('pan_move_duration').value
 
         self.get_logger().info("=" * 65)
         self.get_logger().info("STARTING PANORAMIC SCAN")
@@ -642,7 +646,7 @@ class ExplorerNode(Node):
             self._publish_status(ScanState.MOVING)
 
             # Move to position
-            success = self._move_to_joints_sync(pos.joints, duration_sec=2.0)
+            success = self._move_to_joints_sync(pos.joints, duration_sec=move_duration)
 
             if success:
                 successful += 1
@@ -666,7 +670,7 @@ class ExplorerNode(Node):
         # Scan complete - return to home
         self.get_logger().info("Returning to HOME position...")
         home_joints = [0.0, -1.3, 1.5, 0.0]
-        self._move_to_joints_sync(home_joints, duration_sec=2.0)
+        self._move_to_joints_sync(home_joints, duration_sec=move_duration)
 
         with self._scan_lock:
             self.pan_scan_in_progress = False
