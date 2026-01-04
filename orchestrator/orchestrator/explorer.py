@@ -98,9 +98,9 @@ class ExplorerNode(Node):
         # Panoramic scan parameters
         # 5 columns at 20° steps: -40°, -20°, 0°, +20°, +40° (in radians)
         self.declare_parameter('pan_hip_angles', [-0.70, -0.35, 0.0, 0.35, 0.70])
-        # 2 rows: middle (home) and lower (camera tilts DOWN via elbow only)
-        self.declare_parameter('pan_shoulder_range', [-1.3, -1.3])  # Both same shoulder
-        self.declare_parameter('pan_elbow_range', [1.5, 1.8])        # Middle, lower (more elbow = look down)
+        # 3 rows: middle (home), lower, and lowest (camera tilts DOWN via elbow only)
+        self.declare_parameter('pan_shoulder_range', [-1.3, -1.3, -1.3])  # All same shoulder
+        self.declare_parameter('pan_elbow_range', [1.5, 1.7, 1.9])        # Middle, lower, lowest
         self.declare_parameter('pan_pause_duration', 2.0)  # Pause at each position for capture
 
         # Load config and generate viewpoints
@@ -523,7 +523,12 @@ class ExplorerNode(Node):
         num_cols = len(hip_angles)
 
         # Dynamic row names based on count
-        row_names = ['middle', 'lower'] if num_rows == 2 else ['upper', 'middle', 'lower']
+        if num_rows == 2:
+            row_names = ['middle', 'lower']
+        elif num_rows == 3:
+            row_names = ['middle', 'lower', 'lowest']
+        else:
+            row_names = [f'row_{i}' for i in range(num_rows)]
 
         # Dynamic column names based on count
         if num_cols == 5:
