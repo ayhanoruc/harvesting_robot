@@ -1,0 +1,8 @@
+# Run the spatial detection pipeline at current position
+# This will: detect -> focus (2 iters) -> get 3D position
+int32 focus_iterations   # Number of focus iterations (default: 2)
+---
+# Response: Detected clusters from this position
+harvester_interfaces/DetectedCluster[] detections
+bool success
+string message

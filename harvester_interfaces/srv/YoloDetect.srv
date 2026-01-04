@@ -1,0 +1,6 @@
+# Request YOLO detection on current camera frame
+---
+# Response: Array of detected bounding boxes
+harvester_interfaces/BoundingBox[] detections
+bool success
+string message

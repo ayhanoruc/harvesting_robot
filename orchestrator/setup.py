@@ -28,6 +28,8 @@ setup(
             'explorer = orchestrator.explorer:main',
             'depth_processor = orchestrator.depth_processor:main',
             'camera_focus = orchestrator.camera_focus:main',
+            'mock_yolo_detector = orchestrator.mock_yolo_detector:main',
+            'spatial_detection_pipeline = orchestrator.spatial_detection_pipeline:main',
         ],
     },
 )

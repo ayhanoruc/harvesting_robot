@@ -13,9 +13,13 @@ find_package(std_msgs REQUIRED)
 
 # Generate interfaces
 rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/BoundingBox.msg"
+  "msg/DetectedCluster.msg"
   "srv/PixelTo3D.srv"
   "srv/FocusFromPixel.srv"
   "srv/FocusFromPosition.srv"
+  "srv/YoloDetect.srv"
+  "srv/RunDetectionPipeline.srv"
   DEPENDENCIES geometry_msgs std_msgs
 )
 

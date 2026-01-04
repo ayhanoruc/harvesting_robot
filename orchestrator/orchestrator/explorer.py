@@ -103,6 +103,7 @@ class ExplorerNode(Node):
         self.declare_parameter('pan_elbow_range', [1.5, 1.7, 1.9])        # Middle, lower, lowest
         self.declare_parameter('pan_pause_duration', 1.0)  # Pause at each position for capture
         self.declare_parameter('pan_move_duration', 1.5)   # Time to move between positions
+        self.declare_parameter('enable_detection', True)   # Run detection pipeline at each position
 
         # Load config and generate viewpoints
         self.config = self._load_config()
@@ -131,6 +132,29 @@ class ExplorerNode(Node):
         self.param_client = self.create_client(
             SetParameters, '/arm_commander/set_parameters',
             callback_group=self.client_cb_group
+        )
+
+        # Service client for detection pipeline
+        self.detection_client = self.create_client(
+            Trigger, '/detection/run_at_position',
+            callback_group=self.client_cb_group
+        )
+        self.detection_validate_client = self.create_client(
+            Trigger, '/detection/validate',
+            callback_group=self.client_cb_group
+        )
+        self.detection_clear_client = self.create_client(
+            Trigger, '/detection/clear',
+            callback_group=self.client_cb_group
+        )
+        self.detection_wait_ready_client = self.create_client(
+            Trigger, '/detection/wait_ready',
+            callback_group=self.client_cb_group
+        )
+
+        # Publisher to set scan position name for detection pipeline
+        self.detection_position_pub = self.create_publisher(
+            String, '/detection/current_position', 10
         )
 
         # Service to trigger scan (arc sweep around clusters)
@@ -619,19 +643,68 @@ class ExplorerNode(Node):
 
         return True
 
+    def _call_detection_service(self, service_client, timeout=10.0):
+        """Call a detection service (Trigger type) and return success."""
+        if not service_client.service_is_ready():
+            self.get_logger().debug(f'Detection service not ready')
+            return False
+
+        request = Trigger.Request()
+        future = service_client.call_async(request)
+
+        # Wait for result in thread-safe way
+        import time
+        start = time.time()
+        while not future.done() and (time.time() - start) < timeout:
+            time.sleep(0.1)
+
+        if not future.done():
+            self.get_logger().warn('Detection service timed out')
+            return False
+
+        result = future.result()
+        return result.success if result else False
+
     def _execute_panoramic_scan_thread(self):
         """Execute panoramic scan in a separate thread."""
         pause_duration = self.get_parameter('pan_pause_duration').value
         move_duration = self.get_parameter('pan_move_duration').value
+        enable_detection = self.get_parameter('enable_detection').value
 
         self.get_logger().info("=" * 65)
         self.get_logger().info("STARTING PANORAMIC SCAN")
+        if enable_detection:
+            self.get_logger().info("  Detection pipeline: ENABLED")
+        else:
+            self.get_logger().info("  Detection pipeline: DISABLED")
         self.get_logger().info("=" * 65)
 
         # Print the plan (arm_commander already moved to HOME on startup)
         self._print_panoramic_plan()
 
+        # Clear previous detections and wait for pipeline ready if detection is enabled
+        if enable_detection:
+            self.get_logger().info("Clearing previous detections...")
+            self._call_detection_service(self.detection_clear_client)
+
+            # Wait for detection pipeline to be ready (camera data, depth images)
+            self.get_logger().info("Waiting for detection pipeline to be ready...")
+            max_wait_attempts = 5
+            for attempt in range(max_wait_attempts):
+                ready = self._call_detection_service(self.detection_wait_ready_client, timeout=15.0)
+                if ready:
+                    self.get_logger().info("Detection pipeline ready!")
+                    break
+                else:
+                    self.get_logger().warn(f"Pipeline not ready (attempt {attempt+1}/{max_wait_attempts}), retrying...")
+                    import time
+                    time.sleep(2.0)
+            else:
+                self.get_logger().error("Detection pipeline failed to become ready - continuing without detection")
+                enable_detection = False
+
         successful = 0
+        detections_run = 0
         total = len(self.pan_positions)
 
         for i, pos in enumerate(self.pan_positions):
@@ -658,12 +731,23 @@ class ExplorerNode(Node):
                 msg.data = f"{pos.name}|{pos.row}|{pos.col}|{pos.joints[0]:.3f}|{pos.joints[1]:.3f}|{pos.joints[2]:.3f}|{pos.joints[3]:.3f}"
                 self.scan_position_pub.publish(msg)
 
+                # Also publish position name for detection pipeline
+                pos_msg = String()
+                pos_msg.data = pos.name
+                self.detection_position_pub.publish(pos_msg)
+
                 self.get_logger().info(f"{progress} CAPTURING at {pos.name} for {pause_duration}s")
                 self.get_logger().info(f"         joints: [{pos.joints[0]:+.2f}, {pos.joints[1]:+.2f}, {pos.joints[2]:+.2f}, {pos.joints[3]:+.2f}]")
 
                 # Pause for capture (vision nodes can subscribe to /explorer/scan_position)
                 import time
                 time.sleep(pause_duration)
+
+                # Run detection pipeline if enabled
+                if enable_detection:
+                    self.get_logger().info(f"{progress} Running detection pipeline...")
+                    if self._call_detection_service(self.detection_client):
+                        detections_run += 1
             else:
                 self.get_logger().warn(f"{progress} FAILED to reach {pos.name}")
 
@@ -679,6 +763,11 @@ class ExplorerNode(Node):
         self.get_logger().info("=" * 65)
         self.get_logger().info("PANORAMIC SCAN COMPLETE!")
         self.get_logger().info(f"  Positions visited: {successful}/{total}")
+        if enable_detection:
+            self.get_logger().info(f"  Detection runs: {detections_run}")
+            # Validate against ground truth
+            self.get_logger().info("Validating detections against ground truth...")
+            self._call_detection_service(self.detection_validate_client)
         self.get_logger().info("=" * 65)
 
     def panoramic_scan_callback(self, request, response):

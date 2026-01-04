@@ -44,8 +44,8 @@ class DepthProcessorNode(Node):
         self.get_logger().info('Depth Processor node initializing...')
 
         # Parameters
-        self.declare_parameter('camera_info_topic', '/camera/wrist/depth/camera_info')
-        self.declare_parameter('depth_image_topic', '/camera/wrist/depth/image_raw')
+        self.declare_parameter('camera_info_topic', '/camera/depth/camera_info')
+        self.declare_parameter('depth_image_topic', '/camera/depth/image_raw')
         self.declare_parameter('camera_frame', 'camera_optical_frame')
         self.declare_parameter('world_frame', 'world')
         self.declare_parameter('depth_scale', 1.0)  # Gazebo depth is in meters
@@ -147,15 +147,26 @@ class DepthProcessorNode(Node):
         """
         u, v = request.u, request.v
 
-        # Check prerequisites
+        # Wait for camera info with timeout
+        import time
+        timeout = 5.0  # seconds
+        start = time.time()
+        while not self.camera_info_received and (time.time() - start) < timeout:
+            time.sleep(0.1)
+
         if not self.camera_info_received:
             response.success = False
-            response.message = 'Camera info not yet received'
+            response.message = 'Camera info not received (timeout)'
             return response
+
+        # Wait for depth image with timeout
+        start = time.time()
+        while self.depth_image is None and (time.time() - start) < timeout:
+            time.sleep(0.1)
 
         if self.depth_image is None:
             response.success = False
-            response.message = 'No depth image received'
+            response.message = 'No depth image received (timeout)'
             return response
 
         # Validate pixel coordinates
@@ -184,8 +195,8 @@ class DepthProcessorNode(Node):
         point_cam.y = ray[1] * depth
         point_cam.z = ray[2] * depth
 
-        self.get_logger().debug(
-            f'Pixel ({u}, {v}) -> Camera frame: '
+        self.get_logger().info(
+            f'Pixel ({u}, {v}) depth={depth:.3f}m -> Camera frame: '
             f'({point_cam.x:.3f}, {point_cam.y:.3f}, {point_cam.z:.3f})'
         )
 
@@ -202,6 +213,15 @@ class DepthProcessorNode(Node):
                 self.camera_frame,
                 rclpy.time.Time(),  # Get latest
                 timeout=rclpy.duration.Duration(seconds=1.0)
+            )
+
+            # Log transform for debugging
+            t = transform.transform.translation
+            r = transform.transform.rotation
+            self.get_logger().info(
+                f'TF {self.camera_frame} -> {self.world_frame}: '
+                f'trans=({t.x:.3f}, {t.y:.3f}, {t.z:.3f}) '
+                f'rot=({r.x:.3f}, {r.y:.3f}, {r.z:.3f}, {r.w:.3f})'
             )
 
             # Apply transform

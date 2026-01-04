@@ -24,7 +24,29 @@ ros2 service call /explorer/start_scan std_srvs/srv/Trigger "{}"
 
 ros2 service call /explorer/panoramic_scan std_srvs/srv/Trigger "{}"
 
+# Build with detection pipeline
+colcon build --packages-select harvester_interfaces orchestrator robot_arm robot_arm_moveit_config
 
- colcon build --packages-select harvester_interfaces robot_arm robot_arm_moveit_config
+# Run detection nodes (in separate terminals)
+ros2 run orchestrator mock_yolo_detector
+ros2 run orchestrator depth_processor
+ros2 run orchestrator spatial_detection_pipeline
+
+# Run panoramic scan with detection (enable_detection=true by default)
+ros2 service call /explorer/panoramic_scan std_srvs/srv/Trigger "{}"
+
+# Disable detection for faster scanning
+ros2 param set /explorer enable_detection false
+ros2 service call /explorer/panoramic_scan std_srvs/srv/Trigger "{}"
+
+# Manual detection commands
+ros2 service call /yolo/detect harvester_interfaces/srv/YoloDetect "{}"
+ros2 service call /detection/run_at_position std_srvs/srv/Trigger "{}"
+ros2 service call /detection/validate std_srvs/srv/Trigger "{}"
+ros2 service call /detection/print_results std_srvs/srv/Trigger "{}"
+ros2 service call /detection/clear std_srvs/srv/Trigger "{}"
 
  
+  ros2 run orchestrator mock_yolo_detector &
+  ros2 run orchestrator depth_processor &
+  ros2 run orchestrator spatial_detection_pipeline
