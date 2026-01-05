@@ -1,4 +1,6 @@
 from setuptools import find_packages, setup
+import os
+from glob import glob
 
 package_name = 'orchestrator'
 
@@ -10,6 +12,8 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        # Include YOLO model
+        ('share/' + package_name + '/models', glob('models/*')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -30,6 +34,7 @@ setup(
             'camera_focus = orchestrator.camera_focus:main',
             'mock_yolo_detector = orchestrator.mock_yolo_detector:main',
             'spatial_detection_pipeline = orchestrator.spatial_detection_pipeline:main',
+            'real_yolo_detector = orchestrator.real_yolo_detector:main',
         ],
     },
 )

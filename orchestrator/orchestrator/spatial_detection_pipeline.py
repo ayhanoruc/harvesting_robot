@@ -91,15 +91,23 @@ class SpatialDetectionPipeline(Node):
         self.declare_parameter('validation_tolerance', 0.05)  # 5cm
         self.declare_parameter('z_offset_correction', 0.03)   # 3cm offset for mesh origin
         self.declare_parameter('config_file', '')
-        self.declare_parameter('merge_radius', 0.10)  # 10cm - detections within this are same cluster
+        self.declare_parameter('merge_radius', 0.0)  # 0 = auto-calculate from cluster distances
+        self.declare_parameter('merge_radius_factor', 0.25)  # 25% of min cluster distance
 
         self.focus_iters = self.get_parameter('focus_iterations').value
         self.tolerance = self.get_parameter('validation_tolerance').value
         self.z_offset = self.get_parameter('z_offset_correction').value
-        self.merge_radius = self.get_parameter('merge_radius').value
+        merge_radius_param = self.get_parameter('merge_radius').value
+        self.merge_radius_factor = self.get_parameter('merge_radius_factor').value
 
         # Load ground truth
         self.ground_truth = self._load_ground_truth()
+
+        # Calculate merge_radius from cluster distances if not specified
+        if merge_radius_param <= 0:
+            self.merge_radius = self._calculate_merge_radius()
+        else:
+            self.merge_radius = merge_radius_param
 
         # Tracked clusters
         self.tracked_clusters: Dict[str, TrackedCluster] = {}
@@ -172,6 +180,8 @@ class SpatialDetectionPipeline(Node):
         self.get_logger().info(f'  Focus iterations: {self.focus_iters}')
         self.get_logger().info(f'  Validation tolerance: {self.tolerance}m')
         self.get_logger().info(f'  Z offset correction: {self.z_offset}m')
+        self.get_logger().info(f'  Merge radius (X,Y): {self.merge_radius:.3f}m')
+        self.get_logger().info(f'  Clustering: world-space X,Y with complete-linkage')
 
     def _wait_for_services(self):
         """Wait for required services to be available."""
@@ -227,6 +237,49 @@ class SpatialDetectionPipeline(Node):
             }
 
         return ground_truth
+
+    def _calculate_merge_radius(self) -> float:
+        """
+        Calculate merge_radius as a fraction of minimum distance between clusters.
+
+        Uses X,Y coordinates only (ignores Z) since clusters are at different heights
+        but we care about horizontal separation.
+        """
+        if len(self.ground_truth) < 2:
+            default = 0.12
+            self.get_logger().warn(f'Not enough clusters for distance calc, using default: {default}m')
+            return default
+
+        # Calculate all pairwise X,Y distances
+        positions = list(self.ground_truth.values())
+        names = list(self.ground_truth.keys())
+        min_dist = float('inf')
+        min_pair = ('', '')
+
+        for i in range(len(positions)):
+            for j in range(i + 1, len(positions)):
+                # X,Y distance only (ignore Z)
+                dx = positions[i][0] - positions[j][0]
+                dy = positions[i][1] - positions[j][1]
+                dist = np.sqrt(dx*dx + dy*dy)
+
+                if dist < min_dist:
+                    min_dist = dist
+                    min_pair = (names[i], names[j])
+
+        merge_radius = min_dist * self.merge_radius_factor
+
+        self.get_logger().info(
+            f'Cluster distance calculation:'
+        )
+        self.get_logger().info(
+            f'  Min X,Y distance: {min_dist:.3f}m ({min_pair[0]} <-> {min_pair[1]})'
+        )
+        self.get_logger().info(
+            f'  Merge radius: {merge_radius:.3f}m ({self.merge_radius_factor*100:.0f}% of min)'
+        )
+
+        return merge_radius
 
     def _publish_status(self, status: str):
         """Publish status message."""
@@ -400,68 +453,138 @@ class SpatialDetectionPipeline(Node):
         return None
 
     def _add_detection(self, detection: Detection):
-        """Add detection to tracked clusters."""
-        label = detection.cluster_label
+        """
+        Add detection to tracked clusters using world-space X,Y clustering.
 
-        # Check if cluster already tracked
-        if label in self.tracked_clusters:
-            self.tracked_clusters[label].detections.append(detection)
+        Uses complete-linkage: a detection joins a cluster only if it's within
+        merge_radius (in X,Y plane) of ALL existing detections in that cluster.
+        """
+        position = detection.position_3d
+
+        def xy_distance(pos1, pos2):
+            """Calculate X,Y distance (ignore Z)."""
+            dx = pos1[0] - pos2[0]
+            dy = pos1[1] - pos2[1]
+            return np.sqrt(dx*dx + dy*dy)
+
+        def is_close_to_all(new_pos, cluster):
+            """Check if new_pos is within merge_radius of ALL detections in cluster."""
+            for det in cluster.detections:
+                if xy_distance(new_pos, det.position_3d) > self.merge_radius:
+                    return False
+            return True
+
+        # Find existing cluster where this detection fits (complete-linkage)
+        matched_cluster_id = None
+        for cluster_id, cluster in self.tracked_clusters.items():
+            if is_close_to_all(position, cluster):
+                matched_cluster_id = cluster_id
+                break
+
+        if matched_cluster_id:
+            # Add to existing cluster
+            self.tracked_clusters[matched_cluster_id].detections.append(detection)
+            cluster_id = matched_cluster_id
         else:
-            cluster = TrackedCluster(cluster_id=label)
+            # Create new cluster with unique ID
+            cluster_id = f'detected_cluster_{len(self.tracked_clusters)}'
+            cluster = TrackedCluster(cluster_id=cluster_id)
             cluster.detections.append(detection)
-            self.tracked_clusters[label] = cluster
+            self.tracked_clusters[cluster_id] = cluster
 
         self.get_logger().info(
-            f'Added detection for {label}: '
-            f'pos=[{detection.position_3d[0]:.3f}, {detection.position_3d[1]:.3f}, {detection.position_3d[2]:.3f}], '
-            f'area={detection.bbox_area}, total={self.tracked_clusters[label].num_detections}'
+            f'Added detection to {cluster_id}: '
+            f'pos=[{position[0]:.3f}, {position[1]:.3f}, {position[2]:.3f}], '
+            f'area={detection.bbox_area}, total={self.tracked_clusters[cluster_id].num_detections}'
         )
 
     def validate_callback(self, request, response):
-        """Validate detected clusters against ground truth."""
+        """
+        Validate detected clusters against ground truth using nearest-neighbor matching.
+
+        Since detected clusters have dynamic IDs (detected_cluster_0, etc.),
+        we match each ground truth to its nearest detected cluster.
+        """
         self._publish_status('Validating detections against ground truth...')
+
+        # Build list of detected cluster positions
+        detected = {}
+        for cluster_id, cluster in self.tracked_clusters.items():
+            if cluster.position is not None:
+                detected[cluster_id] = cluster.position
 
         results = []
         total_error = 0.0
         valid_count = 0
+        matched_detected = set()  # Track which detected clusters are already matched
 
-        for label, gt_pos in self.ground_truth.items():
-            if label in self.tracked_clusters:
-                cluster = self.tracked_clusters[label]
-                detected_pos = cluster.position
+        # Match each ground truth to nearest detected cluster
+        for gt_name, gt_pos in self.ground_truth.items():
+            best_match = None
+            best_dist = float('inf')
 
-                if detected_pos is not None:
-                    error = np.linalg.norm(detected_pos - gt_pos)
-                    status = "PASS" if error <= self.tolerance else "FAIL"
-                    total_error += error
+            for det_id, det_pos in detected.items():
+                if det_id in matched_detected:
+                    continue  # Already matched to another ground truth
 
-                    results.append(
-                        f'{label}: error={error:.3f}m [{status}] '
-                        f'(detected=[{detected_pos[0]:.3f}, {detected_pos[1]:.3f}, {detected_pos[2]:.3f}], '
-                        f'gt=[{gt_pos[0]:.3f}, {gt_pos[1]:.3f}, {gt_pos[2]:.3f}])'
-                    )
+                # Calculate X,Y distance (consistent with clustering)
+                dx = det_pos[0] - gt_pos[0]
+                dy = det_pos[1] - gt_pos[1]
+                dist_xy = np.sqrt(dx*dx + dy*dy)
 
-                    if error <= self.tolerance:
-                        valid_count += 1
-                else:
-                    results.append(f'{label}: No valid position')
+                # Also calculate full 3D distance for reporting
+                dist_3d = np.linalg.norm(det_pos - gt_pos)
+
+                if dist_xy < best_dist:
+                    best_dist = dist_xy
+                    best_match = det_id
+                    best_dist_3d = dist_3d
+
+            if best_match is not None:
+                matched_detected.add(best_match)
+                det_pos = detected[best_match]
+                status = "PASS" if best_dist_3d <= self.tolerance else "FAIL"
+                total_error += best_dist_3d
+
+                results.append(
+                    f'{gt_name} -> {best_match}: error={best_dist_3d:.3f}m (xy={best_dist:.3f}m) [{status}]\n'
+                    f'    detected=[{det_pos[0]:.3f}, {det_pos[1]:.3f}, {det_pos[2]:.3f}]\n'
+                    f'    gt=[{gt_pos[0]:.3f}, {gt_pos[1]:.3f}, {gt_pos[2]:.3f}]'
+                )
+
+                if best_dist_3d <= self.tolerance:
+                    valid_count += 1
             else:
-                results.append(f'{label}: NOT DETECTED')
+                results.append(f'{gt_name}: NOT DETECTED (no unmatched clusters)')
+
+        # Report unmatched detected clusters
+        unmatched = set(detected.keys()) - matched_detected
+        if unmatched:
+            results.append(f'\nUnmatched detected clusters: {list(unmatched)}')
 
         # Print results
         self.get_logger().info('=' * 60)
-        self.get_logger().info('VALIDATION RESULTS')
+        self.get_logger().info('VALIDATION RESULTS (Nearest-Neighbor Matching)')
         self.get_logger().info('=' * 60)
-        for r in results:
-            self.get_logger().info(r)
+        self.get_logger().info(f'Detected clusters: {len(detected)}')
+        self.get_logger().info(f'Ground truth clusters: {len(self.ground_truth)}')
+        self.get_logger().info(f'Merge radius used: {self.merge_radius:.3f}m')
+        self.get_logger().info('-' * 60)
 
-        if self.tracked_clusters:
-            avg_error = total_error / len(self.ground_truth)
+        for r in results:
+            for line in r.split('\n'):
+                self.get_logger().info(line)
+
+        if valid_count > 0:
+            avg_error = total_error / valid_count
+            self.get_logger().info('-' * 60)
             self.get_logger().info(f'Average error: {avg_error:.3f}m')
-            self.get_logger().info(f'Valid: {valid_count}/{len(self.ground_truth)} (tolerance: {self.tolerance}m)')
+
+        self.get_logger().info(f'Valid: {valid_count}/{len(self.ground_truth)} (tolerance: {self.tolerance}m)')
+        self.get_logger().info('=' * 60)
 
         response.success = True
-        response.message = f'Validated {len(results)} clusters, {valid_count} passed'
+        response.message = f'Validated {len(self.ground_truth)} ground truth, {valid_count} matched'
         return response
 
     def print_results_callback(self, request, response):

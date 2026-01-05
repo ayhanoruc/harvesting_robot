@@ -50,3 +50,12 @@ ros2 service call /detection/clear std_srvs/srv/Trigger "{}"
   ros2 run orchestrator mock_yolo_detector &
   ros2 run orchestrator depth_processor &
   ros2 run orchestrator spatial_detection_pipeline
+
+
+  # Terminal 2: Build & run
+  cd /mnt/c/Users/ayhan/harvesting_ws
+  colcon build --packages-select orchestrator
+  source install/setup.bash
+
+  # Run YOLO detector
+  ros2 run orchestrator real_yolo_detector
