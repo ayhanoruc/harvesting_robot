@@ -5,18 +5,20 @@
     <link name="link">
       <collision name="collision">
         <geometry>
-          <sphere>
-            <radius>0.05</radius>
-          </sphere>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://cotton_cluster/cluster.dae</uri>
+          </mesh>
         </geometry>
       </collision>
       <visual name="visual">
         <geometry>
           <mesh>
-            <scale>0.5 0.5 0.5</scale>
-            <uri>model://cotton_cluster/meshes/object_0/object_0.stl</uri>
+            <scale>1 1 1</scale>
+            <uri>model://cotton_cluster/cluster.dae</uri>
           </mesh>
         </geometry>
+        <!-- DAE file should reference cluster.png texture internally -->
       </visual>
     </link>
   </model>
