@@ -62,17 +62,17 @@
       </link>
     </model>
 
-    <!-- Plant 1: Front-Left (with STL cotton cluster) -->
+    <!-- Plant 1: cluster_3 - Right side -->
     <model name="plant_1">
       <static>true</static>
-      <pose>0.75 -0.45 0 0 0 0</pose>
+      <pose>0.875 -0.475 0 0 0 0</pose>
       <link name="stem">
         <visual name="stem_visual">
-          <pose>0 0 0.2 0 0 0</pose>
+          <pose>0 0 0.21 0 0 0</pose>
           <geometry>
             <cylinder>
-              <radius>0.02</radius>
-              <length>0.4</length>
+              <radius>0.015</radius>
+              <length>0.42</length>
             </cylinder>
           </geometry>
           <material>
@@ -81,11 +81,11 @@
           </material>
         </visual>
         <collision name="stem_collision">
-          <pose>0 0 0.2 0 0 0</pose>
+          <pose>0 0 0.21 0 0 0</pose>
           <geometry>
             <cylinder>
-              <radius>0.02</radius>
-              <length>0.4</length>
+              <radius>0.015</radius>
+              <length>0.42</length>
             </cylinder>
           </geometry>
         </collision>
@@ -97,7 +97,7 @@
           <geometry>
             <mesh>
               <uri>model://cotton_cluster/cluster.dae</uri>
-              <scale>1 1 1</scale>
+              <scale>0.4 0.4 0.4</scale>
             </mesh>
           </geometry>
         </visual>
@@ -105,7 +105,7 @@
           <geometry>
             <mesh>
               <uri>model://cotton_cluster/cluster.dae</uri>
-              <scale>1 1 1</scale>
+              <scale>0.4 0.4 0.4</scale>
             </mesh>
           </geometry>
         </collision>
@@ -116,17 +116,17 @@
       </joint>
     </model>
 
-    <!-- Plant 2: Front-Center (with STL cotton cluster) -->
+    <!-- Plant 2: cluster_2 - Center -->
     <model name="plant_2">
       <static>true</static>
-      <pose>0.85 0 0 0 0 0</pose>
+      <pose>0.975 0.0 0 0 0 0</pose>
       <link name="stem">
         <visual name="stem_visual">
-          <pose>0 0 0.25 0 0 0</pose>
+          <pose>0 0 0.26 0 0 0</pose>
           <geometry>
             <cylinder>
-              <radius>0.02</radius>
-              <length>0.5</length>
+              <radius>0.015</radius>
+              <length>0.52</length>
             </cylinder>
           </geometry>
           <material>
@@ -135,11 +135,11 @@
           </material>
         </visual>
         <collision name="stem_collision">
-          <pose>0 0 0.25 0 0 0</pose>
+          <pose>0 0 0.26 0 0 0</pose>
           <geometry>
             <cylinder>
-              <radius>0.02</radius>
-              <length>0.5</length>
+              <radius>0.015</radius>
+              <length>0.52</length>
             </cylinder>
           </geometry>
         </collision>
@@ -151,7 +151,7 @@
           <geometry>
             <mesh>
               <uri>model://cotton_cluster/cluster.dae</uri>
-              <scale>1 1 1</scale>
+              <scale>0.4 0.4 0.4</scale>
             </mesh>
           </geometry>
         </visual>
@@ -159,7 +159,7 @@
           <geometry>
             <mesh>
               <uri>model://cotton_cluster/cluster.dae</uri>
-              <scale>1 1 1</scale>
+              <scale>0.4 0.4 0.4</scale>
             </mesh>
           </geometry>
         </collision>
@@ -170,17 +170,17 @@
       </joint>
     </model>
 
-    <!-- Plant 3: Front-Right (with STL cotton cluster) -->
+    <!-- Plant 3: cluster_1 - Left side -->
     <model name="plant_3">
       <static>true</static>
-      <pose>0.75 0.45 0 0 0 0</pose>
+      <pose>0.875 0.475 0 0 0 0</pose>
       <link name="stem">
         <visual name="stem_visual">
-          <pose>0 0 0.22 0 0 0</pose>
+          <pose>0 0 0.23 0 0 0</pose>
           <geometry>
             <cylinder>
-              <radius>0.02</radius>
-              <length>0.44</length>
+              <radius>0.015</radius>
+              <length>0.46</length>
             </cylinder>
           </geometry>
           <material>
@@ -189,11 +189,11 @@
           </material>
         </visual>
         <collision name="stem_collision">
-          <pose>0 0 0.22 0 0 0</pose>
+          <pose>0 0 0.23 0 0 0</pose>
           <geometry>
             <cylinder>
-              <radius>0.02</radius>
-              <length>0.44</length>
+              <radius>0.015</radius>
+              <length>0.46</length>
             </cylinder>
           </geometry>
         </collision>
@@ -205,7 +205,7 @@
           <geometry>
             <mesh>
               <uri>model://cotton_cluster/cluster.dae</uri>
-              <scale>1 1 1</scale>
+              <scale>0.4 0.4 0.4</scale>
             </mesh>
           </geometry>
         </visual>
@@ -213,7 +213,7 @@
           <geometry>
             <mesh>
               <uri>model://cotton_cluster/cluster.dae</uri>
-              <scale>1 1 1</scale>
+              <scale>0.4 0.4 0.4</scale>
             </mesh>
           </geometry>
         </collision>

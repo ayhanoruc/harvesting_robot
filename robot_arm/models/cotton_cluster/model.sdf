@@ -6,7 +6,7 @@
       <collision name="collision">
         <geometry>
           <mesh>
-            <scale>1 1 1</scale>
+            <scale>0.4 0.4 0.4</scale>
             <uri>model://cotton_cluster/cluster.dae</uri>
           </mesh>
         </geometry>
@@ -14,7 +14,7 @@
       <visual name="visual">
         <geometry>
           <mesh>
-            <scale>1 1 1</scale>
+            <scale>0.4 0.4 0.4</scale>
             <uri>model://cotton_cluster/cluster.dae</uri>
           </mesh>
         </geometry>
