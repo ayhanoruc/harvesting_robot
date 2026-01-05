@@ -340,6 +340,16 @@
 					<height>480</height>
 					<format>R8G8B8</format>
 				</image>
+				<!-- Explicit intrinsics to fix cx/cy - must be inside lens element -->
+				<lens>
+					<intrinsics>
+						<fx>277</fx>
+						<fy>277</fy>
+						<cx>320</cx>
+						<cy>240</cy>
+						<s>0</s>
+					</intrinsics>
+				</lens>
 				<clip>
 					<near>0.05</near>
 					<far>3.0</far>

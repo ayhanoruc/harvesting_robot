@@ -37,9 +37,14 @@ from harvester_interfaces.srv import YoloDetect, PixelTo3D, FocusFromPixel
 import yaml
 import os
 import numpy as np
+import cv2
+from datetime import datetime
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional
 import time
+
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
 
 from ament_index_python.packages import get_package_share_directory
 
@@ -93,12 +98,27 @@ class SpatialDetectionPipeline(Node):
         self.declare_parameter('config_file', '')
         self.declare_parameter('merge_radius', 0.0)  # 0 = auto-calculate from cluster distances
         self.declare_parameter('merge_radius_factor', 0.25)  # 25% of min cluster distance
+        self.declare_parameter('save_images', True)
+        self.declare_parameter('output_dir', '/mnt/c/Users/ayhan/harvesting_ws/yolo_output')
+        self.declare_parameter('camera_topic', '/camera/color/image_raw')
 
         self.focus_iters = self.get_parameter('focus_iterations').value
         self.tolerance = self.get_parameter('validation_tolerance').value
         self.z_offset = self.get_parameter('z_offset_correction').value
         merge_radius_param = self.get_parameter('merge_radius').value
         self.merge_radius_factor = self.get_parameter('merge_radius_factor').value
+        self.save_images = self.get_parameter('save_images').value
+        self.output_dir = self.get_parameter('output_dir').value
+        camera_topic = self.get_parameter('camera_topic').value
+
+        # Create output directory
+        if self.save_images:
+            os.makedirs(self.output_dir, exist_ok=True)
+
+        # CV Bridge and latest frame for image saving
+        self.bridge = CvBridge()
+        self.latest_frame = None
+        self.latest_detections = []  # Store detections for image annotation
 
         # Load ground truth
         self.ground_truth = self._load_ground_truth()
@@ -139,6 +159,20 @@ class SpatialDetectionPipeline(Node):
             '/detection/current_position',
             self._position_callback,
             10
+        )
+
+        # Camera subscription for image saving
+        from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
+        sensor_qos = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            durability=DurabilityPolicy.VOLATILE,
+            depth=1
+        )
+        self.image_sub = self.create_subscription(
+            Image,
+            camera_topic,
+            self._image_callback,
+            sensor_qos
         )
 
         # Services
@@ -293,6 +327,13 @@ class SpatialDetectionPipeline(Node):
         self.current_scan_position = msg.data
         self.get_logger().debug(f'Scan position updated: {self.current_scan_position}')
 
+    def _image_callback(self, msg: Image):
+        """Store latest camera frame for image saving."""
+        try:
+            self.latest_frame = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
+        except Exception as e:
+            self.get_logger().error(f'Failed to convert image: {e}')
+
     def set_scan_position(self, position_name: str):
         """Set current scan position name (called by explorer)."""
         self.current_scan_position = position_name
@@ -310,9 +351,16 @@ class SpatialDetectionPipeline(Node):
 
         self._publish_status(f'Found {len(detections)} detections, processing...')
 
+        # Store detections for image annotation
+        self.latest_detections = list(detections)
+
         # Step 2: Process each detection
         for bbox in detections:
             self._process_detection(bbox)
+
+        # Step 3: Save annotated image with cluster overlays
+        if self.save_images:
+            self._save_annotated_image()
 
         response.success = True
         response.message = f'Processed {len(detections)} detections'
@@ -340,6 +388,78 @@ class SpatialDetectionPipeline(Node):
             return []
 
         return list(result.detections)
+
+    def _save_annotated_image(self):
+        """Save annotated image with boll detections and world-space cluster overlays."""
+        if self.latest_frame is None:
+            self.get_logger().warn('No camera frame available for image saving')
+            return
+
+        annotated = self.latest_frame.copy()
+
+        # Draw individual boll detections (thin green)
+        for bbox in self.latest_detections:
+            cv2.rectangle(annotated,
+                          (bbox.u_min, bbox.v_min),
+                          (bbox.u_max, bbox.v_max),
+                          (0, 255, 0), 1)
+            # Small label with confidence
+            label = f'{bbox.confidence:.2f}'
+            cv2.putText(annotated, label, (bbox.u_min, bbox.v_min - 2),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 1)
+
+        # Draw merged cluster bboxes (thick magenta) computed from tracked clusters
+        for cluster_id, cluster in self.tracked_clusters.items():
+            if not cluster.detections:
+                continue
+
+            # Get pixel bounds from all detections in this cluster
+            u_mins, v_mins, u_maxs, v_maxs = [], [], [], []
+            for det in cluster.detections:
+                # Find matching bbox from latest_detections
+                for bbox in self.latest_detections:
+                    center_u = (bbox.u_min + bbox.u_max) // 2
+                    center_v = (bbox.v_min + bbox.v_max) // 2
+                    if abs(center_u - det.pixel_center[0]) < 10 and abs(center_v - det.pixel_center[1]) < 10:
+                        u_mins.append(bbox.u_min)
+                        v_mins.append(bbox.v_min)
+                        u_maxs.append(bbox.u_max)
+                        v_maxs.append(bbox.v_max)
+                        break
+
+            if not u_mins:
+                continue
+
+            # Merged bbox
+            u_min = min(u_mins)
+            v_min = min(v_mins)
+            u_max = max(u_maxs)
+            v_max = max(v_maxs)
+
+            # Draw cluster bbox (magenta)
+            cv2.rectangle(annotated, (u_min, v_min), (u_max, v_max), (255, 0, 255), 3)
+
+            # Label with cluster info
+            pos = cluster.position
+            if pos is not None:
+                label = f'{cluster_id} ({cluster.num_detections} bolls)'
+                pos_label = f'({pos[0]:.2f}, {pos[1]:.2f}, {pos[2]:.2f})'
+                cv2.putText(annotated, label, (u_min, v_min - 25),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 2)
+                cv2.putText(annotated, pos_label, (u_min, v_min - 8),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 255), 1)
+
+            # Draw center point
+            cx = (u_min + u_max) // 2
+            cy = (v_min + v_max) // 2
+            cv2.circle(annotated, (cx, cy), 5, (0, 0, 255), -1)
+
+        # Save with timestamp
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')[:-3]
+        filename = f'spatial_{timestamp}.png'
+        filepath = os.path.join(self.output_dir, filename)
+        cv2.imwrite(filepath, annotated)
+        self.get_logger().info(f'Saved annotated image: {filepath}')
 
     def _process_detection(self, bbox: BoundingBox):
         """Process a single detection through focus + depth pipeline."""
@@ -467,17 +587,30 @@ class SpatialDetectionPipeline(Node):
             dy = pos1[1] - pos2[1]
             return np.sqrt(dx*dx + dy*dy)
 
-        def is_close_to_all(new_pos, cluster):
-            """Check if new_pos is within merge_radius of ALL detections in cluster."""
-            for det in cluster.detections:
-                if xy_distance(new_pos, det.position_3d) > self.merge_radius:
-                    return False
-            return True
+        def is_close_to_all_with_logging(new_pos, cluster):
+            """Check if new_pos is within merge_radius of ALL detections in cluster, with logging."""
+            distances = []
+            all_close = True
+            for i, det in enumerate(cluster.detections):
+                dist = xy_distance(new_pos, det.position_3d)
+                distances.append(dist)
+                if dist > self.merge_radius:
+                    all_close = False
+
+            # Log distances
+            if distances:
+                self.get_logger().info(
+                    f'  Distance check to {cluster.cluster_id}: '
+                    f'dists={[f"{d:.3f}m" for d in distances]}, '
+                    f'max={max(distances):.3f}m, threshold={self.merge_radius:.3f}m, '
+                    f'fits={all_close}'
+                )
+            return all_close
 
         # Find existing cluster where this detection fits (complete-linkage)
         matched_cluster_id = None
         for cluster_id, cluster in self.tracked_clusters.items():
-            if is_close_to_all(position, cluster):
+            if is_close_to_all_with_logging(position, cluster):
                 matched_cluster_id = cluster_id
                 break
 

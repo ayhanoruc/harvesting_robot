@@ -59,3 +59,9 @@ ros2 service call /detection/clear std_srvs/srv/Trigger "{}"
 
   # Run YOLO detector
   ros2 run orchestrator real_yolo_detector
+
+
+  mkdir -p /mnt/c/Users/ayhan/harvesting_ws/yolo_output && cp /tmp/yolo_detections/* /mnt/c/Users/ayhan/harvesting_ws/yolo_output/
+
+
+  ros2 service call /detection/run_at_position std_srvs/srv/Trigger "{}"

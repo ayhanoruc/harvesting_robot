@@ -61,6 +61,12 @@ class DepthProcessorNode(Node):
         self.camera_model = PinholeCameraModel()
         self.camera_info_received = False
 
+        # K matrix intrinsics (set from camera_info, bypass buggy P matrix)
+        self.fx = 277.0  # defaults
+        self.fy = 277.0
+        self.cx = 320.0
+        self.cy = 240.0
+
         # Latest depth image
         self.depth_image = None
         self.depth_stamp = None
@@ -107,13 +113,27 @@ class DepthProcessorNode(Node):
         self.get_logger().info(f'  Service: /depth_processor/pixel_to_3d')
 
     def camera_info_callback(self, msg: CameraInfo):
-        """Store camera intrinsics in the camera model."""
+        """Store camera intrinsics from K matrix directly (bypass P matrix bug)."""
         self.camera_model.fromCameraInfo(msg)
+
+        # Store K matrix values directly (Gazebo P matrix may be wrong)
+        self.fx = msg.k[0]
+        self.fy = msg.k[4]
+        self.cx = msg.k[2]
+        self.cy = msg.k[5]
+
         if not self.camera_info_received:
             self.camera_info_received = True
             self.get_logger().info(
-                f'Camera info received: {msg.width}x{msg.height}, '
-                f'fx={msg.k[0]:.1f}, fy={msg.k[4]:.1f}'
+                f'Camera info received: {msg.width}x{msg.height}'
+            )
+            self.get_logger().info(
+                f'Using K matrix: fx={self.fx:.1f}, fy={self.fy:.1f}, '
+                f'cx={self.cx:.1f}, cy={self.cy:.1f}'
+            )
+            # Debug: show P matrix mismatch
+            self.get_logger().warn(
+                f'P matrix has WRONG values: cx={msg.p[2]:.1f}, cy={msg.p[6]:.1f} (ignoring)'
             )
 
     def depth_callback(self, msg: Image):
@@ -185,15 +205,12 @@ class DepthProcessorNode(Node):
             response.message = f'Invalid depth at pixel ({u}, {v}): {depth}'
             return response
 
-        # Back-project to 3D using image_geometry
-        # projectPixelTo3dRay returns a unit vector, we scale by depth
-        ray = self.camera_model.projectPixelTo3dRay((u, v))
-
-        # Point in camera optical frame
+        # Back-project to 3D using K matrix directly (bypass buggy P matrix)
+        # Standard pinhole model: X = (u - cx) * Z / fx, Y = (v - cy) * Z / fy
         point_cam = Point()
-        point_cam.x = ray[0] * depth
-        point_cam.y = ray[1] * depth
-        point_cam.z = ray[2] * depth
+        point_cam.x = (u - self.cx) * depth / self.fx
+        point_cam.y = (v - self.cy) * depth / self.fy
+        point_cam.z = depth
 
         self.get_logger().info(
             f'Pixel ({u}, {v}) depth={depth:.3f}m -> Camera frame: '
