@@ -5,167 +5,338 @@
 
 # 2.2 Overview of Possible Solutions
 
+Autonomous cotton harvesting requires the integration of multiple subsystems spanning perception, motion planning and mechanical design. Rather than evaluating monolithic system configurations, this section adopts a component-based approach where each design decision point is analyzed independently. Since the RoboCot architecture is built on modular, interchangeable components, this approach allows systematic evaluation of alternatives at each decision point using consistent criteria. The selected components are then integrated into the final system configuration.
+
 ## 2.2.1 Solution Space Overview
 
-> **BRIEF**: Introduce the key design decisions that shape the system. Frame the problem: autonomous cotton harvesting requires (1) reliable detection, (2) precise 3D localization, (3) dexterous manipulation. Each subsystem has multiple viable approaches.
+The design of an autonomous cotton picking system involves ten key decision points spanning software architecture, perception, control and mechanical domains. Table 1 summarizes these decision points, their requirements derived from the product design specifications (Section 2.1) and their impact on overall system performance.
 
-**Key Decision Points:**
-- Vision system type (sensor selection)
-- Camera placement strategy
-- Detection/ML approach
-- 3D localization method
-- Manipulator configuration
-- Scanning/exploration strategy
-- Multi-detection clustering approach
+**Table 1. Solution Space: Design Decision Points**
 
----
+| Decision Point | Requirement Reference | Impact on System |
+|----------------|----------------------|------------------|
+| Software Framework | MF-03 (modularity), RL-02 (crash recovery) | Determines integration architecture, debugging capability and code reusability |
+| Camera Placement | QL-03 (90% detection), SR-02 (mock field coverage) | Affects viewing angles, occlusion handling and inspection distance |
+| Depth Sensing Method | QL-01 (±5mm positioning), QL-02 (±3mm repeatability) | Determines 3D localization accuracy and calibration complexity |
+| Detection Method | QL-03 (90% detection), EN-01 (lighting robustness) | Affects detection reliability under varying conditions |
+| Cluster Identification | QL-05 (90% pick rate), RL-02 (software reliability) | Determines tracking accuracy across multiple scan positions |
+| Clustering Algorithm | QL-05 (functional consistency) | Affects grouping correctness and outlier rejection |
+| Motion Planning | SF-02 (speed limits), SF-03 (singularity handling) | Determines path safety, collision avoidance and execution reliability |
+| Manipulator Configuration | SR-01 (520mm reach), WT-03 (tip deflection <10mm) | Affects workspace coverage and approach trajectory flexibility |
+| Gripper Design | SR-04 (50-60mm opening), QL-04 (cycle time <60s) | Determines grasp success rate and pick efficiency |
+| Reservoir Design | SR-03 (15×15×15cm), ER-03 (tool-free removal <15s) | Affects storage capacity and operator interaction |
+| Operator Interface | ER-01 (GUI control), ER-02 (visual indicators) | Determines operator situational awareness and control capability |
 
-## 2.2.2 Alternative Solutions
+The following subsections present the alternative options for each decision point, evaluate them against relevant criteria and justify the selected solution.
 
-### Alternative A: Classical Computer Vision + Simple Manipulator
+## 2.2.2 Design Decision Analysis
 
-> **BRIEF**: Baseline approach using color segmentation, edge detection, fixed overhead camera, 3-4 DOF arm.
+### Decision Point 1: Software Framework
 
-**Characteristics:**
-- Color-based segmentation (HSV thresholding for white cotton)
-- Fixed overhead camera (bird's-eye view)
-- 3-DOF or 4-DOF arm with simple gripper
-- No depth sensing (2D localization only)
+The software framework determines how system components communicate, how sensor data flows through the pipeline and how motion commands are executed. This choice affects development efficiency, debugging capability and long-term maintainability.
 
-**Advantages:**
-- Low computational cost
-- Simple implementation
-- Minimal hardware requirements
+**Option A: ROS2 (Robot Operating System 2)**
+ROS2 is a widely adopted open-source framework for robotics development [18]. It provides standardized communication patterns (topics, services, actions), a transform library (TF2) for coordinate frame management and integration with common tools including Gazebo simulation and MoveIt motion planning.
 
-**Disadvantages:**
-- Fails under varying lighting conditions
-- No depth information for grasping
-- Limited viewing angles (occlusion issues)
-- Poor robustness to natural variations
+**Option B: Custom Framework**
+A custom framework built on standard libraries (ZeroMQ, Protocol Buffers) offers more control over communication patterns and potentially lower latency. However, it requires implementing functionality that ROS2 provides out of the box.
 
-[SKETCH A: Top-view diagram showing fixed overhead camera with limited viewing angles]
+**Option C: NVIDIA Isaac ROS**
+NVIDIA's Isaac ROS is a GPU-accelerated robotics framework optimized for Jetson platforms [31]. It provides hardware-accelerated perception pipelines and integrates with Isaac Sim for simulation. However, it has a smaller community and fewer manipulation-focused tools compared to the broader ROS ecosystem.
 
----
+**Table 2. Software Framework Decision Matrix**
 
-### Alternative B: Deep Learning + Fixed Stereo Camera
+| Criterion | Weight | PDS Ref. | ROS2 | Custom | Isaac ROS |
+|-----------|--------|----------|------|--------|-----------|
+| Tool Integration (MoveIt, Gazebo) | 0.12 | MF-03 | 5 | 2 | 3 |
+| Modularity & Reusability | 0.12 | MF-03 | 5 | 3 | 4 |
+| Development Speed | 0.12 | MF-02 | 4 | 2 | 3 |
+| Long-term Support | 0.28 | RL-02 | 5 | 3 | 4 |
+| Real-time Capability | 0.36 | QL-04 | 4 | 5 | 5 |
+| **Weighted Total** | **1.00** | | **4.52** | **3.48** | **4.12** |
 
-> **BRIEF**: Improved detection via YOLO, stereo camera for depth, but still fixed mounting.
-
-**Characteristics:**
-- YOLO-based object detection
-- Stereo camera pair for triangulation-based depth
-- Fixed side-mounted or overhead position
-- 4-DOF arm
-
-**Advantages:**
-- Robust detection via deep learning
-- 3D localization possible
-- Better than color segmentation
-
-**Disadvantages:**
-- Stereo calibration complexity
-- Baseline distance limits depth accuracy
-- Fixed viewpoint still causes occlusions
-- Cannot inspect from multiple angles
-
-[SKETCH B: Side-view showing stereo camera pair with triangulation geometry]
+**Selected: ROS2** — Provides the best balance of tool integration, modularity and community support. While NVIDIA Isaac ROS offers superior GPU acceleration on the Jetson platform, MoveIt2 integration and the broader ecosystem of manipulation tools make ROS2 the preferred choice for this manipulation-focused application. The ros2_control framework enables standardized hardware abstraction while MoveIt2 provides motion planning capabilities essential for collision-free trajectory generation.
 
 ---
 
-### Alternative C: Deep Learning + Eye-in-Hand RGB-D (SELECTED)
+### Decision Point 2: Camera Placement
 
-> **BRIEF**: Our chosen approach - YOLO11 detection with wrist-mounted RGB-D camera, 6-DOF arm.
+Camera placement affects viewing angles, inspection distance and the ability to handle occlusions from plant geometry. For a wrist-mounted manipulator, two primary options exist.
 
-**Characteristics:**
-- YOLO11 trained on cotton boll dataset (0.7+ confidence)
-- Wrist-mounted Intel RealSense-style RGB-D camera
-- Direct depth measurement (no stereo calibration)
-- 6-DOF Braccio arm for full workspace coverage
-- Multi-view scanning for complete coverage
+**Option A: Eye-in-Hand (Wrist-Mounted)**
+The camera is mounted directly on the end-effector, moving with the gripper. This provides close-up inspection capability (viewing distance ~35cm) and the ability to position the camera at arbitrary viewpoints through arm motion.
 
-**Advantages:**
-- Robust detection in varying conditions
-- Direct depth at each pixel (no triangulation)
-- Camera follows arm - inspect from any angle
-- Close-up views possible (~35cm viewing distance)
-- 6-DOF enables complex approach trajectories
+**Option B: Upper-Arm Mounted**
+The camera is mounted on a more proximal link (shoulder or elbow region), providing a more stable platform but with less positioning flexibility and greater viewing distance to targets.
 
-**Disadvantages:**
-- Higher computational cost (GPU inference)
-- More complex calibration (hand-eye)
-- Requires motion planning integration
+**[Figure 1: Camera Placement Options - (a) Eye-in-hand configuration showing camera at wrist with close viewing distance, (b) Upper-arm mounted configuration showing camera on shoulder link with wider but less flexible viewing angle]**
 
-[SKETCH C: Diagram showing wrist-mounted camera following arm to multiple viewpoints]
+**Table 3. Camera Placement Decision Matrix**
 
----
+| Criterion | Weight | PDS Ref. | Eye-in-Hand | Upper-Arm |
+|-----------|--------|----------|-------------|-----------|
+| Close-up Inspection Capability | 0.20 | QL-03 | 5 | 2 |
+| Multi-angle Viewing | 0.15 | SR-02 | 5 | 3 |
+| Occlusion Handling | 0.36 | QL-03, EN-01 | 5 | 2 |
+| Platform Stability | 0.20 | QL-02 | 3 | 5 |
+| Calibration Simplicity | 0.09 | MA-03 | 3 | 4 |
+| **Weighted Total** | **1.00** | | **4.42** | **2.93** |
 
-### Subsystem Decision Summary
-
-| Decision Point | Alt. A | Alt. B | Alt. C (Selected) |
-|----------------|--------|--------|-------------------|
-| **Vision Sensor** | Monocular RGB | Stereo RGB | RGB-D |
-| **Camera Placement** | Fixed overhead | Fixed side | Eye-in-hand (wrist) |
-| **Detection Method** | Color segmentation | YOLO | YOLO11 |
-| **Localization** | 2D only | Stereo triangulation | Direct depth back-projection |
-| **Arm DOF** | 3-DOF | 4-DOF | 6-DOF (Braccio) |
-| **Scanning** | Single viewpoint | Single viewpoint | Panoramic 7x3 grid |
-| **Clustering** | None | Pixel-space | World-space complete-linkage |
+**Selected: Eye-in-Hand** — The ability to position the camera at multiple viewpoints and achieve close-up inspection is critical for reliable cotton detection and accurate depth measurement. The stability trade-off is acceptable given the controlled motion during scanning.
 
 ---
 
-## 2.2.3 Decision Matrix
+### Decision Point 3: Depth Sensing Method
 
-> **BRIEF**: Weighted scoring of alternatives against our design criteria.
+Accurate 3D localization requires depth measurement at detected pixel locations. Two primary approaches are available with the eye-in-hand configuration.
 
-### Criteria Weights
+**Option A: RGB-D Camera (Direct Depth)**
+RGB-D cameras provide direct depth measurement at each pixel using structured light projection or time-of-flight sensing. The depth value is read directly from the sensor without additional computation.
 
-| Criterion | Weight | Justification |
-|-----------|--------|---------------|
-| Detection Accuracy | 25% | Critical - false negatives mean missed harvest |
-| Localization Precision | 20% | Need ~1-2cm accuracy for successful grasping |
-| Robustness to Occlusion | 15% | Cotton plants have complex, overlapping geometry |
-| Implementation Complexity | 15% | Senior project timeline constraint |
-| Computational Cost | 10% | Real-time operation required |
-| Scalability | 10% | Future field deployment consideration |
-| Hardware Cost | 5% | Academic budget (~1900 EUR total) |
+**Option B: Stereo Camera Pair (Triangulation)**
+Stereo vision computes depth from disparity between matched features in left and right images. Depth accuracy depends on baseline distance and matching quality.
 
-### Scoring Matrix (1-5 scale, 5 = best)
+**Table 4. Depth Sensing Decision Matrix**
 
-| Criterion | Weight | Alt. A | Alt. B | Alt. C |
-|-----------|--------|--------|--------|--------|
-| Detection Accuracy | 0.25 | 2 | 4 | 5 |
-| Localization Precision | 0.20 | 1 | 3 | 5 |
-| Robustness to Occlusion | 0.15 | 1 | 2 | 4 |
-| Implementation Complexity | 0.15 | 5 | 3 | 2 |
-| Computational Cost | 0.10 | 5 | 3 | 2 |
-| Scalability | 0.10 | 2 | 3 | 4 |
-| Hardware Cost | 0.05 | 5 | 3 | 3 |
-| **Weighted Total** | **1.00** | **2.40** | **3.05** | **3.85** |
+| Criterion | Weight | PDS Ref. | RGB-D | Stereo |
+|-----------|--------|----------|-------|--------|
+| Depth Accuracy at Close Range | 0.31 | QL-01, QL-02 | 5 | 3 |
+| Calibration Simplicity | 0.14 | MA-03 | 5 | 2 |
+| Computational Cost | 0.24 | EN-02 | 5 | 3 |
+| Performance in Texture-less Regions | 0.31 | QL-03 | 4 | 2 |
+| **Weighted Total** | **1.00** | | **4.69** | **2.55** |
+
+**Selected: RGB-D Camera** — Direct depth measurement eliminates stereo calibration complexity and matching errors. The ZED X Mini selected for hardware deployment provides depth accuracy compatible with the ±5mm positioning requirement at the 35cm viewing distance used during cluster inspection.
 
 ---
 
-## 2.2.4 Justification of Selected Approach
+### Decision Point 4: Detection Method
 
-> **BRIEF**: Explain why Alternative C wins despite higher complexity.
+Cotton boll detection converts camera images into bounding boxes identifying target locations. This is the foundation of the perception pipeline.
 
-### Detection Accuracy
-- YOLO11 achieves 0.7+ confidence on cotton bolls in simulation
-- Color segmentation achieves only ~0.3 equivalent accuracy under varying lighting
-- Deep learning generalizes to natural variation in boll appearance
+**Option A: Classical Computer Vision**
+Traditional approaches use color segmentation (HSV thresholding for white cotton), edge detection and blob analysis. These methods are computationally efficient but sensitive to lighting variations.
 
-### Localization Precision
-- RGB-D provides direct depth measurement per pixel
-- Eliminates stereo calibration errors and baseline limitations
-- Achieved ~1-2cm accuracy in validation tests (see Section 2.3.7)
+**Option B: Deep Learning (YOLO)**
+Learning-based detection using convolutional neural networks trained on labeled cotton datasets. YOLO-style architectures provide real-time inference with strong robustness to lighting and background variation [12][22].
 
-### Occlusion Handling
-- Eye-in-hand camera can approach from multiple angles
-- Panoramic scan covers 7x3 grid of viewpoints
-- Partial visibility recovered via camera focus iterations
+**Table 5. Detection Method Decision Matrix**
 
-### ByteTrack Consideration
+| Criterion | Weight | PDS Ref. | Classical CV | YOLO |
+|-----------|--------|----------|--------------|------|
+| Robustness to Lighting Variation | 0.18 | EN-01 | 2 | 5 |
+| Detection Accuracy | 0.23 | QL-03 | 2 | 5 |
+| Handling Complex Backgrounds | 0.41 | QL-03, RL-01 | 2 | 5 |
+| Computational Cost | 0.18 | EN-02 | 5 | 3 |
+| **Weighted Total** | **1.00** | | **2.54** | **4.64** |
 
-> **NOTE**: Initial design considered YOLO + ByteTrack for multi-frame cluster tracking. However, memory buffer issues caused ID instability during testing. We pivoted to world-space 3D clustering using our spatial detection pipeline, which provides more robust cluster identification across scan positions.
+**Selected: YOLO11** — Deep learning detection is essential for achieving the 90% detection accuracy requirement under field-like lighting conditions. The YOLO11 model trained on the Cotton-boll-and-cluster-2 dataset achieves confidence above 0.7 on cotton bolls. GPU inference on the Jetson Orin NX provides real-time performance.
+
+---
+
+### Decision Point 5: Cluster Identification Strategy
+
+During panoramic scanning, the same cotton cluster may be detected from multiple viewpoints. A method is required to identify that these detections correspond to the same physical target.
+
+**Option A: Multi-Frame Tracking (ByteTrack/BoT-SORT)**
+Video-based trackers maintain object identity across frames using motion prediction and appearance features [25][26]. These methods are designed for continuous video streams where objects move smoothly between frames.
+
+**Option B: World-Space 3D Clustering (Custom Pipeline)**
+Each detection is converted to 3D world coordinates using depth and TF transforms. Detections are then clustered based on spatial proximity in world-space, independent of camera motion between scan positions.
+
+**Table 6. Cluster Identification Decision Matrix**
+
+| Criterion | Weight | PDS Ref. | ByteTrack | World-Space 3D |
+|-----------|--------|----------|-----------|----------------|
+| Stability Across Discrete Scan Positions | 0.32 | QL-05 | 2 | 5 |
+| ID Consistency | 0.25 | RL-02 | 3 | 5 |
+| Independence from Frame Rate | 0.32 | QL-04 | 2 | 5 |
+| Implementation Complexity | 0.11 | MF-03 | 4 | 3 |
+| **Weighted Total** | **1.00** | | **2.47** | **4.78** |
+
+**Selected: World-Space 3D Clustering** — Testing with ByteTrack revealed ID instability when the camera moved significantly between scan positions, as the tracker's motion model assumes continuous video with gradual object movement. The world-space approach converts each detection to 3D coordinates and clusters spatially, providing robust identification regardless of camera trajectory.
+
+---
+
+### Decision Point 6: Clustering Algorithm
+
+When grouping detections in world-space, the algorithm choice affects how nearby detections are merged and whether chain-linking artifacts occur.
+
+**Option A: Single-Linkage Clustering**
+A detection joins a cluster if it is within the merge radius of ANY existing member. This can cause chain-linking where distant detections become grouped through intermediate detections.
+
+**Option B: Complete-Linkage Clustering**
+A detection joins a cluster only if it is within the merge radius of ALL existing members. This produces tight, compact clusters without chain-linking artifacts.
+
+**Option C: DBSCAN**
+Density-based clustering identifies clusters as dense regions separated by sparse regions. Requires tuning of epsilon and minimum points parameters.
+
+**Table 7. Clustering Algorithm Decision Matrix**
+
+| Criterion | Weight | PDS Ref. | Single-Link | Complete-Link | DBSCAN |
+|-----------|--------|----------|-------------|---------------|--------|
+| Cluster Compactness | 0.25 | QL-05 | 2 | 5 | 4 |
+| Resistance to Chain-Linking | 0.46 | QL-05, RL-02 | 1 | 5 | 4 |
+| Simplicity | 0.09 | MF-03 | 5 | 4 | 3 |
+| Parameter Sensitivity | 0.20 | RL-02 | 4 | 4 | 2 |
+| **Weighted Total** | **1.00** | | **2.21** | **4.71** | **3.51** |
+
+**Selected: Complete-Linkage Clustering** — Initial testing with single-linkage produced chain-linking artifacts where separate clusters were incorrectly merged. Complete-linkage ensures that all members of a cluster are within the merge radius of each other, producing physically meaningful groupings. The merge radius of 0.121m (25% of minimum inter-cluster distance) ensures bolls on the same plant group together while separate plants remain distinct.
+
+---
+
+### Decision Point 7: Motion Planning
+
+Motion planning determines how the arm moves between positions and approaches targets while avoiding collisions and respecting joint limits.
+
+**Option A: Direct Joint Interpolation**
+Joint angles are interpolated linearly between start and goal configurations. Simple to implement but provides no collision checking or Cartesian path control.
+
+**Option B: MoveIt2 with OMPL**
+MoveIt2 provides a complete motion planning framework with collision checking, multiple planner options (OMPL library) and Cartesian path planning [19]. Integrates with ROS2 and ros2_control.
+
+**Option C: Custom IK Solver**
+Inverse kinematics computed analytically or numerically for specific arm geometry. Provides direct control but requires custom collision checking implementation.
+
+**Table 8. Motion Planning Decision Matrix**
+
+| Criterion | Weight | PDS Ref. | Joint Interp. | MoveIt2 | Custom IK |
+|-----------|--------|----------|---------------|---------|-----------|
+| Collision Avoidance | 0.37 | SF-02, SF-03 | 1 | 5 | 3 |
+| Cartesian Path Control | 0.30 | QL-01 | 1 | 5 | 4 |
+| Integration with ROS2 | 0.10 | MF-03 | 3 | 5 | 2 |
+| Computational Overhead | 0.23 | EN-02 | 5 | 3 | 4 |
+| **Weighted Total** | **1.00** | | **2.12** | **4.54** | **3.43** |
+
+**Selected: MoveIt2 with OMPL** — Collision avoidance is critical for safe operation in the cluttered mock field environment. MoveIt2 provides planning scene management, multiple planner algorithms and seamless integration with the ROS2 ecosystem. The computational overhead is acceptable given the non-time-critical nature of arm repositioning during scanning.
+
+---
+
+### Decision Point 8: Manipulator Configuration
+
+The manipulator must provide sufficient reach to cover the mock field while enabling approach trajectories that avoid plant obstacles.
+
+**Option A: 4-DOF Arm**
+Four degrees of freedom (base rotation, shoulder, elbow, wrist) provide basic positioning capability but limit approach angle flexibility.
+
+**Option B: 6-DOF Arm (Braccio)**
+Six degrees of freedom enable full position and orientation control of the end-effector, allowing the gripper to approach targets from arbitrary angles.
+
+**Table 9. Manipulator Configuration Decision Matrix**
+
+| Criterion | Weight | PDS Ref. | 4-DOF | 6-DOF |
+|-----------|--------|----------|-------|-------|
+| Approach Trajectory Flexibility | 0.29 | QL-05 | 2 | 5 |
+| Workspace Coverage | 0.23 | SR-01, SR-02 | 3 | 4 |
+| Obstacle Avoidance Capability | 0.35 | SF-03 | 2 | 5 |
+| Mechanical Simplicity | 0.13 | MA-01 | 5 | 3 |
+| **Weighted Total** | **1.00** | | **2.62** | **4.51** |
+
+**Selected: 6-DOF Braccio Arm** — The additional degrees of freedom enable approach trajectories that avoid plant obstacles while positioning the gripper optimally for cotton extraction. The Braccio arm provides 520mm+ reach satisfying requirement SR-01 and has existing ROS2/MoveIt integration from the EI_Pick_n_Place reference implementation.
+
+---
+
+### Decision Point 9: Gripper Design
+
+The gripper must reliably grasp cotton bolls without damaging the plant or losing the picked material during transfer.
+
+**Option A: Parallel Jaw Gripper**
+Two opposing fingers close to grasp the target. Simple, reliable and provides controlled grip force. Requires 50-60mm opening for cotton boll clusters.
+
+**Option B: Vacuum/Suction End-Effector**
+Suction cups or vacuum nozzles pick up material through negative pressure. Works well for flat surfaces but cotton's fibrous texture may reduce seal effectiveness.
+
+**Option C: Multi-Finger Adaptive Gripper**
+Compliant fingers conform to irregular object shapes. Higher cost and complexity but better adaptation to variable boll geometry.
+
+**Table 10. Gripper Design Decision Matrix**
+
+| Criterion | Weight | PDS Ref. | Parallel Jaw | Vacuum | Multi-Finger |
+|-----------|--------|----------|--------------|--------|--------------|
+| Reliability on Fibrous Material | 0.31 | QL-05 | 4 | 2 | 4 |
+| Simplicity & Cost | 0.28 | MC-01, MF-01 | 5 | 4 | 2 |
+| Grip Security During Transfer | 0.31 | QL-05 | 4 | 2 | 5 |
+| 3D Printability | 0.10 | MF-01 | 5 | 3 | 3 |
+| **Weighted Total** | **1.00** | | **4.38** | **2.66** | **3.65** |
+
+**Selected: Parallel Jaw Gripper** — The parallel jaw design provides reliable grasping of cotton bolls with controlled force. The 50-60mm opening requirement (SR-04) is achievable with servo-driven fingers. Components can be 3D printed as specified in MF-01. The Braccio arm includes a compatible gripper base.
+
+---
+
+### Decision Point 10: Reservoir Design
+
+The reservoir collects harvested cotton bolls and must support easy emptying by the operator without tools.
+
+**Option A: Fixed Integrated Bin**
+The collection bin is permanently attached to the platform. Cotton is removed by reaching into the bin or inverting the entire unit.
+
+**Option B: Removable Drop-In Bin**
+A separate container drops into a receptacle and lifts out for emptying. Supports tool-free removal as required by ER-03.
+
+**Option C: Conveyor to External Container**
+A conveyor belt transfers cotton to a separate collection point. Adds mechanical complexity and potential failure modes.
+
+**Table 11. Reservoir Design Decision Matrix**
+
+| Criterion | Weight | PDS Ref. | Fixed | Removable | Conveyor |
+|-----------|--------|----------|-------|-----------|----------|
+| Tool-Free Removal (<15s) | 0.11 | ER-03 | 1 | 5 | 3 |
+| Simplicity | 0.17 | MF-02 | 4 | 5 | 1 |
+| Capacity (300g cotton) | 0.44 | SR-03, WT-02 | 4 | 4 | 5 |
+| Cost | 0.28 | MC-03 | 5 | 4 | 2 |
+| **Weighted Total** | **1.00** | | **3.95** | **4.28** | **3.26** |
+
+**Selected: Removable Drop-In Bin** — The flip-top reservoir bin meets the 15×15×15cm dimension requirement (SR-03) and enables tool-free removal in under 15 seconds (ER-03). The design supports operator ergonomics during demo operation.
+
+---
+
+### Decision Point 11: Operator Interface
+
+The operator interface enables human supervision and control of the autonomous harvesting system. During demonstrations and field operation, operators need real-time visibility into system state and the ability to intervene when necessary.
+
+**Option A: Web-Based Dashboard**
+A browser-accessible interface built with modern web technologies (React, Vue or plain HTML/CSS/JS). The dashboard connects to the ROS2 system via rosbridge websocket protocol, displaying real-time state, metrics and providing control buttons. Accessible from any device with a web browser.
+
+**Option B: No Dedicated Interface (Command Line Only)**
+System operation relies entirely on ROS2 command-line tools (ros2 topic, ros2 service) and terminal outputs. Suitable for development but requires technical expertise and provides limited situational awareness during demonstrations.
+
+**Table 12. Operator Interface Decision Matrix**
+
+| Criterion | Weight | PDS Ref. | Web Dashboard | CLI Only |
+|-----------|--------|----------|---------------|----------|
+| Operator Usability | 0.20 | ER-01 | 5 | 1 |
+| Real-time Status Visibility | 0.20 | ER-01, ER-02 | 5 | 2 |
+| Cross-Platform Accessibility | 0.30 | MF-03 | 5 | 3 |
+| Implementation Complexity | 0.30 | MF-02 | 3 | 5 |
+| **Weighted Total** | **1.00** | | **4.40** | **3.00** |
+
+**Selected: Web-Based Dashboard** — The RoboCot monitoring application provides intuitive control through START/PAUSE/EMERGENCY buttons (ER-01), color-coded status indicators visible at a glance (ER-02) and real-time ML confidence visualization. The web-based approach enables monitoring from mobile devices without requiring software installation, supporting flexible operator positioning during demonstrations.
+
+---
+
+## 2.2.3 Decision Criteria and Weights
+
+The criteria weights used in each decision matrix are derived from the Binary Dominance Matrix established in Section 2.1. The BDM pairwise comparison yielded the following priority ranking: Safety (16.67%), Standards (15.15%), Quality (13.64%), Size Restriction (10.61%), Reliability (10.61%), Environment (10.61%), Material Cost (7.58%), Maintenance (6.06%), Manufacturing Cost (4.55%), Ergonomics (3.03%), Weight (1.52%) and Aesthetic (0.00%). Each decision matrix applies weights proportional to the relevant PDS criteria for that specific design choice, as indicated by the PDS Reference column in Tables 2-12.
+
+## 2.2.4 Final System Configuration
+
+**Table 13. Selected Components Summary**
+
+| Decision Point | Selected Option | Weighted Score | Key Justification |
+|----------------|-----------------|----------------|-------------------|
+| Software Framework | ROS2 | 4.52 | Best tool integration, modularity and support |
+| Camera Placement | Eye-in-Hand (Wrist) | 4.42 | Enables multi-angle inspection and close-up viewing |
+| Depth Sensing | RGB-D Camera | 4.69 | Direct depth eliminates stereo calibration errors |
+| Detection Method | YOLO11 | 4.64 | Robust detection under varying lighting conditions |
+| Cluster Identification | World-Space 3D Clustering | 4.78 | Stable across discrete scan positions |
+| Clustering Algorithm | Complete-Linkage | 4.71 | Prevents chain-linking artifacts |
+| Motion Planning | MoveIt2 with OMPL | 4.54 | Collision avoidance and Cartesian path support |
+| Manipulator | 6-DOF Braccio Arm | 4.51 | Flexible approach trajectories, sufficient reach |
+| Gripper | Parallel Jaw | 4.38 | Reliable on fibrous material, 3D printable |
+| Reservoir | Removable Drop-In Bin | 4.28 | Tool-free removal, ergonomic operation |
+| Operator Interface | Web-Based Dashboard | 4.40 | Intuitive control, real-time visibility, cross-platform |
+
+The selected components integrate into a coherent system architecture where ROS2 provides the communication backbone, YOLO11 detection feeds into the world-space clustering pipeline, MoveIt2 plans collision-free motions for the 6-DOF arm and the parallel gripper executes picks depositing cotton into the removable reservoir. The web-based operator dashboard provides real-time monitoring and control capability. Section 2.3 provides detailed design specifications for each selected component and their integration.
 
 ---
 
