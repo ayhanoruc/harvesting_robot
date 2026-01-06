@@ -6,7 +6,7 @@ The design integrates ROS2 software architecture, 6-DOF manipulator kinematics, 
 
 The RoboCot system is built on ROS2 Humble with Gazebo Ignition Fortress for simulation [18][19]. The modular architecture consists of nine ROS2 packages organized by functionality, enabling independent development and testing of each subsystem.
 
-**[Figure 1: RoboCot System Architecture Overview]** *(robocot_system_architecture.jpg)*
+*(See Appendix Figure 1: RoboCot System Architecture Overview)*
 
 ### Package Overview
 
@@ -25,22 +25,9 @@ Table 9 lists core packages and their responsibilities.
 
 The architecture follows a hierarchical pattern: low-level nodes (robot_state_publisher, arm_controller) provide hardware abstraction while high-level nodes (explorer, spatial_detection_pipeline) implement application logic (Figure 2).
 
-**[Figure 2: Node Interaction Diagram showing Gazebo simulation, ros2_control interface, vision pipeline nodes and their interconnections via topics and services]**
+*(See Appendix Figure 2: Node Interaction Diagram)*
 
-**Orchestrator State Machine:** The explorer node implements a finite state machine for systematic field scanning:
-
-```
-IDLE ─► SCANNING ─┬─► MOVING (to next grid position)
-                  │         │
-                  │         ▼
-                  └── CAPTURING (pause, run detection pipeline)
-                            │
-                            ▼
-                   [repeat for 21 positions]
-                            │
-                            ▼
-                  COMPLETE ─► IDLE
-```
+**Orchestrator State Machine:** IDLE → DETECTING_CLUSTERS → CLUSTER_VIEW_POSITION → DETECTING_BOLLS → HARVESTING → TRANSFERRING → CLUSTER_COMPLETE → (next cluster or IDLE)
 
 The system employs ROS2 topics for continuous data streams and services for request-response interactions [18]. See **Appendix Tables 18-19** for complete topic and service listings.
 
@@ -48,7 +35,7 @@ The system employs ROS2 topics for continuous data streams and services for requ
 
 Each processing stage is implemented as an independent ROS2 node, enabling parallel development and debugging through intermediate topic inspection (Figure 3).
 
-**[Figure 3: Data Flow Pipeline diagram showing: RGB Image → YOLO Detection → Pixel Center → Camera Focus → Depth Lookup → Back-Projection → TF Transform → World-Space Clustering → TrackedCluster output]**
+*(See Appendix Figure 3: Data Flow Pipeline)*
 
 ---
 
@@ -93,7 +80,9 @@ The eye-in-hand camera is simulated using Gazebo's rgbd_camera sensor plugin, co
 
 The camera follows the standard pinhole projection model [21] (Figure 6). The intrinsic matrix K encapsulates internal parameters:
 
-**[Figure 6: Pinhole Camera Model]** *(pinhole.png, ref: [21])*
+<img src="pinhole.png" alt="Figure 6: Pinhole Camera Model" width="50%">
+
+*Figure 6: Pinhole Camera Model [21]*
 
 **Equation 1. Camera Intrinsic Matrix**
 
@@ -209,7 +198,9 @@ Effective cluster detection requires systematically viewing the field from multi
 
 Scan positions are visited in a snake (boustrophedon) pattern minimizing total joint travel (Figure 10).
 
-**[Figure 10: Panoramic Scan Pattern showing the 7×3 grid with snake traversal arrows, camera FOV cones at each position and cluster locations in the field]**
+<img src="figures/figure_10_snake_pattern.svg" alt="Figure 10: Panoramic Scan Pattern" width="60%">
+
+*Figure 10: Panoramic Scan Pattern (7×3 grid with snake traversal)*
 
 
 **Traversal Order:**
@@ -373,39 +364,16 @@ The XY positioning accuracy of sub-centimeter meets the precision grasping requi
 
 ## 2.3.8 Operator Interface
 
-The web-based dashboard provides real-time monitoring and control, designed per ergonomic requirements (ER-01, ER-02) in Section 2.1.
+The web-based dashboard provides real-time monitoring and control per ergonomic requirements ER-01/ER-02.
 
-### Design Requirements
+**[Figure 14: RoboCot App Interface]** — Components: color-coded status banner, session metrics (bolls harvested, success rate), ML confidence display, 5-step pipeline flow, timestamped alerts, control panel.
 
-| Requirement | Implementation |
-|-------------|----------------|
-| ER-01: GUI start/stop/pause | Control panel with labeled buttons |
-| ER-02: Visual state indication | Color-coded status banner (Green/Yellow/Orange/Red) |
-| Real-time feedback | ML confidence bar, harvest count, reservoir fill |
-| Error visibility | Alerts section with timestamps |
-
-### User Interface Layout
-
-**[Figure 14: RoboCot App Interface with annotated components]**
-
-**Components:** Status Banner (top, color-coded state), Session Metrics (bolls harvested, success rate %), Current Operation (state + ML confidence), Pipeline Flow (5-step progress), Alerts Section (timestamped log), Control Panel (START, PAUSE, SKIP, EMERGENCY STOP).
-
-### Harvester State Machine
-
-**[Figure 15: Harvester State Machine Diagram]**
-
-**States:** IDLE → DETECTING_CLUSTERS → CLUSTER_VIEW_POSITION → DETECTING_BOLLS → HARVESTING → TRANSFERRING → COMPRESSION → CLUSTER_COMPLETE → (next cluster or IDLE)
-
-### Control Panel
-
-| Button | Behavior |
-|--------|----------|
-| START/RESUME | Begin scan or resume from pause |
-| PAUSE | Complete current motion, hold position |
-| SKIP CLUSTER | Mark skipped, proceed to next |
-| EMERGENCY STOP | Halt all motion, engage brakes, return to HOME |
-
-**Emergency Stop:** Immediate velocity=0 → engage brakes → controlled return to HOME → requires manual START to resume.
+| Control | Behavior | Requirement |
+|---------|----------|-------------|
+| START/RESUME | Begin or resume operation | ER-01 |
+| PAUSE | Complete current motion, hold | ER-01 |
+| SKIP CLUSTER | Mark skipped, proceed to next | ER-01 |
+| EMERGENCY STOP | Halt → brakes → return HOME → manual restart | ER-02 |
 
 ---
 
@@ -413,7 +381,27 @@ The web-based dashboard provides real-time monitoring and control, designed per 
 
 ### Appendix:
 
+---
 
+#### Appendix Figures (Full Size)
+
+<img src="robocot_system_architecture.jpg" alt="Figure 1: RoboCot System Architecture Overview" width="100%">
+
+*Figure 1: RoboCot System Architecture Overview*
+
+---
+
+<img src="figures/figure_02_node_interaction.svg" alt="Figure 2: Node Interaction Diagram" width="100%">
+
+*Figure 2: Node Interaction Diagram showing Gazebo simulation, ros2_control interface, vision pipeline nodes and their interconnections via topics and services*
+
+---
+
+<img src="figures/figure_03_data_flow.svg" alt="Figure 3: Data Flow Pipeline" width="100%">
+
+*Figure 3: Data Flow Pipeline — RGB Image → YOLO Detection → Pixel Center → Camera Focus → Depth Lookup → Back-Projection → TF Transform → World-Space Clustering → TrackedCluster output*
+
+---
 
 **Table 18. Primary ROS2 Topics** 
 
