@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 520" font-family="Consolas, monospace" font-size="11">
+  <!-- Background -->
+  <rect width="750" height="520" fill="white"/>
+
+  <!-- Title -->
+  <text x="375" y="20" text-anchor="middle" font-size="14" font-weight="bold">Figure 2: Node Interaction Architecture</text>
+
+  <!-- Arrow marker definitions with fixed orientations -->
+  <defs>
+    <marker id="arrow-down" markerWidth="10" markerHeight="10" refX="5" refY="10" orient="0">
+      <polygon points="0 0, 10 0, 5 10" fill="#333"/>
+    </marker>
+    <marker id="arrow-up" markerWidth="10" markerHeight="10" refX="5" refY="0" orient="0">
+      <polygon points="0 10, 10 10, 5 0" fill="#333"/>
+    </marker>
+    <marker id="arrow-right" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="0">
+      <polygon points="0 0, 10 5, 0 10" fill="#333"/>
+    </marker>
+  </defs>
+
+  <!-- ==================== LEVEL 0: bot.launch.py ==================== -->
+  <g>
+    <rect x="250" y="40" width="250" height="45" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+    <text x="375" y="58" text-anchor="middle" font-weight="bold" fill="#1e40af">bot.launch.py</text>
+    <text x="375" y="74" text-anchor="middle" fill="#1e40af" font-size="10">(Gazebo Sim + ros2_control)</text>
+  </g>
+
+  <!-- Vertical line from bot.launch.py -->
+  <line x1="375" y1="85" x2="375" y2="105" stroke="#333" stroke-width="1.5"/>
+
+  <!-- Horizontal branch line -->
+  <line x1="120" y1="105" x2="630" y2="105" stroke="#333" stroke-width="1.5"/>
+
+  <!-- Three vertical lines down to Level 1 -->
+  <line x1="120" y1="105" x2="120" y2="125" stroke="#333" stroke-width="1.5" marker-end="url(#arrow-down)"/>
+  <line x1="375" y1="105" x2="375" y2="125" stroke="#333" stroke-width="1.5" marker-end="url(#arrow-down)"/>
+  <line x1="630" y1="105" x2="630" y2="125" stroke="#333" stroke-width="1.5" marker-end="url(#arrow-down)"/>
+
+  <!-- ==================== LEVEL 1: Three nodes ==================== -->
+  <!-- robot_state_publisher -->
+  <g>
+    <rect x="30" y="130" width="180" height="70" rx="4" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="120" y="148" text-anchor="middle" font-weight="bold" fill="#15803d">robot_state_publisher</text>
+    <text x="120" y="165" text-anchor="middle" fill="#166534" font-size="10">→ /tf</text>
+    <text x="120" y="180" text-anchor="middle" fill="#166534" font-size="10">→ /robot_description</text>
+  </g>
+
+  <!-- arm_controller -->
+  <g>
+    <rect x="285" y="130" width="180" height="70" rx="4" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="375" y="148" text-anchor="middle" font-weight="bold" fill="#15803d">arm_controller</text>
+    <text x="375" y="165" text-anchor="middle" fill="#166534" font-size="10">(JointTrajectory)</text>
+    <text x="375" y="180" text-anchor="middle" fill="#166534" font-size="10">← joint_traj → /joint_states</text>
+  </g>
+
+  <!-- landmark_publisher -->
+  <g>
+    <rect x="540" y="130" width="180" height="70" rx="4" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="630" y="148" text-anchor="middle" font-weight="bold" fill="#15803d">landmark_publisher</text>
+    <text x="630" y="165" text-anchor="middle" fill="#166534" font-size="10">→ /tf (static)</text>
+    <text x="630" y="180" text-anchor="middle" fill="#166534" font-size="10">→ /collision_objects</text>
+  </g>
+
+  <!-- ==================== Connection: Level 2 to arm_controller ==================== -->
+  <!-- Vertical line up to arm_controller with arrow at TOP -->
+  <line x1="375" y1="200" x2="375" y2="235" stroke="#333" stroke-width="1.5" marker-start="url(#arrow-up)"/>
+
+  <!-- "Trajectory commands" label -->
+  <text x="385" y="222" fill="#666" font-size="9" font-style="italic">Trajectory commands</text>
+
+  <!-- Horizontal branch line for Level 2 -->
+  <line x1="120" y1="245" x2="630" y2="245" stroke="#333" stroke-width="1.5"/>
+
+  <!-- Vertical line connecting branch to trajectory arrow -->
+  <line x1="375" y1="235" x2="375" y2="245" stroke="#333" stroke-width="1.5"/>
+
+  <!-- Three vertical lines DOWN from branch to Level 2 nodes -->
+  <line x1="120" y1="245" x2="120" y2="260" stroke="#333" stroke-width="1.5"/>
+  <line x1="375" y1="245" x2="375" y2="260" stroke="#333" stroke-width="1.5"/>
+  <line x1="630" y1="245" x2="630" y2="260" stroke="#333" stroke-width="1.5"/>
+
+  <!-- ==================== LEVEL 2: Three nodes ==================== -->
+  <!-- explorer -->
+  <g>
+    <rect x="30" y="260" width="180" height="70" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+    <text x="120" y="278" text-anchor="middle" font-weight="bold" fill="#b45309">explorer</text>
+    <text x="120" y="295" text-anchor="middle" fill="#92400e" font-size="10">/panoramic_scan</text>
+    <text x="120" y="310" text-anchor="middle" fill="#92400e" font-size="10">/start_scan</text>
+  </g>
+
+  <!-- camera_focus -->
+  <g>
+    <rect x="285" y="260" width="180" height="55" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+    <text x="375" y="283" text-anchor="middle" font-weight="bold" fill="#b45309">camera_focus</text>
+    <text x="375" y="300" text-anchor="middle" fill="#92400e" font-size="10">/center_on_pixel</text>
+  </g>
+
+  <!-- arm_commander -->
+  <g>
+    <rect x="540" y="260" width="180" height="55" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+    <text x="630" y="283" text-anchor="middle" font-weight="bold" fill="#b45309">arm_commander</text>
+    <text x="630" y="300" text-anchor="middle" fill="#92400e" font-size="10">(MoveIt client)</text>
+  </g>
+
+  <!-- Horizontal arrow: explorer → camera_focus -->
+  <line x1="210" y1="287" x2="283" y2="287" stroke="#333" stroke-width="1.5" marker-end="url(#arrow-right)"/>
+
+  <!-- ==================== Connection: explorer to spatial_detection_pipeline ==================== -->
+  <line x1="120" y1="330" x2="120" y2="360" stroke="#333" stroke-width="1.5"/>
+
+  <!-- "Calls detection at each position" label -->
+  <text x="130" y="350" fill="#666" font-size="9" font-style="italic">Calls detection at each position</text>
+
+  <line x1="120" y1="360" x2="120" y2="375" stroke="#333" stroke-width="1.5" marker-end="url(#arrow-down)"/>
+
+  <!-- ==================== LEVEL 3: spatial_detection_pipeline ==================== -->
+  <g>
+    <rect x="30" y="380" width="550" height="50" rx="4" fill="#fae8ff" stroke="#a855f7" stroke-width="2"/>
+    <text x="305" y="400" text-anchor="middle" font-weight="bold" fill="#7e22ce">spatial_detection_pipeline</text>
+    <text x="305" y="418" text-anchor="middle" fill="#7e22ce" font-size="10">/detection/run_at_position, /detection/validate, /detection/clear</text>
+  </g>
+
+  <!-- ==================== Connection: spatial_detection_pipeline to Level 4 ==================== -->
+  <!-- Two vertical lines down -->
+  <line x1="180" y1="430" x2="180" y2="455" stroke="#333" stroke-width="1.5" marker-end="url(#arrow-down)"/>
+  <line x1="430" y1="430" x2="430" y2="455" stroke="#333" stroke-width="1.5" marker-end="url(#arrow-down)"/>
+
+  <!-- ==================== LEVEL 4: Two detector nodes ==================== -->
+  <!-- real_yolo_detector -->
+  <g>
+    <rect x="70" y="460" width="180" height="55" rx="4" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+    <text x="160" y="478" text-anchor="middle" font-weight="bold" fill="#b91c1c">real_yolo_detector</text>
+    <text x="160" y="493" text-anchor="middle" fill="#991b1b" font-size="10">/yolo/detect</text>
+    <text x="160" y="506" text-anchor="middle" fill="#991b1b" font-size="10">← /camera/color/image_raw</text>
+  </g>
+
+  <!-- depth_processor -->
+  <g>
+    <rect x="320" y="460" width="180" height="55" rx="4" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+    <text x="410" y="478" text-anchor="middle" font-weight="bold" fill="#b91c1c">depth_processor</text>
+    <text x="410" y="493" text-anchor="middle" fill="#991b1b" font-size="10">/pixel_to_3d</text>
+    <text x="410" y="506" text-anchor="middle" fill="#991b1b" font-size="10">← /camera/depth, /tf</text>
+  </g>
+
+  <!-- ==================== Legend ==================== -->
+  <g transform="translate(580, 380)">
+    <rect x="0" y="0" width="140" height="130" rx="4" fill="#f9fafb" stroke="#d1d5db" stroke-width="1"/>
+    <text x="70" y="18" text-anchor="middle" font-weight="bold" font-size="10" fill="#374151">Legend</text>
+
+    <rect x="10" y="28" width="20" height="12" fill="#dbeafe" stroke="#2563eb" stroke-width="1"/>
+    <text x="38" y="38" font-size="9" fill="#333">Launch file</text>
+
+    <rect x="10" y="48" width="20" height="12" fill="#f0fdf4" stroke="#16a34a" stroke-width="1"/>
+    <text x="38" y="58" font-size="9" fill="#333">Hardware abstraction</text>
+
+    <rect x="10" y="68" width="20" height="12" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
+    <text x="38" y="78" font-size="9" fill="#333">Application logic</text>
+
+    <rect x="10" y="88" width="20" height="12" fill="#fae8ff" stroke="#a855f7" stroke-width="1"/>
+    <text x="38" y="98" font-size="9" fill="#333">Pipeline orchestrator</text>
+
+    <rect x="10" y="108" width="20" height="12" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
+    <text x="38" y="118" font-size="9" fill="#333">Vision processing</text>
+  </g>
+</svg>

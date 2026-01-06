@@ -1,0 +1,178 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 940" font-family="Consolas, monospace" font-size="11">
+  <!-- Background -->
+  <rect width="720" height="940" fill="white"/>
+
+  <!-- Arrow marker definitions -->
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-down" markerWidth="8" markerHeight="8" refX="4" refY="8" orient="0">
+      <polygon points="0 0, 8 0, 4 8" fill="#2563eb"/>
+    </marker>
+  </defs>
+
+  <!-- ==================== TITLE BOX ==================== -->
+  <rect x="40" y="15" width="640" height="40" rx="3" fill="#f0f4f8" stroke="#333" stroke-width="1.5"/>
+  <text x="360" y="40" text-anchor="middle" font-size="13" font-weight="bold">DETECTION PIPELINE (per scan position)</text>
+
+  <!-- ==================== STEP 1: YOLO Detection ==================== -->
+  <text x="40" y="85" font-weight="bold" fill="#2563eb">Step 1: YOLO Detection</text>
+
+  <!-- Input box -->
+  <rect x="40" y="95" width="140" height="72" rx="3" fill="#e8f4e8" stroke="#333" stroke-width="1"/>
+  <text x="110" y="113" text-anchor="middle">RGB Image</text>
+  <text x="110" y="127" text-anchor="middle">640x480</text>
+  <text x="110" y="141" text-anchor="middle" font-size="10">/camera/color/</text>
+  <text x="110" y="155" text-anchor="middle" font-size="10">image_raw</text>
+
+  <!-- Arrow 1→2 -->
+  <line x1="180" y1="131" x2="218" y2="131" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Process box -->
+  <rect x="220" y="95" width="140" height="72" rx="3" fill="#fff8e8" stroke="#333" stroke-width="1"/>
+  <text x="290" y="113" text-anchor="middle" font-weight="bold">real_yolo_</text>
+  <text x="290" y="127" text-anchor="middle" font-weight="bold">detector</text>
+  <text x="290" y="141" text-anchor="middle" font-size="10">(best.pt)</text>
+  <text x="290" y="155" text-anchor="middle" font-size="10">conf ≥ 0.7</text>
+
+  <!-- Arrow 2→3 -->
+  <line x1="360" y1="131" x2="398" y2="131" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Output box -->
+  <rect x="400" y="95" width="200" height="72" rx="3" fill="#e8f0f8" stroke="#333" stroke-width="1"/>
+  <text x="500" y="113" text-anchor="middle">BoundingBox[]</text>
+  <text x="500" y="127" text-anchor="middle" font-size="10">u_min, v_min, u_max, v_max</text>
+  <text x="500" y="141" text-anchor="middle" font-size="10">confidence, label</text>
+  <text x="500" y="155" text-anchor="middle" font-size="10">"cotton_boll"</text>
+
+  <!-- Vertical arrow down -->
+  <line x1="500" y1="167" x2="500" y2="195" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-down)"/>
+
+  <!-- ==================== STEP 2: Pixel Center Extraction ==================== -->
+  <text x="40" y="220" font-weight="bold" fill="#2563eb">Step 2: Pixel Center Extraction</text>
+
+  <!-- Single output box (right-aligned like ASCII) -->
+  <rect x="400" y="200" width="200" height="44" rx="3" fill="#e8f0f8" stroke="#333" stroke-width="1"/>
+  <text x="500" y="220" text-anchor="middle" font-size="10">center = (u_min+u_max)/2,</text>
+  <text x="500" y="236" text-anchor="middle" font-size="10">         (v_min+v_max)/2</text>
+
+  <!-- Vertical arrow down -->
+  <line x1="500" y1="244" x2="500" y2="272" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-down)"/>
+
+  <!-- ==================== STEP 3: Camera Focus ==================== -->
+  <text x="40" y="295" font-weight="bold" fill="#2563eb">Step 3: Camera Focus</text>
+  <text x="205" y="295" fill="#666" font-size="10">(optional, 1-2 iterations)</text>
+
+  <!-- Input box -->
+  <rect x="40" y="305" width="140" height="44" rx="3" fill="#e8f4e8" stroke="#333" stroke-width="1"/>
+  <text x="110" y="323" text-anchor="middle">Pixel error</text>
+  <text x="110" y="339" text-anchor="middle" font-size="10">(u-320, v-240)</text>
+
+  <!-- Arrow -->
+  <line x1="180" y1="327" x2="218" y2="327" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Process box -->
+  <rect x="220" y="305" width="140" height="44" rx="3" fill="#fff8e8" stroke="#333" stroke-width="1"/>
+  <text x="290" y="323" text-anchor="middle" font-weight="bold">camera_focus</text>
+  <text x="290" y="339" text-anchor="middle" font-size="10">Adjust joints</text>
+
+  <!-- Arrow -->
+  <line x1="360" y1="327" x2="398" y2="327" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Output box -->
+  <rect x="400" y="305" width="200" height="44" rx="3" fill="#e8f0f8" stroke="#333" stroke-width="1"/>
+  <text x="500" y="323" text-anchor="middle" font-size="10">Arm moves to center target</text>
+  <text x="500" y="339" text-anchor="middle" font-size="10">in camera view</text>
+
+  <!-- Vertical arrow down -->
+  <line x1="500" y1="349" x2="500" y2="387" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-down)"/>
+
+  <!-- ==================== STEP 4: Depth Lookup + Back-Projection ==================== -->
+  <text x="40" y="410" font-weight="bold" fill="#2563eb">Step 4: Depth Lookup + Back-Projection</text>
+
+  <!-- Input box (taller) -->
+  <rect x="40" y="420" width="140" height="100" rx="3" fill="#e8f4e8" stroke="#333" stroke-width="1"/>
+  <text x="110" y="442" text-anchor="middle">Depth Image</text>
+  <text x="110" y="458" text-anchor="middle" font-size="10">640x480 32FC1</text>
+  <text x="110" y="474" text-anchor="middle" font-size="10">/camera/depth/</text>
+  <text x="110" y="490" text-anchor="middle" font-size="10">image_raw</text>
+
+  <!-- Arrow -->
+  <line x1="180" y1="470" x2="218" y2="470" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Process box -->
+  <rect x="220" y="420" width="140" height="100" rx="3" fill="#fff8e8" stroke="#333" stroke-width="1"/>
+  <text x="290" y="442" text-anchor="middle" font-weight="bold">depth_processor</text>
+  <text x="290" y="460" text-anchor="middle" font-size="10"></text>
+  <text x="290" y="474" text-anchor="middle" font-size="10">Back-project:</text>
+  <text x="290" y="488" text-anchor="middle" font-size="10">K matrix</text>
+  <text x="290" y="502" text-anchor="middle" font-size="10">fx=fy=277</text>
+  <text x="290" y="516" text-anchor="middle" font-size="10">cx=320, cy=240</text>
+
+  <!-- Arrow -->
+  <line x1="360" y1="470" x2="398" y2="470" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Output box -->
+  <rect x="400" y="420" width="200" height="100" rx="3" fill="#e8f0f8" stroke="#333" stroke-width="1"/>
+  <text x="500" y="442" text-anchor="middle">Point in camera frame</text>
+  <text x="500" y="462" text-anchor="middle" font-size="10"></text>
+  <text x="500" y="478" text-anchor="middle" font-size="10">X = (u - cx) * Z / fx</text>
+  <text x="500" y="494" text-anchor="middle" font-size="10">Y = (v - cy) * Z / fy</text>
+  <text x="500" y="510" text-anchor="middle" font-size="10">Z = depth</text>
+
+  <!-- Vertical arrow down -->
+  <line x1="500" y1="520" x2="500" y2="558" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-down)"/>
+
+  <!-- ==================== STEP 5: TF Transform ==================== -->
+  <text x="40" y="580" font-weight="bold" fill="#2563eb">Step 5: TF Transform</text>
+  <text x="175" y="580" fill="#666" font-size="10">(camera_optical_frame → world)</text>
+
+  <!-- Input box -->
+  <rect x="40" y="590" width="140" height="56" rx="3" fill="#e8f4e8" stroke="#333" stroke-width="1"/>
+  <text x="110" y="612" text-anchor="middle">Point in</text>
+  <text x="110" y="628" text-anchor="middle">camera frame</text>
+
+  <!-- Arrow -->
+  <line x1="180" y1="618" x2="218" y2="618" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Process box -->
+  <rect x="220" y="590" width="140" height="56" rx="3" fill="#fff8e8" stroke="#333" stroke-width="1"/>
+  <text x="290" y="608" text-anchor="middle" font-weight="bold">tf2_ros</text>
+  <text x="290" y="624" text-anchor="middle" font-size="10">lookup_</text>
+  <text x="290" y="638" text-anchor="middle" font-size="10">transform</text>
+
+  <!-- Arrow -->
+  <line x1="360" y1="618" x2="398" y2="618" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Output box -->
+  <rect x="400" y="590" width="200" height="56" rx="3" fill="#e8f0f8" stroke="#333" stroke-width="1"/>
+  <text x="500" y="612" text-anchor="middle">Point in world frame</text>
+  <text x="500" y="630" text-anchor="middle" font-size="10">(x, y, z) meters</text>
+
+  <!-- Vertical arrow down -->
+  <line x1="500" y1="646" x2="500" y2="684" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-down)"/>
+
+  <!-- ==================== STEP 6: World-Space Clustering ==================== -->
+  <text x="40" y="707" font-weight="bold" fill="#2563eb">Step 6: World-Space Clustering</text>
+  <text x="260" y="707" fill="#666" font-size="10">(complete-linkage)</text>
+
+  <!-- Full-width pseudocode box -->
+  <rect x="40" y="717" width="640" height="125" rx="3" fill="#f8f4ff" stroke="#333" stroke-width="1"/>
+  <text x="55" y="740" font-size="10">For each new detection:</text>
+  <text x="70" y="760" font-size="10">For each existing cluster:</text>
+  <text x="85" y="780" font-size="10">If XY_distance to ALL members &lt; merge_radius (0.12m):</text>
+  <text x="100" y="800" font-size="10">→ Add to cluster</text>
+  <text x="70" y="820" font-size="10">Else:</text>
+  <text x="85" y="840" font-size="10">→ Create new cluster (detected_cluster_N)</text>
+
+  <!-- Vertical arrow down -->
+  <line x1="500" y1="842" x2="500" y2="875" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-down)"/>
+
+  <!-- ==================== OUTPUT ==================== -->
+  <rect x="300" y="880" width="380" height="32" rx="3" fill="#d4edda" stroke="#28a745" stroke-width="1.5"/>
+  <text x="490" y="901" text-anchor="middle" font-weight="bold">Output: TrackedCluster[] with 3D positions (~1-2cm accuracy)</text>
+
+  <!-- Figure caption -->
+  <text x="360" y="930" text-anchor="middle" font-size="10" fill="#666">Figure 3: Data Flow Pipeline — RGB Image → YOLO → Pixel Center → Camera Focus → Depth → TF → Clustering → TrackedCluster</text>
+</svg>

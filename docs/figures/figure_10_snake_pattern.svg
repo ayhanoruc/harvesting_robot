@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 220" font-family="Consolas, monospace" font-size="12">
+  <!-- Background -->
+  <rect width="700" height="220" fill="white"/>
+
+  <!-- Title -->
+  <text x="350" y="20" text-anchor="middle" font-size="14" font-weight="bold">Figure 10: Panoramic Scan Pattern (7×3 Snake/Boustrophedon)</text>
+
+  <!-- Column Headers -->
+  <g fill="#333" font-size="11">
+    <text x="150" y="50" text-anchor="middle">-45°</text>
+    <text x="220" y="50" text-anchor="middle">-30°</text>
+    <text x="290" y="50" text-anchor="middle">-15°</text>
+    <text x="360" y="50" text-anchor="middle">0°</text>
+    <text x="430" y="50" text-anchor="middle">+15°</text>
+    <text x="500" y="50" text-anchor="middle">+30°</text>
+    <text x="570" y="50" text-anchor="middle">+45°</text>
+  </g>
+
+  <!-- Row Labels -->
+  <g fill="#333" font-size="11">
+    <text x="70" y="80" text-anchor="middle">MIDDLE</text>
+    <text x="70" y="130" text-anchor="middle">LOWER</text>
+    <text x="70" y="180" text-anchor="middle">LOWEST</text>
+  </g>
+
+  <!-- Row descriptions (right side) -->
+  <g fill="#666" font-size="10">
+    <text x="620" y="80" text-anchor="start">0° tilt</text>
+    <text x="620" y="130" text-anchor="start">15° down</text>
+    <text x="620" y="180" text-anchor="start">30° down</text>
+  </g>
+
+  <!-- Grid Cells - Row 1 (MIDDLE): positions 1-7 -->
+  <g stroke="#333" stroke-width="1.5" fill="#e8f4e8">
+    <rect x="130" y="65" width="40" height="28" rx="3"/>
+    <rect x="200" y="65" width="40" height="28" rx="3"/>
+    <rect x="270" y="65" width="40" height="28" rx="3"/>
+    <rect x="340" y="65" width="40" height="28" rx="3"/>
+    <rect x="410" y="65" width="40" height="28" rx="3"/>
+    <rect x="480" y="65" width="40" height="28" rx="3"/>
+    <rect x="550" y="65" width="40" height="28" rx="3"/>
+  </g>
+
+  <!-- Grid Cells - Row 2 (LOWER): positions 8-14 -->
+  <g stroke="#333" stroke-width="1.5" fill="#e8f0f8">
+    <rect x="130" y="115" width="40" height="28" rx="3"/>
+    <rect x="200" y="115" width="40" height="28" rx="3"/>
+    <rect x="270" y="115" width="40" height="28" rx="3"/>
+    <rect x="340" y="115" width="40" height="28" rx="3"/>
+    <rect x="410" y="115" width="40" height="28" rx="3"/>
+    <rect x="480" y="115" width="40" height="28" rx="3"/>
+    <rect x="550" y="115" width="40" height="28" rx="3"/>
+  </g>
+
+  <!-- Grid Cells - Row 3 (LOWEST): positions 15-21 -->
+  <g stroke="#333" stroke-width="1.5" fill="#f8f0e8">
+    <rect x="130" y="165" width="40" height="28" rx="3"/>
+    <rect x="200" y="165" width="40" height="28" rx="3"/>
+    <rect x="270" y="165" width="40" height="28" rx="3"/>
+    <rect x="340" y="165" width="40" height="28" rx="3"/>
+    <rect x="410" y="165" width="40" height="28" rx="3"/>
+    <rect x="480" y="165" width="40" height="28" rx="3"/>
+    <rect x="550" y="165" width="40" height="28" rx="3"/>
+  </g>
+
+  <!-- Cell Numbers - Row 1 -->
+  <g fill="#333" font-weight="bold">
+    <text x="150" y="84" text-anchor="middle">1</text>
+    <text x="220" y="84" text-anchor="middle">2</text>
+    <text x="290" y="84" text-anchor="middle">3</text>
+    <text x="360" y="84" text-anchor="middle">4</text>
+    <text x="430" y="84" text-anchor="middle">5</text>
+    <text x="500" y="84" text-anchor="middle">6</text>
+    <text x="570" y="84" text-anchor="middle">7</text>
+  </g>
+
+  <!-- Cell Numbers - Row 2 (reverse order: 14 to 8) -->
+  <g fill="#333" font-weight="bold">
+    <text x="150" y="134" text-anchor="middle">14</text>
+    <text x="220" y="134" text-anchor="middle">13</text>
+    <text x="290" y="134" text-anchor="middle">12</text>
+    <text x="360" y="134" text-anchor="middle">11</text>
+    <text x="430" y="134" text-anchor="middle">10</text>
+    <text x="500" y="134" text-anchor="middle">9</text>
+    <text x="570" y="134" text-anchor="middle">8</text>
+  </g>
+
+  <!-- Cell Numbers - Row 3 -->
+  <g fill="#333" font-weight="bold">
+    <text x="150" y="184" text-anchor="middle">15</text>
+    <text x="220" y="184" text-anchor="middle">16</text>
+    <text x="290" y="184" text-anchor="middle">17</text>
+    <text x="360" y="184" text-anchor="middle">18</text>
+    <text x="430" y="184" text-anchor="middle">19</text>
+    <text x="500" y="184" text-anchor="middle">20</text>
+    <text x="570" y="184" text-anchor="middle">21</text>
+  </g>
+
+  <!-- Arrow marker definition -->
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrowhead-down" markerWidth="6" markerHeight="8" refX="3" refY="7" orient="auto">
+      <polygon points="0 0, 6 0, 3 8" fill="#2563eb"/>
+    </marker>
+  </defs>
+
+  <!-- Horizontal Arrows - Row 1 (left to right) -->
+  <g stroke="#2563eb" stroke-width="2" fill="none" marker-end="url(#arrowhead)">
+    <line x1="170" y1="79" x2="198" y2="79"/>
+    <line x1="240" y1="79" x2="268" y2="79"/>
+    <line x1="310" y1="79" x2="338" y2="79"/>
+    <line x1="380" y1="79" x2="408" y2="79"/>
+    <line x1="450" y1="79" x2="478" y2="79"/>
+    <line x1="520" y1="79" x2="548" y2="79"/>
+  </g>
+
+  <!-- Vertical Arrow - Row 1 to Row 2 (right side) -->
+  <path d="M 570 93 L 570 113" stroke="#2563eb" stroke-width="2" fill="none" marker-end="url(#arrowhead-down)"/>
+
+  <!-- Horizontal Arrows - Row 2 (right to left, arrows point left) -->
+  <g stroke="#2563eb" stroke-width="2" fill="none">
+    <line x1="548" y1="129" x2="522" y2="129" marker-end="url(#arrowhead)"/>
+    <line x1="478" y1="129" x2="452" y2="129" marker-end="url(#arrowhead)"/>
+    <line x1="408" y1="129" x2="382" y2="129" marker-end="url(#arrowhead)"/>
+    <line x1="338" y1="129" x2="312" y2="129" marker-end="url(#arrowhead)"/>
+    <line x1="268" y1="129" x2="242" y2="129" marker-end="url(#arrowhead)"/>
+    <line x1="198" y1="129" x2="172" y2="129" marker-end="url(#arrowhead)"/>
+  </g>
+
+  <!-- Vertical Arrow - Row 2 to Row 3 (left side) -->
+  <path d="M 150 143 L 150 163" stroke="#2563eb" stroke-width="2" fill="none" marker-end="url(#arrowhead-down)"/>
+
+  <!-- Horizontal Arrows - Row 3 (left to right) -->
+  <g stroke="#2563eb" stroke-width="2" fill="none" marker-end="url(#arrowhead)">
+    <line x1="170" y1="179" x2="198" y2="179"/>
+    <line x1="240" y1="179" x2="268" y2="179"/>
+    <line x1="310" y1="179" x2="338" y2="179"/>
+    <line x1="380" y1="179" x2="408" y2="179"/>
+    <line x1="450" y1="179" x2="478" y2="179"/>
+    <line x1="520" y1="179" x2="548" y2="179"/>
+  </g>
+
+  <!-- Legend -->
+  <g font-size="10" fill="#666">
+    <text x="350" y="210" text-anchor="middle">Pan angles: ±45° in 15° increments | Tilt levels: 0°, 15°, 30° down | Total: 21 positions</text>
+  </g>
+</svg>
