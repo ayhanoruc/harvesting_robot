@@ -59,8 +59,9 @@
 		</collision>
 	</link>
 
-	<joint name="hip" type="continuous">
+	<joint name="hip" type="revolute">
 		<axis xyz="0 0 1"/>
+		<limit velocity="1.0" effort="30.0" lower="-3.14159" upper="3.14159"/>
 		<parent link="base_link"/>
 		<child link="torso"/>
 		<origin rpy="0 0 0" xyz="0 0 0.05"/>
@@ -145,8 +146,9 @@
 		</collision>
 	</link>
 
-	<joint name="wrist" type="continuous">
+	<joint name="wrist" type="revolute">
 		<axis xyz="0 1 0"/>
+		<limit velocity="1.0" effort="30.0" lower="-3.14159" upper="3.14159"/>
 		<parent link="lower_arm"/>
 		<child link="hand"/>
 		<origin rpy="0 0 0" xyz="0.0 0.0 0.425"/>

@@ -137,8 +137,10 @@ class SpatialDetectionPipeline(Node):
         self.callback_group = ReentrantCallbackGroup()
 
         # Service clients
+        # Use cluster detection (merged bolls) instead of raw boll detection
+        # This focuses on cluster centers, not individual bolls
         self.yolo_client = self.create_client(
-            YoloDetect, '/yolo/detect',
+            YoloDetect, '/yolo/detect_clusters',
             callback_group=self.callback_group
         )
         self.depth_client = self.create_client(
@@ -220,7 +222,7 @@ class SpatialDetectionPipeline(Node):
     def _wait_for_services(self):
         """Wait for required services to be available."""
         services = [
-            (self.yolo_client, '/yolo/detect'),
+            (self.yolo_client, '/yolo/detect_clusters'),
             (self.depth_client, '/depth_processor/pixel_to_3d'),
         ]
         # Note: focus_client is optional - we can skip focus iterations
@@ -486,16 +488,29 @@ class SpatialDetectionPipeline(Node):
                     time.sleep(0.5)
 
                     # Re-detect to get updated bbox
+                    # Match by proximity (closest to image center after focus), not by label
+                    # since cluster labels may change order between detections
                     new_detections = self._call_yolo_detect()
-                    for new_bbox in new_detections:
-                        if new_bbox.label == label:
-                            final_u = (new_bbox.u_min + new_bbox.u_max) // 2
-                            final_v = (new_bbox.v_min + new_bbox.v_max) // 2
-                            final_bbox = new_bbox
+                    if new_detections:
+                        # Find detection closest to image center (we just focused there)
+                        best_det = None
+                        best_dist = float('inf')
+                        for new_bbox in new_detections:
+                            new_u = (new_bbox.u_min + new_bbox.u_max) // 2
+                            new_v = (new_bbox.v_min + new_bbox.v_max) // 2
+                            # Distance from image center
+                            dist = abs(new_u - 320) + abs(new_v - 240)
+                            if dist < best_dist:
+                                best_dist = dist
+                                best_det = new_bbox
+
+                        if best_det:
+                            final_u = (best_det.u_min + best_det.u_max) // 2
+                            final_v = (best_det.v_min + best_det.v_max) // 2
+                            final_bbox = best_det
                             self.get_logger().info(
                                 f'  After focus {i+1}: center=({final_u}, {final_v}), area={final_bbox.area}'
                             )
-                            break
             else:
                 self.get_logger().debug('Focus service not available, skipping')
 

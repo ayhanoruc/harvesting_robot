@@ -47,7 +47,7 @@ ros2 service call /detection/print_results std_srvs/srv/Trigger "{}"
 ros2 service call /detection/clear std_srvs/srv/Trigger "{}"
 
  
-  ros2 run orchestrator mock_yolo_detector &
+  ros2 run orchestrator real_yolo_detector &
   ros2 run orchestrator depth_processor &
   ros2 run orchestrator spatial_detection_pipeline
 
@@ -65,3 +65,7 @@ ros2 service call /detection/clear std_srvs/srv/Trigger "{}"
 
 
   ros2 service call /detection/run_at_position std_srvs/srv/Trigger "{}"
+
+
+   ros2 run rqt_joint_trajectory_controller rqt_joint_trajectory_controller
+
