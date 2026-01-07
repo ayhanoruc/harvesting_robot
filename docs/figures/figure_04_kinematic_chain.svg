@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" width="900" height="600">
+  <defs>
+    <!-- Arrow marker for axes -->
+    <marker id="arrowRed" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#E53935"/>
+    </marker>
+    <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#1E88E5"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#43A047"/>
+    </marker>
+    <!-- Dimension arrow markers -->
+    <marker id="dimArrowL" markerWidth="8" markerHeight="8" refX="0" refY="4" orient="auto">
+      <path d="M8,0 L8,8 L0,4 z" fill="#666"/>
+    </marker>
+    <marker id="dimArrowR" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L0,8 L8,4 z" fill="#666"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="600" fill="#FAFAFA"/>
+
+  <!-- Title -->
+  <text x="450" y="35" font-family="Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="middle" fill="#333">
+    Figure 4: Braccio Arm Kinematic Chain (6-DOF)
+  </text>
+
+  <!-- ==================== LEFT SIDE: Physical Representation ==================== -->
+  <text x="200" y="70" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#555">
+    (a) Side View - Joint Axes &amp; Link Lengths
+  </text>
+
+  <!-- Ground/World frame -->
+  <rect x="80" y="545" width="240" height="8" fill="#8D6E63" rx="2"/>
+  <text x="200" y="570" font-family="Arial, sans-serif" font-size="11" text-anchor="middle" fill="#666">world (fixed)</text>
+
+  <!-- World coordinate frame axes -->
+  <line x1="320" y1="545" x2="360" y2="545" stroke="#E53935" stroke-width="2" marker-end="url(#arrowRed)"/>
+  <text x="368" y="549" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#E53935">X</text>
+  <line x1="320" y1="545" x2="320" y2="505" stroke="#1E88E5" stroke-width="2" marker-end="url(#arrowBlue)"/>
+  <text x="324" y="500" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#1E88E5">Z</text>
+  <circle cx="320" cy="545" r="6" fill="none" stroke="#43A047" stroke-width="2"/>
+  <circle cx="320" cy="545" r="2" fill="#43A047"/>
+  <text x="330" y="558" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#43A047">Y</text>
+
+  <!-- Base plate -->
+  <ellipse cx="200" cy="540" rx="45" ry="8" fill="#37474F"/>
+  <rect x="155" y="532" width="90" height="8" fill="#37474F"/>
+  <text x="200" y="525" font-family="Arial, sans-serif" font-size="9" text-anchor="middle" fill="#666">base_link</text>
+
+  <!-- J1: Base Joint - Z axis rotation (visible between base_link and braccio_base_link) -->
+  <circle cx="200" cy="508" r="12" fill="#1E88E5" stroke="#0D47A1" stroke-width="2"/>
+  <text x="200" y="512" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" fill="white">J1</text>
+  <!-- Z-axis arrow (pointing up, same as world Z) -->
+  <line x1="200" y1="493" x2="200" y2="463" stroke="#1E88E5" stroke-width="2" marker-end="url(#arrowBlue)"/>
+  <text x="210" y="468" font-family="Arial, sans-serif" font-size="9" fill="#1E88E5">Z</text>
+
+  <!-- Braccio base link (vertical cylinder) -->
+  <rect x="188" y="440" width="24" height="68" fill="#78909C" stroke="#546E7A" stroke-width="1" rx="3"/>
+  <text x="250" y="475" font-family="Arial, sans-serif" font-size="9" fill="#666">braccio_base_link</text>
+
+  <!-- Dimension: 0.072m -->
+  <line x1="160" y1="508" x2="160" y2="440" stroke="#666" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="155" y1="508" x2="165" y2="508" stroke="#666" stroke-width="1"/>
+  <line x1="155" y1="440" x2="165" y2="440" stroke="#666" stroke-width="1"/>
+  <text x="145" y="478" font-family="Arial, sans-serif" font-size="9" text-anchor="middle" fill="#666" transform="rotate(-90, 145, 478)">0.072m</text>
+
+  <!-- J2: Shoulder Joint - X axis rotation -->
+  <circle cx="200" cy="428" r="12" fill="#E53935" stroke="#B71C1C" stroke-width="2"/>
+  <text x="200" y="432" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" fill="white">J2</text>
+  <!-- X-axis arrow (pointing out of page - circle with dot) -->
+  <circle cx="225" cy="428" r="8" fill="none" stroke="#E53935" stroke-width="2"/>
+  <circle cx="225" cy="428" r="2" fill="#E53935"/>
+  <text x="238" y="432" font-family="Arial, sans-serif" font-size="9" fill="#E53935">X</text>
+
+  <!-- Shoulder link (angled up-right) -->
+  <rect x="196" y="315" width="16" height="113" fill="#90A4AE" stroke="#607D8B" stroke-width="1" rx="2" transform="rotate(15, 204, 371)"/>
+  <text x="255" y="375" font-family="Arial, sans-serif" font-size="9" fill="#666">shoulder_link</text>
+
+  <!-- Dimension: 0.125m -->
+  <line x1="140" y1="428" x2="140" y2="315" stroke="#666" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="135" y1="428" x2="145" y2="428" stroke="#666" stroke-width="1"/>
+  <line x1="135" y1="315" x2="145" y2="315" stroke="#666" stroke-width="1"/>
+  <text x="125" y="375" font-family="Arial, sans-serif" font-size="9" text-anchor="middle" fill="#666" transform="rotate(-90, 125, 375)">0.125m</text>
+
+  <!-- J3: Elbow Joint - X axis rotation -->
+  <circle cx="230" cy="315" r="12" fill="#E53935" stroke="#B71C1C" stroke-width="2"/>
+  <text x="230" y="319" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" fill="white">J3</text>
+  <!-- X-axis indicator -->
+  <circle cx="255" cy="315" r="8" fill="none" stroke="#E53935" stroke-width="2"/>
+  <circle cx="255" cy="315" r="2" fill="#E53935"/>
+  <text x="268" y="319" font-family="Arial, sans-serif" font-size="9" fill="#E53935">X</text>
+
+  <!-- Elbow link -->
+  <rect x="226" y="202" width="16" height="113" fill="#90A4AE" stroke="#607D8B" stroke-width="1" rx="2" transform="rotate(-10, 234, 258)"/>
+  <text x="280" y="260" font-family="Arial, sans-serif" font-size="9" fill="#666">elbow_link</text>
+
+  <!-- Dimension: 0.125m -->
+  <line x1="140" y1="315" x2="140" y2="202" stroke="#666" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="135" y1="315" x2="145" y2="315" stroke="#666" stroke-width="1"/>
+  <line x1="135" y1="202" x2="145" y2="202" stroke="#666" stroke-width="1"/>
+  <text x="125" y="262" font-family="Arial, sans-serif" font-size="9" text-anchor="middle" fill="#666" transform="rotate(-90, 125, 262)">0.125m</text>
+
+  <!-- J4: Wrist Pitch Joint - X axis rotation -->
+  <circle cx="218" cy="195" r="12" fill="#E53935" stroke="#B71C1C" stroke-width="2"/>
+  <text x="218" y="199" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" fill="white">J4</text>
+  <!-- X-axis indicator -->
+  <circle cx="243" cy="195" r="8" fill="none" stroke="#E53935" stroke-width="2"/>
+  <circle cx="243" cy="195" r="2" fill="#E53935"/>
+  <text x="256" y="199" font-family="Arial, sans-serif" font-size="9" fill="#E53935">X</text>
+
+  <!-- Wrist pitch link -->
+  <rect x="214" y="142" width="12" height="53" fill="#B0BEC5" stroke="#78909C" stroke-width="1" rx="2"/>
+  <text x="265" y="168" font-family="Arial, sans-serif" font-size="9" fill="#666">wrist_pitch_link</text>
+
+  <!-- Dimension: 0.060m -->
+  <line x1="140" y1="195" x2="140" y2="142" stroke="#666" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="135" y1="195" x2="145" y2="195" stroke="#666" stroke-width="1"/>
+  <line x1="135" y1="142" x2="145" y2="142" stroke="#666" stroke-width="1"/>
+  <text x="125" y="172" font-family="Arial, sans-serif" font-size="9" text-anchor="middle" fill="#666" transform="rotate(-90, 125, 172)">0.060m</text>
+
+  <!-- J5: Wrist Roll Joint - Z axis rotation -->
+  <circle cx="220" cy="135" r="12" fill="#1E88E5" stroke="#0D47A1" stroke-width="2"/>
+  <text x="220" y="139" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" fill="white">J5</text>
+  <!-- Z-axis arrow -->
+  <line x1="220" y1="120" x2="220" y2="98" stroke="#1E88E5" stroke-width="2" marker-end="url(#arrowBlue)"/>
+  <text x="230" y="102" font-family="Arial, sans-serif" font-size="9" fill="#1E88E5">Z</text>
+
+  <!-- Wrist roll link -->
+  <rect x="210" y="110" width="20" height="25" fill="#CFD8DC" stroke="#90A4AE" stroke-width="1" rx="2"/>
+  <text x="265" y="122" font-family="Arial, sans-serif" font-size="9" fill="#666">wrist_roll_link</text>
+
+  <!-- Dimension: 0.030m -->
+  <line x1="190" y1="135" x2="190" y2="110" stroke="#666" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="185" y1="135" x2="195" y2="135" stroke="#666" stroke-width="1"/>
+  <line x1="185" y1="110" x2="195" y2="110" stroke="#666" stroke-width="1"/>
+  <text x="178" y="125" font-family="Arial, sans-serif" font-size="8" text-anchor="middle" fill="#666">0.03m</text>
+
+  <!-- J6: Gripper Joint - Y axis rotation -->
+  <circle cx="220" cy="105" r="10" fill="#43A047" stroke="#2E7D32" stroke-width="2"/>
+  <text x="220" y="109" font-family="Arial, sans-serif" font-size="9" font-weight="bold" text-anchor="middle" fill="white">J6</text>
+  <!-- Y-axis arrow -->
+  <line x1="235" y1="105" x2="258" y2="105" stroke="#43A047" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <text x="265" y="109" font-family="Arial, sans-serif" font-size="9" fill="#43A047">Y</text>
+
+  <!-- Gripper fingers -->
+  <path d="M205,105 L195,80 L200,75 L215,95" fill="#ECEFF1" stroke="#90A4AE" stroke-width="1"/>
+  <path d="M235,105 L245,80 L240,75 L225,95" fill="#ECEFF1" stroke="#90A4AE" stroke-width="1"/>
+  <text x="220" y="68" font-family="Arial, sans-serif" font-size="9" text-anchor="middle" fill="#666">gripper</text>
+
+  <!-- Dimension: gripper (~0.11m to make total ~0.52m) -->
+  <line x1="140" y1="110" x2="140" y2="75" stroke="#666" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="135" y1="110" x2="145" y2="110" stroke="#666" stroke-width="1"/>
+  <line x1="135" y1="75" x2="145" y2="75" stroke="#666" stroke-width="1"/>
+  <text x="125" y="95" font-family="Arial, sans-serif" font-size="9" text-anchor="middle" fill="#666" transform="rotate(-90, 125, 95)">~0.11m</text>
+
+  <!-- Camera (eye-in-hand) -->
+  <rect x="240" y="115" width="25" height="18" fill="#263238" stroke="#37474F" stroke-width="1" rx="2"/>
+  <circle cx="252" cy="124" r="5" fill="#455A64" stroke="#37474F" stroke-width="1"/>
+  <text x="252" y="145" font-family="Arial, sans-serif" font-size="8" text-anchor="middle" fill="#666">camera</text>
+
+  <!-- Total reach annotation (ground to gripper tip) -->
+  <line x1="90" y1="545" x2="90" y2="75" stroke="#FF9800" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <line x1="85" y1="545" x2="95" y2="545" stroke="#FF9800" stroke-width="1.5"/>
+  <line x1="85" y1="75" x2="95" y2="75" stroke="#FF9800" stroke-width="1.5"/>
+  <text x="75" y="310" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle" fill="#FF9800" transform="rotate(-90, 75, 310)">Total: ~0.52m</text>
+
+  <!-- ==================== RIGHT SIDE: Tree Diagram ==================== -->
+  <text x="650" y="70" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#555">
+    (b) Kinematic Tree Structure
+  </text>
+
+  <!-- Tree nodes -->
+  <!-- world -->
+  <rect x="600" y="90" width="100" height="28" fill="#ECEFF1" stroke="#90A4AE" stroke-width="1.5" rx="4"/>
+  <text x="650" y="108" font-family="Arial, sans-serif" font-size="11" text-anchor="middle" fill="#333">world</text>
+  <text x="650" y="122" font-family="Arial, sans-serif" font-size="8" fill="#666">(fixed)</text>
+
+  <!-- Connector -->
+  <line x1="650" y1="118" x2="650" y2="140" stroke="#78909C" stroke-width="1.5"/>
+
+  <!-- base_link -->
+  <rect x="600" y="140" width="100" height="28" fill="#ECEFF1" stroke="#90A4AE" stroke-width="1.5" rx="4"/>
+  <text x="650" y="158" font-family="Arial, sans-serif" font-size="11" text-anchor="middle" fill="#333">base_link</text>
+
+  <!-- J1 connector -->
+  <line x1="650" y1="168" x2="650" y2="195" stroke="#78909C" stroke-width="1.5"/>
+  <rect x="620" y="178" width="60" height="16" fill="#1E88E5" rx="3"/>
+  <text x="650" y="190" font-family="Arial, sans-serif" font-size="9" font-weight="bold" text-anchor="middle" fill="white">J1: Z-axis</text>
+
+  <!-- braccio_base_link -->
+  <rect x="580" y="195" width="140" height="28" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.5" rx="4"/>
+  <text x="650" y="213" font-family="Arial, sans-serif" font-size="11" text-anchor="middle" fill="#333">braccio_base_link</text>
+
+  <!-- J2 connector -->
+  <line x1="650" y1="223" x2="650" y2="250" stroke="#78909C" stroke-width="1.5"/>
+  <rect x="620" y="233" width="60" height="16" fill="#E53935" rx="3"/>
+  <text x="650" y="245" font-family="Arial, sans-serif" font-size="9" font-weight="bold" text-anchor="middle" fill="white">J2: X-axis</text>
+
+  <!-- shoulder_link -->
+  <rect x="600" y="250" width="100" height="28" fill="#FFEBEE" stroke="#E53935" stroke-width="1.5" rx="4"/>
+  <text x="650" y="268" font-family="Arial, sans-serif" font-size="11" text-anchor="middle" fill="#333">shoulder_link</text>
+
+  <!-- J3 connector -->
+  <line x1="650" y1="278" x2="650" y2="305" stroke="#78909C" stroke-width="1.5"/>
+  <rect x="620" y="288" width="60" height="16" fill="#E53935" rx="3"/>
+  <text x="650" y="300" font-family="Arial, sans-serif" font-size="9" font-weight="bold" text-anchor="middle" fill="white">J3: X-axis</text>
+
+  <!-- elbow_link -->
+  <rect x="600" y="305" width="100" height="28" fill="#FFEBEE" stroke="#E53935" stroke-width="1.5" rx="4"/>
+  <text x="650" y="323" font-family="Arial, sans-serif" font-size="11" text-anchor="middle" fill="#333">elbow_link</text>
+
+  <!-- J4 connector -->
+  <line x1="650" y1="333" x2="650" y2="360" stroke="#78909C" stroke-width="1.5"/>
+  <rect x="620" y="343" width="60" height="16" fill="#E53935" rx="3"/>
+  <text x="650" y="355" font-family="Arial, sans-serif" font-size="9" font-weight="bold" text-anchor="middle" fill="white">J4: X-axis</text>
+
+  <!-- wrist_pitch_link -->
+  <rect x="590" y="360" width="120" height="28" fill="#FFEBEE" stroke="#E53935" stroke-width="1.5" rx="4"/>
+  <text x="650" y="378" font-family="Arial, sans-serif" font-size="11" text-anchor="middle" fill="#333">wrist_pitch_link</text>
+
+  <!-- J5 connector -->
+  <line x1="650" y1="388" x2="650" y2="415" stroke="#78909C" stroke-width="1.5"/>
+  <rect x="620" y="398" width="60" height="16" fill="#1E88E5" rx="3"/>
+  <text x="650" y="410" font-family="Arial, sans-serif" font-size="9" font-weight="bold" text-anchor="middle" fill="white">J5: Z-axis</text>
+
+  <!-- wrist_roll_link -->
+  <rect x="590" y="415" width="120" height="28" fill="#E3F2FD" stroke="#1E88E5" stroke-width="1.5" rx="4"/>
+  <text x="650" y="433" font-family="Arial, sans-serif" font-size="11" text-anchor="middle" fill="#333">wrist_roll_link</text>
+
+  <!-- Branch to gripper and camera -->
+  <line x1="650" y1="443" x2="650" y2="460" stroke="#78909C" stroke-width="1.5"/>
+  <line x1="650" y1="460" x2="580" y2="460" stroke="#78909C" stroke-width="1.5"/>
+  <line x1="650" y1="460" x2="720" y2="460" stroke="#78909C" stroke-width="1.5"/>
+  <line x1="580" y1="460" x2="580" y2="475" stroke="#78909C" stroke-width="1.5"/>
+  <line x1="720" y1="460" x2="720" y2="475" stroke="#78909C" stroke-width="1.5"/>
+
+  <!-- J6 connector (left branch) -->
+  <rect x="550" y="465" width="60" height="16" fill="#43A047" rx="3"/>
+  <text x="580" y="477" font-family="Arial, sans-serif" font-size="9" font-weight="bold" text-anchor="middle" fill="white">J6: Y-axis</text>
+
+  <!-- gripper links -->
+  <line x1="580" y1="481" x2="580" y2="495" stroke="#78909C" stroke-width="1.5"/>
+  <rect x="530" y="495" width="100" height="28" fill="#E8F5E9" stroke="#43A047" stroke-width="1.5" rx="4"/>
+  <text x="580" y="510" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#333">gripper_links</text>
+  <text x="580" y="520" font-family="Arial, sans-serif" font-size="8" fill="#666">(L+R mimic)</text>
+
+  <!-- camera branch (right) -->
+  <rect x="690" y="465" width="60" height="16" fill="#78909C" rx="3"/>
+  <text x="720" y="477" font-family="Arial, sans-serif" font-size="9" font-weight="bold" text-anchor="middle" fill="white">fixed</text>
+
+  <line x1="720" y1="481" x2="720" y2="495" stroke="#78909C" stroke-width="1.5"/>
+  <rect x="680" y="495" width="80" height="28" fill="#ECEFF1" stroke="#90A4AE" stroke-width="1.5" rx="4"/>
+  <text x="720" y="510" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#333">camera_link</text>
+  <text x="720" y="520" font-family="Arial, sans-serif" font-size="8" fill="#666">(eye-in-hand)</text>
+
+  <!-- Legend -->
+  <rect x="500" y="545" width="380" height="45" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1" rx="4"/>
+  <text x="510" y="562" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#333">Legend:</text>
+
+  <!-- Z-axis -->
+  <rect x="560" y="553" width="14" height="14" fill="#1E88E5" rx="2"/>
+  <text x="580" y="564" font-family="Arial, sans-serif" font-size="9" fill="#333">Z-axis (yaw/roll)</text>
+
+  <!-- X-axis -->
+  <rect x="680" y="553" width="14" height="14" fill="#E53935" rx="2"/>
+  <text x="700" y="564" font-family="Arial, sans-serif" font-size="9" fill="#333">X-axis (pitch)</text>
+
+  <!-- Y-axis -->
+  <rect x="790" y="553" width="14" height="14" fill="#43A047" rx="2"/>
+  <text x="810" y="564" font-family="Arial, sans-serif" font-size="9" fill="#333">Y-axis</text>
+
+  <!-- Note about total reach -->
+  <text x="510" y="582" font-family="Arial, sans-serif" font-size="9" fill="#666">
+    Total reach: 0.072 + 0.125 + 0.125 + 0.060 + 0.030 = 0.412m (base to wrist) + gripper ≈ 0.52m
+  </text>
+
+</svg>
