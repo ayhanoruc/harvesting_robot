@@ -62,6 +62,8 @@ Cotton boll detection converts camera images into bounding boxes identifying tar
 
 **Selected: YOLO11** — Deep learning is essential for achieving 90% detection accuracy under field-like conditions. The model trained on Cotton-boll-and-cluster-2 dataset achieves >0.7 confidence. GPU inference on Jetson Orin NX provides real-time performance.
 
+**Classical CV Evaluation:** HSV (Hue-Saturation-Value) color space segmentation was tested as the most promising classical approach, since cotton's white color can be isolated via low saturation and high value thresholds. However, testing revealed ~50% false positive rate from sky regions, lighting reflections, and background objects sharing similar color properties (see Appendix Figure 15). This confirms that learned feature representations are necessary for reliable cotton detection.
+
 ---
 
 ### Decision Point 3: Cluster Identification Strategy
