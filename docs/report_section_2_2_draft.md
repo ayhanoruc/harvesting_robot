@@ -19,7 +19,7 @@ The design of an autonomous cotton picking system involves six key decision poin
 | Detection Method | QL-03 (90% detection), EN-01 (lighting robustness) | Affects detection reliability under varying conditions |
 | Cluster Identification | QL-05 (90% pick rate), RL-02 (software reliability) | Determines tracking accuracy across multiple scan positions |
 | Manipulator Configuration | SR-01 (520mm reach), WT-03 (tip deflection <10mm) | Affects workspace coverage and approach trajectory flexibility |
-| Gripper Design | SR-04 (50-60mm opening), QL-04 (cycle time <60s) | Determines grasp success rate and pick efficiency |
+| Gripper Design | SR-04 (50-60mm opening), QL-05 (90% pick rate) | Determines harvest purity and foreign matter content |
 | Reservoir Design | SR-03 (15×15×15cm), ER-03 (tool-free removal <15s) | Affects storage capacity and operator interaction |
 
 The following subsections present the alternative options for each decision point, evaluate them against relevant criteria and justify the selected solution.
@@ -102,19 +102,20 @@ The manipulator must provide sufficient reach while enabling approach trajectori
 
 ### Decision Point 5: Gripper Design
 
-The gripper must reliably grasp cotton bolls without damage or loss during transfer. Two options were evaluated: (A) **Parallel Jaw Gripper** — two opposing fingers with controlled grip force, 50-60mm opening for cotton clusters; (B) **Vacuum/Suction** — negative pressure pickup; effective on flat surfaces but cotton's fibrous texture reduces seal effectiveness.
+The gripper must reliably grasp cotton bolls while minimizing contamination of the harvest. Two options were evaluated: (A) **Parallel Jaw Gripper** — two opposing fingers with controlled grip force, 50-60mm opening for cotton clusters, enabling selective grasping of target bolls; (B) **Vacuum/Suction** — negative pressure pickup creating suction to lift cotton fibers.
 
 **Table 6. Gripper Design Decision Matrix**
 
 | Criterion | Weight | PDS Ref. | Parallel Jaw | Vacuum |
 |-----------|--------|----------|--------------|--------|
-| Reliability on Fibrous Material | 0.31 | QL-05 | 4 | 2 |
-| Simplicity & Cost | 0.28 | MC-01, MF-01 | 5 | 4 |
-| Grip Security During Transfer | 0.31 | QL-05 | 4 | 2 |
+| Foreign Matter Reduction | 0.35 | QL-05 | 5 | 2 |
+| Selective Grasping Capability | 0.25 | QL-05 | 5 | 2 |
+| Simplicity & Cost | 0.20 | MC-01, MF-01 | 5 | 4 |
 | 3D Printability | 0.10 | MF-01 | 5 | 3 |
-| **Weighted Total** | **1.00** | | **4.38** | **2.66** |
+| Energy Efficiency | 0.10 | EN-02 | 4 | 2 |
+| **Weighted Total** | **1.00** | | **4.85** | **2.45** |
 
-**Selected: Parallel Jaw Gripper** — Provides reliable grasping with controlled force. The 50-60mm opening (SR-04) is achievable with servo-driven, 3D-printable fingers compatible with the Braccio gripper base.
+**Selected: Parallel Jaw Gripper** — Vacuum/suction systems tend to collect surrounding debris (leaves, stems, dirt) along with cotton fibers, increasing foreign matter content in the harvest. Parallel jaw grippers enable selective grasping of only the target cotton boll, improving harvest purity. Additionally, vacuum systems require continuous air pump operation increasing energy consumption, while servo-driven fingers operate only during grasp cycles. The 50-60mm opening (SR-04) is achievable with 3D-printable fingers compatible with the Braccio gripper base.
 
 ---
 
@@ -146,7 +147,7 @@ The reservoir collects harvested cotton and must support tool-free emptying (ER-
 | Detection Method | YOLO11 | 4.64 | Robust detection under varying lighting conditions |
 | Cluster Identification | World-Space 3D Clustering | 4.78 | Stable across discrete scan positions, complete-linkage prevents chain-linking |
 | Manipulator | 6-DOF Braccio Arm | 4.51 | Flexible approach trajectories, sufficient reach |
-| Gripper | Parallel Jaw | 4.38 | Reliable on fibrous material, 3D printable |
+| Gripper | Parallel Jaw | 4.85 | Reduces foreign matter, selective grasping, energy efficient |
 | Reservoir | Flip-Top Bin | 4.80 | Tool-free access, one-handed operation |
 
 The selected components integrate into a coherent system architecture where ROS2 provides the communication backbone, YOLO11 detection feeds into the world-space clustering pipeline, MoveIt2 plans collision-free motions for the 6-DOF arm and the parallel gripper executes picks depositing cotton into the removable reservoir.

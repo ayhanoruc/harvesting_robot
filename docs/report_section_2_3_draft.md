@@ -103,7 +103,7 @@ Where fx, fy = 277 pixels (focal length derived from FOV: fx = 320/tan(45°) ≈
 
 ### YOLO Object Detection Model
 
-*[This section to be completed by teammate]*
+YOLO (You Only Look Once) is a single-stage object detector consisting of a CSPDarknet backbone for feature extraction, a PANet neck for multi-scale feature fusion, and a detection head that predicts bounding boxes with class probabilities in one forward pass [12][22]. This architecture enables real-time inference by processing the entire image simultaneously rather than using region proposals. RoboCot uses YOLO11 trained on the Cotton-boll-and-cluster dataset with 0.7 confidence threshold.
 
 ---
 
