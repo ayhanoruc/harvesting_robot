@@ -105,7 +105,39 @@ Where fx, fy = 277 pixels (focal length derived from FOV: fx = 320/tan(45°) ≈
 
 ### YOLO Object Detection Model
 
-YOLO (You Only Look Once) is a single-stage object detector consisting of a CSPDarknet backbone for feature extraction, a PANet neck for multi-scale feature fusion, and a detection head that predicts bounding boxes with class probabilities in one forward pass [12][22]. This architecture enables real-time inference by processing the entire image simultaneously rather than using region proposals. RoboCot uses YOLO11 trained on the Cotton-boll-and-cluster dataset with 0.7 confidence threshold.
+YOLO (You Only Look Once) is a single-stage object detector consisting of a CSPDarknet backbone for feature extraction, a PANet neck for multi-scale feature fusion, and a detection head that predicts bounding boxes with class probabilities in one forward pass [12][22]. This architecture enables real-time inference by processing the entire image simultaneously rather than using region proposals.
+
+#### Dataset Collection and Annotation
+
+Video data was collected using a standard cellphone camera with the cotton rotating 360° to capture all viewing angles. Additional images were captured from 3D cotton models and edited to create unripe cotton boll samples. The dataset includes diverse angles, variable lighting conditions, and motion blur for robustness.
+
+Frames were labeled using Roboflow with three classes: `cotton-boll`, `cotton-boll-cluster`, and `unripe-cotton-boll`. Each image contains an average of 16 individual cotton bounding boxes plus one cluster bounding box. The base dataset of 100 images was expanded with 35 additional images containing unripe bolls, then augmented (rotation, blur, contrast variations) to produce **375 total training images**.
+
+#### Model Training
+
+RoboCot uses **YOLO11s** (small variant) from Ultralytics, selected for optimal balance between inference speed and detection accuracy. Training parameters: image size 1280×1280, 100 epochs. The resulting `best.pt` weights are deployed with a 0.7 confidence threshold.
+
+<img src="figures/train_val_plots.png" alt="Figure 7: YOLO Training Performance" width="80%">
+
+*Figure 7: Training and validation loss curves showing steady Box Loss reduction over 100 epochs*
+
+Training metrics show consistent improvement in localization accuracy, with Box Loss decreasing steadily for both training and validation sets. Final **mAP@50-95 reached approximately 0.60**, representing solid baseline performance for a custom agricultural dataset.
+
+#### Detection Accuracy
+
+<img src="figures/confusion_matrix.png" alt="Figure 8: Confusion Matrix" width="55%"> <img src="figures/real_cotton_detection.png" alt="Figure 9: Real Cotton Detection" width="22%"> <img src="figures/test_with_unripe.jpg" alt="Figure 10: Detection with Unripe Bolls" width="22%">
+
+*Figure 8-10: Normalized confusion matrix (left), sample detection on real cotton (center), and detection on cluster with unripe bolls (right)*
+
+**Table 11. YOLO Detection Accuracy by Class**
+
+| Class | Accuracy | Notes |
+|-------|----------|-------|
+| cotton-boll | 95% | Primary detection target, excellent performance |
+| unripe-cotton-boll | 82% | Limited training data (augmented images only) |
+| cotton-boll-cluster | — | Used for spatial grouping, not harvesting |
+
+The 95% accuracy on single cotton bolls confirms the model reliably identifies individual harvest targets. The model rarely confuses cotton bolls with background elements, validating the YOLO architecture's feature extraction capability for this application.
 
 ---
 
@@ -198,11 +230,11 @@ Effective cluster detection requires systematically viewing the field from multi
 
 ### Snake Traversal Pattern (Boustrophedon)
 
-Scan positions are visited in a snake (boustrophedon) pattern minimizing total joint travel (Figure 10).
+Scan positions are visited in a snake (boustrophedon) pattern minimizing total joint travel (Figure 11).
 
-<img src="figures/figure_10_snake_pattern.svg" alt="Figure 10: Panoramic Scan Pattern" width="60%">
+<img src="figures/figure_10_snake_pattern.svg" alt="Figure 11: Panoramic Scan Pattern" width="60%">
 
-*Figure 10: Panoramic Scan Pattern (7×3 grid with snake traversal)*
+*Figure 11: Panoramic Scan Pattern (7×3 grid with snake traversal)*
 
 
 **Traversal Order:**
@@ -229,11 +261,11 @@ This 60° overlap between adjacent positions provides:
 - Multiple viewpoints for complete-linkage clustering
 - Tolerance for slight positioning errors
 
-The entire mock field (±45° from center) falls within the combined FOV (Figure 11).
+The entire mock field (±45° from center) falls within the combined FOV (Figure 12).
 
-<img src="figures/figure_11_fov_overlap.png" alt="Figure 11: FOV Overlap Diagram" width="50%">
+<img src="figures/figure_11_fov_overlap.png" alt="Figure 12: FOV Overlap Diagram" width="50%">
 
-*Figure 11: FOV Overlap Diagram showing top-down view of camera coverage cones from all 7 horizontal positions, with shaded overlap regions and cluster positions marked*
+*Figure 12: FOV Overlap Diagram showing top-down view of camera coverage cones from all 7 horizontal positions, with shaded overlap regions and cluster positions marked*
 
 ### Scan Timing Parameters
 
@@ -259,9 +291,9 @@ The camera_focus node implements image-based visual servoing (IBVS) [23], mappin
 
 Gains derived empirically (K ≈ 0.3 rad / 150 pixels). The arm geometry provides approximate decoupling—horizontal error maps to hip rotation, vertical error to shoulder/elbow—enabling centering within 2-3 iterations without Jacobian-based IK. Max adjustment limited to 0.3 rad/iteration.
 
-<img src="figures/figure_12_visual_servoing_convergence.png" alt="Figure 12: Visual Servoing Convergence" width="80%">
+<img src="figures/figure_12_visual_servoing_convergence.png" alt="Figure 13: Visual Servoing Convergence" width="80%">
 
-*Figure 12: Visual Servoing Convergence showing (a) initial off-center, (b) after iteration 1, (c) centered view with error < 20 pixels*
+*Figure 13: Visual Servoing Convergence showing (a) initial off-center, (b) after iteration 1, (c) centered view with error < 20 pixels*
 
 ### Partial Visibility Recovery
 
@@ -270,9 +302,9 @@ When a cluster is detected at the frame edge (truncated bbox, ~0.65 confidence):
 - Full cluster visibility achieved within 2 iterations
 - Centered depth measurement improves localization accuracy
 
-<img src="figures/partially_visible.png" alt="Figure 13a: Cluster at image edge" width="45%"> <img src="figures/centered_after_focus.png" alt="Figure 13b: Centered after focus" width="45%">
+<img src="figures/partially_visible.png" alt="Figure 14a: Cluster at image edge" width="45%"> <img src="figures/centered_after_focus.png" alt="Figure 14b: Centered after focus" width="45%">
 
-*Figure 13: Partial Visibility Recovery showing (a) cluster at image edge, (b) centered after focus iterations*
+*Figure 14: Partial Visibility Recovery showing (a) cluster at image edge, (b) centered after focus iterations*
 
 ### Motion Planning Integration
 
@@ -347,7 +379,7 @@ The center cluster (cluster_2) is detected more frequently as it falls within th
 
 The web-based dashboard provides real-time monitoring and control per ergonomic requirements ER-01/ER-02.
 
-*(See Appendix Figure 14)*
+*(See Appendix Figure 15)*
 
 | Control | Behavior | Requirement |
 |---------|----------|-------------|
@@ -384,15 +416,15 @@ The web-based dashboard provides real-time monitoring and control per ergonomic 
 
 ---
 
-<img src="figures/figure_cv_vs_yolo_sidebyside.png" alt="Figure 15: Classical CV vs YOLO Comparison" width="100%">
+<img src="figures/figure_cv_vs_yolo_sidebyside.png" alt="Figure 16: Classical CV vs YOLO Comparison" width="100%">
 
-*Figure 15: Classical CV vs Deep Learning Detection — HSV segmentation detects all white regions (robot gripper parts) as false positives, while YOLO11 correctly identifies only cotton bolls*
+*Figure 16: Classical CV vs Deep Learning Detection — HSV segmentation detects all white regions (robot gripper parts) as false positives, while YOLO11 correctly identifies only cotton bolls*
 
 ---
 
-<img src="robocot_app_ss.png" alt="Figure 14: RoboCot App Interface" width="50%">
+<img src="robocot_app_ss.png" alt="Figure 15: RoboCot App Interface" width="50%">
 
-*Figure 14: RoboCot App Interface — Components: color-coded status banner, session metrics (bolls harvested, success rate), ML confidence display, 5-step pipeline flow, timestamped alerts, control panel*
+*Figure 15: RoboCot App Interface — Components: color-coded status banner, session metrics (bolls harvested, success rate), ML confidence display, 5-step pipeline flow, timestamped alerts, control panel*
 
 ---
 
