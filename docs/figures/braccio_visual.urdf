@@ -1,0 +1,214 @@
+<?xml version="1.0" ?>
+<!-- Braccio Arm URDF for visualization with cotton_field.world -->
+<robot name="braccio">
+  <link name="world"/>
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <cylinder length="0.01" radius=".053"/>
+      </geometry>
+      <material name="black"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <cylinder length="0.01" radius=".053"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="braccio_base_link">
+    <visual>
+      <geometry>
+        <mesh filename="file:///mnt/c/Users/ayhan/harvesting_ws/src/docs/RESEARCH/EI_Pick_n_Place/pnp_ws/src/braccio_description/stl/braccio_base.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="gray"/>
+      <origin rpy="0 0 0" xyz="0 0.004 0"/>
+    </visual>
+    <inertial>
+      <mass value="2"/>
+      <inertia ixx="0.015" ixy="0" ixz="0" iyy="0.00666666666667" iyz="0" izz="0.0216666666667"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0.004 0"/>
+      <geometry>
+        <mesh filename="file:///mnt/c/Users/ayhan/harvesting_ws/src/docs/RESEARCH/EI_Pick_n_Place/pnp_ws/src/braccio_description/stl/braccio_base.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="shoulder_link">
+    <visual>
+      <geometry>
+        <mesh filename="file:///mnt/c/Users/ayhan/harvesting_ws/src/docs/RESEARCH/EI_Pick_n_Place/pnp_ws/src/braccio_description/stl/braccio_shoulder.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="gray"/>
+      <origin rpy="0 0 0" xyz="-0.0045 0.0055 -0.026"/>
+    </visual>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.000348958333333" ixy="0" ixz="0" iyy="0.000348958333333" iyz="0" izz="3.125e-05"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="-0.0045 0.0055 -0.026"/>
+      <geometry>
+        <mesh filename="file:///mnt/c/Users/ayhan/harvesting_ws/src/docs/RESEARCH/EI_Pick_n_Place/pnp_ws/src/braccio_description/stl/braccio_shoulder.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="elbow_link">
+    <visual>
+      <geometry>
+        <mesh filename="file:///mnt/c/Users/ayhan/harvesting_ws/src/docs/RESEARCH/EI_Pick_n_Place/pnp_ws/src/braccio_description/stl/braccio_elbow.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="gray"/>
+      <origin rpy="0 0 0" xyz="-0.0045 0.005 -0.025"/>
+    </visual>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.000348958333333" ixy="0" ixz="0" iyy="0.000348958333333" iyz="0" izz="3.125e-05"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="-0.0045 0.005 -0.025"/>
+      <geometry>
+        <mesh filename="file:///mnt/c/Users/ayhan/harvesting_ws/src/docs/RESEARCH/EI_Pick_n_Place/pnp_ws/src/braccio_description/stl/braccio_elbow.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="wrist_pitch_link">
+    <visual>
+      <geometry>
+        <mesh filename="file:///mnt/c/Users/ayhan/harvesting_ws/src/docs/RESEARCH/EI_Pick_n_Place/pnp_ws/src/braccio_description/stl/braccio_wrist_pitch.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="gray"/>
+      <origin rpy="0 0 0" xyz="0.003 -0.0004 -0.024"/>
+    </visual>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.000348958333333" ixy="0" ixz="0" iyy="0.000348958333333" iyz="0" izz="3.125e-05"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.003 -0.0004 -0.024"/>
+      <geometry>
+        <mesh filename="file:///mnt/c/Users/ayhan/harvesting_ws/src/docs/RESEARCH/EI_Pick_n_Place/pnp_ws/src/braccio_description/stl/braccio_wrist_pitch.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="wrist_roll_link">
+    <visual>
+      <geometry>
+        <mesh filename="file:///mnt/c/Users/ayhan/harvesting_ws/src/docs/RESEARCH/EI_Pick_n_Place/pnp_ws/src/braccio_description/stl/braccio_wrist_roll.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="white"/>
+      <origin rpy="0 0 0" xyz="0.006 0 0.0"/>
+    </visual>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.000348958333333" ixy="0" ixz="0" iyy="0.000348958333333" iyz="0" izz="3.125e-05"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.006 0 0.0"/>
+      <geometry>
+        <mesh filename="file:///mnt/c/Users/ayhan/harvesting_ws/src/docs/RESEARCH/EI_Pick_n_Place/pnp_ws/src/braccio_description/stl/braccio_wrist_roll.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="left_gripper_link">
+    <visual>
+      <geometry>
+        <mesh filename="file:///mnt/c/Users/ayhan/harvesting_ws/src/docs/RESEARCH/EI_Pick_n_Place/pnp_ws/src/braccio_description/stl/braccio_left_gripper.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="white"/>
+      <origin rpy="0 1.5708 0" xyz="0 -0.012 0"/>
+    </visual>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.000348958333333" ixy="0" ixz="0" iyy="0.000348958333333" iyz="0" izz="3.125e-05"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 1.5708 0" xyz="0 -0.012 0"/>
+      <geometry>
+        <mesh filename="file:///mnt/c/Users/ayhan/harvesting_ws/src/docs/RESEARCH/EI_Pick_n_Place/pnp_ws/src/braccio_description/stl/braccio_left_gripper.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="right_gripper_link">
+    <visual>
+      <geometry>
+        <mesh filename="file:///mnt/c/Users/ayhan/harvesting_ws/src/docs/RESEARCH/EI_Pick_n_Place/pnp_ws/src/braccio_description/stl/braccio_right_gripper.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="white"/>
+      <origin rpy="0 1.5708 0" xyz="0 -0.012 0.010"/>
+    </visual>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.000348958333333" ixy="0" ixz="0" iyy="0.000348958333333" iyz="0" izz="3.125e-05"/>
+    </inertial>
+    <collision>
+      <origin rpy="0 1.5708 0" xyz="0 -0.012 0.010"/>
+      <geometry>
+        <mesh filename="file:///mnt/c/Users/ayhan/harvesting_ws/src/docs/RESEARCH/EI_Pick_n_Place/pnp_ws/src/braccio_description/stl/braccio_right_gripper.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Joints - Using ORIGINAL Braccio rpy values + valid joint angles -->
+  <!-- Original rpy values align the meshes, we add joint angle on top -->
+  <joint name="world_joint" type="fixed">
+    <parent link="world"/>
+    <child link="base_link"/>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+  </joint>
+  <joint name="base_joint" type="fixed">
+    <!-- Face toward +X (plants), slight rotation -->
+    <origin rpy="0 0 0.3" xyz="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="braccio_base_link"/>
+  </joint>
+  <joint name="shoulder_joint" type="fixed">
+    <!-- Tilt forward toward plants: -2.8 + 2.0 = -0.8 -->
+    <origin rpy="-0.8 0 0" xyz="0 -0.002 0.072"/>
+    <parent link="braccio_base_link"/>
+    <child link="shoulder_link"/>
+  </joint>
+  <joint name="elbow_joint" type="fixed">
+    <!-- Bend elbow forward: -2.8 + 3.5 = 0.7 -->
+    <origin rpy="0.7 0 0" xyz="0 0 0.125"/>
+    <parent link="shoulder_link"/>
+    <child link="elbow_link"/>
+  </joint>
+  <joint name="wrist_pitch_joint" type="fixed">
+    <!-- Wrist angled: -2.8 + 3.2 = 0.4 -->
+    <origin rpy="0.4 0 0" xyz="0 0 0.125"/>
+    <parent link="elbow_link"/>
+    <child link="wrist_pitch_link"/>
+  </joint>
+  <joint name="wrist_roll_joint" type="fixed">
+    <!-- Neutral wrist roll -->
+    <origin rpy="0 0 0" xyz="0 0 0.06"/>
+    <parent link="wrist_pitch_link"/>
+    <child link="wrist_roll_link"/>
+  </joint>
+  <joint name="gripper_joint" type="fixed">
+    <!-- Gripper pointing forward, slightly open -->
+    <origin rpy="0 0.8 0" xyz="0.010 0 0.03"/>
+    <parent link="wrist_roll_link"/>
+    <child link="right_gripper_link"/>
+  </joint>
+  <joint name="sub_gripper_joint" type="fixed">
+    <!-- Mirror gripper -->
+    <origin rpy="0 -0.8 0" xyz="-0.010 0 0.03"/>
+    <parent link="wrist_roll_link"/>
+    <child link="left_gripper_link"/>
+  </joint>
+
+  <!-- Materials -->
+  <material name="gray">
+    <color rgba="0.572 0.584 0.568 1.0"/>
+  </material>
+  <material name="white">
+    <color rgba="0.8 0.8 0.8 1.0"/>
+  </material>
+  <material name="black">
+    <color rgba="0 0 0 0.50"/>
+  </material>
+</robot>
