@@ -55,7 +55,9 @@ Link dimensions and inertial properties are derived from the CAD model and verif
 
 The reachable workspace must encompass all three cotton cluster positions. Figure 5 shows the workspace envelope calculated from forward kinematics across joint limits.
 
-**[Figure 5: Workspace Reachability Analysis showing (a) top view with cluster positions marked, (b) side view showing height range]**
+<img src="figures/figure_05_workspace_analysis.png" alt="Figure 5: Workspace Reachability Analysis" width="80%">
+
+*Figure 5: Workspace Reachability Analysis showing (a) top view with cluster positions marked, (b) side view showing height range*
 
 **Table 10. Cluster Reachability Verification**
 
@@ -78,11 +80,11 @@ The eye-in-hand camera is simulated using Gazebo's rgbd_camera sensor plugin, co
 
 ### Pinhole Camera Model
 
-The camera follows the standard pinhole projection model [21] (Figure 6). The intrinsic matrix K encapsulates internal parameters:
+The camera follows the standard pinhole projection model (Figure 6). The intrinsic matrix K encapsulates internal parameters:
 
 <img src="pinhole.png" alt="Figure 6: Pinhole Camera Model" width="50%">
 
-*Figure 6: Pinhole Camera Model [21]*
+*Figure 6: Pinhole Camera Model https://www.researchgate.net/figure/Pinhole-camera-model-projection-from-3D-scene-to-2D-image_fig3_339068804*
 
 **Equation 1. Camera Intrinsic Matrix**
 
@@ -229,7 +231,9 @@ This 60° overlap between adjacent positions provides:
 
 The entire mock field (±45° from center) falls within the combined FOV (Figure 11).
 
-**[Figure 11: FOV Overlap Diagram showing top-down view of camera coverage cones from all 7 horizontal positions, with shaded overlap regions and cluster positions marked]**
+<img src="figures/figure_11_fov_overlap.png" alt="Figure 11: FOV Overlap Diagram" width="50%">
+
+*Figure 11: FOV Overlap Diagram showing top-down view of camera coverage cones from all 7 horizontal positions, with shaded overlap regions and cluster positions marked*
 
 ### Scan Timing Parameters
 
@@ -255,7 +259,9 @@ The camera_focus node implements image-based visual servoing (IBVS) [23], mappin
 
 Gains derived empirically (K ≈ 0.3 rad / 150 pixels). The arm geometry provides approximate decoupling—horizontal error maps to hip rotation, vertical error to shoulder/elbow—enabling centering within 2-3 iterations without Jacobian-based IK. Max adjustment limited to 0.3 rad/iteration.
 
-**[Figure 12: Visual Servoing Convergence showing (a) initial off-center, (b) after iteration 1, (c) centered view with error < 20 pixels]**
+<img src="figures/figure_12_visual_servoing_convergence.png" alt="Figure 12: Visual Servoing Convergence" width="80%">
+
+*Figure 12: Visual Servoing Convergence showing (a) initial off-center, (b) after iteration 1, (c) centered view with error < 20 pixels*
 
 ### Partial Visibility Recovery
 
@@ -264,7 +270,9 @@ When a cluster is detected at the frame edge (truncated bbox, ~0.65 confidence):
 - Full cluster visibility achieved within 2 iterations
 - Centered depth measurement improves localization accuracy
 
-**[Figure 13: Partial Visibility Recovery showing (a) cluster at image edge, (b) centered after focus iterations]**
+<img src="figures/partially_visible.png" alt="Figure 13a: Cluster at image edge" width="45%"> <img src="figures/centered_after_focus.png" alt="Figure 13b: Centered after focus" width="45%">
+
+*Figure 13: Partial Visibility Recovery showing (a) cluster at image edge, (b) centered after focus iterations*
 
 ### Motion Planning Integration
 
@@ -277,16 +285,6 @@ MoveIt2 provides collision-aware planning [19] for larger movements (see **Appen
 Quantitative validation compares detected cluster positions against known ground truth positions in the simulated environment.
 
 ### Ground Truth Configuration
-
-The mock field contains three cotton clusters at known positions (Table 11).
-
-**Table 11. Ground Truth Cluster Positions and Distances**
-
-| Cluster | Position (x, y, z) m | Height | Location | Min Distance to Neighbor |
-|---------|---------------------|--------|----------|--------------------------|
-| cluster_1 | (0.875, 0.475, 0.46) | 0.46 m | Left | 0.485 m (to cluster_2) |
-| cluster_2 | (0.975, 0.0, 0.52) | 0.52 m | Center | 0.485 m (to cluster_1/3) |
-| cluster_3 | (0.875, -0.475, 0.42) | 0.42 m | Right | 0.485 m (to cluster_2) |
 
 The minimum inter-cluster distance of 0.485m informs the merge radius calculation (0.121m = 25% × 0.485m).
 
@@ -366,7 +364,7 @@ The XY positioning accuracy of sub-centimeter meets the precision grasping requi
 
 The web-based dashboard provides real-time monitoring and control per ergonomic requirements ER-01/ER-02.
 
-**[Figure 14: RoboCot App Interface]** — Components: color-coded status banner, session metrics (bolls harvested, success rate), ML confidence display, 5-step pipeline flow, timestamped alerts, control panel.
+*(See Appendix Figure 14)*
 
 | Control | Behavior | Requirement |
 |---------|----------|-------------|
@@ -403,6 +401,18 @@ The web-based dashboard provides real-time monitoring and control per ergonomic 
 
 ---
 
+<img src="figures/figure_cv_vs_yolo_sidebyside.png" alt="Figure 15: Classical CV vs YOLO Comparison" width="100%">
+
+*Figure 15: Classical CV vs Deep Learning Detection — HSV segmentation detects all white regions (robot gripper parts) as false positives, while YOLO11 correctly identifies only cotton bolls*
+
+---
+
+<img src="robocot_app_ss.png" alt="Figure 14: RoboCot App Interface" width="50%">
+
+*Figure 14: RoboCot App Interface — Components: color-coded status banner, session metrics (bolls harvested, success rate), ML confidence display, 5-step pipeline flow, timestamped alerts, control panel*
+
+---
+
 **Table 18. Primary ROS2 Topics** 
 
 | Topic | Message Type | Rate | Description |
@@ -424,22 +434,9 @@ The web-based dashboard provides real-time monitoring and control per ergonomic 
 | `/camera_focus/center_on_pixel` | FocusFromPixel | camera_focus | Adjust arm to center target in view |
 
 
-**[Figure 4: Kinematic Chain Diagram showing the 6-DOF Braccio arm with joint axes, link lengths and coordinate frames at each joint]**
-The kinematic chain follows the sequence:
+<img src="figures/figure_04_kinematic_chain.svg" alt="Figure 4: Kinematic Chain Diagram" width="80%">
 
-```
-world (fixed)
-  └── base_link ─────────────────────── Fixed mounting plate
-        └── braccio_base_link ─────────── J1: Base rotation (Z-axis)
-              └── shoulder_link ─────────── J2: Shoulder pitch (X-axis)
-                    └── elbow_link ─────────── J3: Elbow pitch (X-axis)
-                          └── wrist_pitch_link ── J4: Wrist pitch (X-axis)
-                                └── wrist_roll_link ── J5: Wrist roll (Z-axis)
-                                      ├── right_gripper_link ── J6: Gripper (Y-axis)
-                                      └── left_gripper_link ─── Mimic joint
-                                            └── camera_link
-                                                  └── camera_optical_frame
-```
+*Figure 4: Kinematic Chain Diagram showing the 6-DOF Braccio arm with joint axes, link lengths and coordinate frames at each joint*
 
 
 **Table 20. Braccio Arm Joint Specifications**
@@ -468,7 +465,7 @@ All joints are configured with damping coefficient of 0.1 Ns/rad and friction co
 | wrist_roll_link | 0.030 | 0.1 | Wrist roll mechanism |
 | gripper_links (×2) | — | 0.1 each | Parallel jaw fingers |
 
-**Total arm length (extended):** 0.072 + 0.125 + 0.125 + 0.060 + 0.030 = **0.412m** base to wrist, plus gripper reach providing approximately **520mm** total reach from base.
+**Total arm length (extended):** 0.072 + 0.125 + 0.125 + 0.060 + 0.030 = **0.412m** base to wrist, plus gripper reach providing approximately **520mm** total reach from base (per manufacturer specifications).
 
 
 ### Solidworks CAD Model
