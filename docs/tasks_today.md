@@ -39,3 +39,6 @@ Slide deck: architecture diagram (old 4-DOF vs new M1013), spec comparison table
 Want me to start on Task 1 (copying meshes) and Task 2 (writing the M1013 xacro)?
 
 
+----
+
+- [ ] monster'da docker'ı build edip mac'te runlamak nasıl olur?? yani en azından commandleri çalıştırabildiğimizi, fundamental işleri halledebildiğimizi, simule edebildiğimiz, bi çeşit mocklama işi?? lab visit'e kadar olabildiğince hazırlıklı olalım ve tüm detayları planlayalım diye diyorum

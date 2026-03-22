@@ -2,7 +2,7 @@
 """
 ROS2 Arm Control Node
 
-Interactive command-line interface to control the 4-DOF robot arm.
+Interactive command-line interface to control the M1013 6-DOF robot arm + Hand-E gripper.
 
 Commands:
   move    - Set all joint positions
@@ -26,47 +26,73 @@ class ArmController(Node):
         super().__init__('arm_controller_node')
 
         # Publisher for arm commands
-        self.pub = self.create_publisher(
+        self.arm_pub = self.create_publisher(
             JointTrajectory,
             '/arm_controller/joint_trajectory',
             10
         )
 
-        # Joint name mapping
-        self.joint_dict = {'hip': 0, 'shoulder': 1, 'elbow': 2, 'wrist': 3}
-        self.joint_names = ['hip', 'shoulder', 'elbow', 'wrist', 'l_g_base', 'r_g_base']
+        # Publisher for gripper commands
+        self.gripper_pub = self.create_publisher(
+            JointTrajectory,
+            '/gripper_controller/joint_trajectory',
+            10
+        )
 
-        # Initialize trajectory message
-        self.jt = JointTrajectory()
-        self.jt.header.frame_id = "base_link"
-        self.jt.joint_names = self.joint_names
+        # Joint name mapping (M1013 6-DOF)
+        self.joint_dict = {
+            'joint1': 0, 'joint2': 1, 'joint3': 2,
+            'joint4': 3, 'joint5': 4, 'joint6': 5
+        }
+        self.arm_joint_names = ['joint1', 'joint2', 'joint3', 'joint4', 'joint5', 'joint6']
+        self.gripper_joint_names = ['hande_left_finger_joint']
+
+        # Initialize trajectory messages
+        self.arm_jt = JointTrajectory()
+        self.arm_jt.header.frame_id = "base_0"
+        self.arm_jt.joint_names = self.arm_joint_names
 
         # Initial positions
         self.positions = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        self.gripper_open = True
+        self.gripper_pos = 0.0  # 0=closed, 0.025=open
+        self.gripper_open = False
 
         self.get_logger().info("=" * 50)
-        self.get_logger().info("4-DOF ROBOT ARM CONTROLLER (ROS2)")
+        self.get_logger().info("M1013 6-DOF ARM CONTROLLER (ROS2)")
         self.get_logger().info("=" * 50)
         self.get_logger().info("Commands:")
-        self.get_logger().info("  move    - Set hip, shoulder, elbow, wrist positions")
+        self.get_logger().info("  move    - Set joint1-6 positions")
         self.get_logger().info("  stop    - Return to home and exit")
         self.get_logger().info("  release - Open gripper")
         self.get_logger().info("  close   - Close gripper")
         self.get_logger().info("  change  - Change single joint (format: joint_name : value)")
         self.get_logger().info("=" * 50)
 
-    def send_trajectory(self):
+    def send_arm_trajectory(self):
         """Send current positions as trajectory command."""
-        self.jt.header.stamp = self.get_clock().now().to_msg()
+        self.arm_jt.header.stamp = self.get_clock().now().to_msg()
 
         point = JointTrajectoryPoint()
         point.positions = self.positions.copy()
+        point.time_from_start = Duration(sec=2, nanosec=0)
+
+        self.arm_jt.points = [point]
+        self.arm_pub.publish(self.arm_jt)
+        self.get_logger().info(f"Sent arm positions: {self.positions}")
+
+    def send_gripper_trajectory(self, position: float):
+        """Send gripper command."""
+        jt = JointTrajectory()
+        jt.header.stamp = self.get_clock().now().to_msg()
+        jt.joint_names = self.gripper_joint_names
+
+        point = JointTrajectoryPoint()
+        point.positions = [position]
         point.time_from_start = Duration(sec=1, nanosec=0)
 
-        self.jt.points = [point]
-        self.pub.publish(self.jt)
-        self.get_logger().info(f"Sent positions: {self.positions}")
+        jt.points = [point]
+        self.gripper_pub.publish(jt)
+        self.get_logger().info(f"Sent gripper position: {position}")
 
     def run(self):
         """Main control loop."""
@@ -76,37 +102,33 @@ class ArmController(Node):
 
                 if command == "stop":
                     self.positions = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-                    self.send_trajectory()
+                    self.send_arm_trajectory()
                     self.get_logger().info("Returning to home. Goodbye!")
                     break
 
                 elif command == "move":
-                    for i in range(4):
+                    for i in range(6):
                         try:
-                            pos = float(input(f"  {self.joint_names[i]} position: "))
+                            pos = float(input(f"  {self.arm_joint_names[i]} position: "))
                             self.positions[i] = pos
                         except ValueError:
                             self.get_logger().warn("Invalid input, keeping previous value")
-                    self.send_trajectory()
+                    self.send_arm_trajectory()
 
                 elif command == "release":
                     if self.gripper_open:
                         self.get_logger().info("Gripper already open!")
                     else:
-                        self.positions[4] = 0.0   # l_g_base
-                        self.positions[5] = 0.0   # r_g_base
+                        self.send_gripper_trajectory(0.025)
                         self.gripper_open = True
-                        self.send_trajectory()
                         self.get_logger().info("Gripper released")
 
                 elif command == "close":
                     if not self.gripper_open:
                         self.get_logger().info("Gripper already closed!")
                     else:
-                        self.positions[4] = 0.5236   # ~30 degrees
-                        self.positions[5] = -0.5236
+                        self.send_gripper_trajectory(0.0)
                         self.gripper_open = False
-                        self.send_trajectory()
                         self.get_logger().info("Gripper closed")
 
                 elif command == "change":
@@ -119,7 +141,7 @@ class ArmController(Node):
                             if joint_name in self.joint_dict:
                                 idx = self.joint_dict[joint_name]
                                 self.positions[idx] = value
-                                self.send_trajectory()
+                                self.send_arm_trajectory()
                                 self.get_logger().info(f"Set {joint_name} to {value}")
                             else:
                                 self.get_logger().warn(f"Unknown joint: {joint_name}")

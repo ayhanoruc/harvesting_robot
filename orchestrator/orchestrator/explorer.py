@@ -62,7 +62,7 @@ class ScanState(Enum):
 class ScanPosition:
     """Represents a single scan position in joint space."""
     name: str
-    joints: List[float]  # [hip, shoulder, elbow, wrist]
+    joints: List[float]  # [joint1, joint2, joint3, joint4, joint5, joint6]
     row: int  # 0=upper, 1=middle, 2=lower
     col: int  # 0=left, 1=center, 2=right
 
@@ -95,12 +95,16 @@ class ExplorerNode(Node):
         self.declare_parameter('height_variation', 0.06)   # Z variation across arc
         self.declare_parameter('pause_at_viewpoint', 1.5)  # Pause duration
 
-        # Panoramic scan parameters
-        # 7 columns at 15° steps: -45°, -30°, -15°, 0°, +15°, +30°, +45° (in radians)
-        self.declare_parameter('pan_hip_angles', [-0.78, -0.52, -0.26, 0.0, 0.26, 0.52, 0.78])
-        # 3 rows: middle (home), lower, and lowest (camera tilts DOWN via elbow only)
-        self.declare_parameter('pan_shoulder_range', [-1.3, -1.3, -1.3])  # All same shoulder
-        self.declare_parameter('pan_elbow_range', [1.5, 1.7, 1.9])        # Middle, lower, lowest
+        # Panoramic scan parameters (M1013 6-DOF)
+        # 7 columns at 15° steps via joint1 (base rotation): -45° to +45°
+        self.declare_parameter('pan_joint1_angles', [-0.78, -0.52, -0.26, 0.0, 0.26, 0.52, 0.78])
+        # 3 rows: camera tilts via joint2 (shoulder) and joint3 (elbow)
+        # joint4-6 maintain tool orientation
+        self.declare_parameter('pan_joint2_range', [-0.922, -0.922, -0.922])
+        self.declare_parameter('pan_joint3_range', [2.45, 2.65, 2.85])
+        self.declare_parameter('pan_joint4_range', [0.0, 0.0, 0.0])
+        self.declare_parameter('pan_joint5_range', [-1.5708, -1.5708, -1.5708])
+        self.declare_parameter('pan_joint6_range', [0.0, 0.0, 0.0])
         self.declare_parameter('pan_pause_duration', 1.0)  # Pause at each position for capture
         self.declare_parameter('pan_move_duration', 1.5)   # Time to move between positions
         self.declare_parameter('enable_detection', True)   # Run detection pipeline at each position
@@ -535,17 +539,23 @@ class ExplorerNode(Node):
 
         # Get parameters (use defaults if not set properly)
         try:
-            hip_angles = self.get_parameter('pan_hip_angles').value
-            shoulder_vals = self.get_parameter('pan_shoulder_range').value
-            elbow_vals = self.get_parameter('pan_elbow_range').value
+            j1_angles = self.get_parameter('pan_joint1_angles').value
+            j2_vals = self.get_parameter('pan_joint2_range').value
+            j3_vals = self.get_parameter('pan_joint3_range').value
+            j4_vals = self.get_parameter('pan_joint4_range').value
+            j5_vals = self.get_parameter('pan_joint5_range').value
+            j6_vals = self.get_parameter('pan_joint6_range').value
         except Exception:
             # Fallback defaults (5 columns × 2 rows)
-            hip_angles = [-0.70, -0.35, 0.0, 0.35, 0.70]
-            shoulder_vals = [-1.3, -1.5]
-            elbow_vals = [1.5, 1.7]
+            j1_angles = [-0.70, -0.35, 0.0, 0.35, 0.70]
+            j2_vals = [-0.922, -0.922]
+            j3_vals = [2.45, 2.65]
+            j4_vals = [0.0, 0.0]
+            j5_vals = [-1.5708, -1.5708]
+            j6_vals = [0.0, 0.0]
 
-        num_rows = len(shoulder_vals)
-        num_cols = len(hip_angles)
+        num_rows = len(j2_vals)
+        num_cols = len(j1_angles)
 
         # Dynamic row names based on count
         if num_rows == 2:
@@ -570,15 +580,19 @@ class ExplorerNode(Node):
             cols = range(num_cols) if row % 2 == 0 else range(num_cols - 1, -1, -1)
 
             for col in cols:
-                hip = hip_angles[col]
-                shoulder = shoulder_vals[row]
-                elbow = elbow_vals[row]
-                wrist = 0.0
+                joints = [
+                    j1_angles[col],
+                    j2_vals[row],
+                    j3_vals[row],
+                    j4_vals[row],
+                    j5_vals[row],
+                    j6_vals[row],
+                ]
 
                 name = f"{row_names[row]}_{col_names[col]}"
                 positions.append(ScanPosition(
                     name=name,
-                    joints=[hip, shoulder, elbow, wrist],
+                    joints=joints,
                     row=row,
                     col=col
                 ))
@@ -602,8 +616,8 @@ class ExplorerNode(Node):
         self.get_logger().info("")
 
         for i, pos in enumerate(self.pan_positions):
-            hip_deg = pos.joints[0] * 57.3  # rad to deg
-            joints_str = f"hip={hip_deg:+5.0f}° sh={pos.joints[1]:+.2f} el={pos.joints[2]:+.2f}"
+            j1_deg = pos.joints[0] * 57.3  # rad to deg
+            joints_str = f"j1={j1_deg:+5.0f}° j2={pos.joints[1]:+.2f} j3={pos.joints[2]:+.2f}"
             self.get_logger().info(f"  {i+1:2d}. {pos.name:20s} {joints_str}")
 
         self.get_logger().info("=" * 70)
@@ -613,14 +627,14 @@ class ExplorerNode(Node):
         Send joint trajectory command and wait for completion.
 
         Args:
-            joints: [hip, shoulder, elbow, wrist] target positions
+            joints: [joint1, joint2, joint3, joint4, joint5, joint6] target positions
             duration_sec: Time to reach the target
 
         Returns:
             True if movement likely succeeded (we don't have feedback, so we wait)
         """
-        # Joint names must match controller config
-        joint_names = ['hip', 'shoulder', 'elbow', 'wrist', 'l_g_base', 'r_g_base']
+        # Joint names must match controller config (M1013 6-DOF)
+        joint_names = ['joint1', 'joint2', 'joint3', 'joint4', 'joint5', 'joint6']
 
         # Create trajectory message
         traj_msg = JointTrajectory()
@@ -628,8 +642,7 @@ class ExplorerNode(Node):
 
         # Single point trajectory
         point = JointTrajectoryPoint()
-        # Add gripper joints (keep at 0)
-        point.positions = joints + [0.0, 0.0]
+        point.positions = joints[:6]
         point.time_from_start = Duration(sec=int(duration_sec), nanosec=int((duration_sec % 1) * 1e9))
 
         traj_msg.points = [point]
@@ -727,8 +740,8 @@ class ExplorerNode(Node):
 
                 # Publish scan position info (for data capture nodes)
                 msg = String()
-                # Format: name|row|col|hip|shoulder|elbow|wrist
-                msg.data = f"{pos.name}|{pos.row}|{pos.col}|{pos.joints[0]:.3f}|{pos.joints[1]:.3f}|{pos.joints[2]:.3f}|{pos.joints[3]:.3f}"
+                # Format: name|row|col|j1|j2|j3|j4|j5|j6
+                msg.data = f"{pos.name}|{pos.row}|{pos.col}|" + "|".join(f"{j:.3f}" for j in pos.joints)
                 self.scan_position_pub.publish(msg)
 
                 # Also publish position name for detection pipeline
@@ -737,7 +750,7 @@ class ExplorerNode(Node):
                 self.detection_position_pub.publish(pos_msg)
 
                 self.get_logger().info(f"{progress} CAPTURING at {pos.name} for {pause_duration}s")
-                self.get_logger().info(f"         joints: [{pos.joints[0]:+.2f}, {pos.joints[1]:+.2f}, {pos.joints[2]:+.2f}, {pos.joints[3]:+.2f}]")
+                self.get_logger().info(f"         joints: [{', '.join(f'{j:+.2f}' for j in pos.joints)}]")
 
                 # Pause for capture (vision nodes can subscribe to /explorer/scan_position)
                 import time
@@ -751,9 +764,9 @@ class ExplorerNode(Node):
             else:
                 self.get_logger().warn(f"{progress} FAILED to reach {pos.name}")
 
-        # Scan complete - return to home
+        # Scan complete - return to home (M1013 home position)
         self.get_logger().info("Returning to HOME position...")
-        home_joints = [0.0, -1.3, 1.5, 0.0]
+        home_joints = [0.0, -0.922, 2.4494, 0.0, -1.5708, 0.0]
         self._move_to_joints_sync(home_joints, duration_sec=move_duration)
 
         with self._scan_lock:

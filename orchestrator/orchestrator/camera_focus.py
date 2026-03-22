@@ -13,8 +13,8 @@ Service:
 How it works:
     1. Pixel error = (target_pixel - image_center)
     2. Convert pixel error to joint adjustments:
-       - Horizontal error → hip rotation
-       - Vertical error → shoulder/elbow tilt
+       - Horizontal error → joint1 (base) rotation
+       - Vertical error → joint2 (shoulder) / joint3 (elbow) tilt
     3. Send adjusted joint positions to MoveIt
 """
 
@@ -42,22 +42,22 @@ class CameraFocusNode(Node):
         self.get_logger().info('Camera Focus node initializing...')
 
         # Parameters - pixel error to joint angle gains
-        self.declare_parameter('gain_hip', 0.002)        # rad per pixel
-        self.declare_parameter('gain_shoulder', 0.0015)  # rad per pixel
-        self.declare_parameter('gain_elbow', 0.001)      # rad per pixel
-        self.declare_parameter('image_center_u', 320)    # image width / 2
-        self.declare_parameter('image_center_v', 240)    # image height / 2
-        self.declare_parameter('max_adjustment', 0.3)    # max radians per call
+        self.declare_parameter('gain_joint1', 0.002)      # rad per pixel (base rotation)
+        self.declare_parameter('gain_joint2', 0.0015)      # rad per pixel (shoulder)
+        self.declare_parameter('gain_joint3', 0.001)       # rad per pixel (elbow)
+        self.declare_parameter('image_center_u', 320)      # image width / 2
+        self.declare_parameter('image_center_v', 240)      # image height / 2
+        self.declare_parameter('max_adjustment', 0.3)      # max radians per call
 
-        self.gain_hip = self.get_parameter('gain_hip').value
-        self.gain_shoulder = self.get_parameter('gain_shoulder').value
-        self.gain_elbow = self.get_parameter('gain_elbow').value
+        self.gain_j1 = self.get_parameter('gain_joint1').value
+        self.gain_j2 = self.get_parameter('gain_joint2').value
+        self.gain_j3 = self.get_parameter('gain_joint3').value
         self.center_u = self.get_parameter('image_center_u').value
         self.center_v = self.get_parameter('image_center_v').value
         self.max_adj = self.get_parameter('max_adjustment').value
 
-        # Joint names (must match URDF)
-        self.joint_names = ['hip', 'shoulder', 'elbow', 'wrist']
+        # Joint names (must match URDF - M1013 6-DOF)
+        self.joint_names = ['joint1', 'joint2', 'joint3', 'joint4', 'joint5', 'joint6']
 
         # Current joint positions
         self.current_joints = {}
@@ -99,7 +99,7 @@ class CameraFocusNode(Node):
 
         self.get_logger().info('Camera Focus ready.')
         self.get_logger().info(f'  Service: /camera_focus/center_on_pixel')
-        self.get_logger().info(f'  Gains - hip: {self.gain_hip}, shoulder: {self.gain_shoulder}')
+        self.get_logger().info(f'  Gains - j1: {self.gain_j1}, j2: {self.gain_j2}')
 
     def joint_state_callback(self, msg: JointState):
         """Store current joint positions."""
@@ -107,7 +107,7 @@ class CameraFocusNode(Node):
             if name in self.joint_names:
                 self.current_joints[name] = pos
 
-        if len(self.current_joints) >= 4 and not self.joints_received:
+        if len(self.current_joints) >= 6 and not self.joints_received:
             self.joints_received = True
             self.get_logger().info(f'Joint states received: {list(self.current_joints.keys())}')
 
@@ -132,31 +132,33 @@ class CameraFocusNode(Node):
         self.get_logger().info(f'Pixel error: ({error_u}, {error_v})')
 
         # Compute joint adjustments
-        # Hip: rotates view left/right - negative because right pixel needs left rotation
-        hip_delta = -self.gain_hip * error_u
+        # Joint1 (base): rotates view left/right - negative because right pixel needs left rotation
+        j1_delta = -self.gain_j1 * error_u
 
-        # Shoulder: positive error_v (down) needs to tilt down (POSITIVE shoulder)
-        shoulder_delta = self.gain_shoulder * error_v
+        # Joint2 (shoulder): positive error_v (down) needs to tilt down
+        j2_delta = self.gain_j2 * error_v
 
-        # Elbow: assists shoulder for tilt, opposite direction
-        elbow_delta = -self.gain_elbow * error_v
+        # Joint3 (elbow): assists shoulder for tilt, opposite direction
+        j3_delta = -self.gain_j3 * error_v
 
         # Clamp adjustments
-        hip_delta = max(-self.max_adj, min(self.max_adj, hip_delta))
-        shoulder_delta = max(-self.max_adj, min(self.max_adj, shoulder_delta))
-        elbow_delta = max(-self.max_adj, min(self.max_adj, elbow_delta))
+        j1_delta = max(-self.max_adj, min(self.max_adj, j1_delta))
+        j2_delta = max(-self.max_adj, min(self.max_adj, j2_delta))
+        j3_delta = max(-self.max_adj, min(self.max_adj, j3_delta))
 
-        # Compute new joint targets
+        # Compute new joint targets (joint4-6 keep current values)
         new_joints = {
-            'hip': self.current_joints.get('hip', 0.0) + hip_delta,
-            'shoulder': self.current_joints.get('shoulder', 0.0) + shoulder_delta,
-            'elbow': self.current_joints.get('elbow', 0.0) + elbow_delta,
-            'wrist': self.current_joints.get('wrist', 0.0),  # Keep wrist same
+            'joint1': self.current_joints.get('joint1', 0.0) + j1_delta,
+            'joint2': self.current_joints.get('joint2', 0.0) + j2_delta,
+            'joint3': self.current_joints.get('joint3', 0.0) + j3_delta,
+            'joint4': self.current_joints.get('joint4', 0.0),
+            'joint5': self.current_joints.get('joint5', 0.0),
+            'joint6': self.current_joints.get('joint6', 0.0),
         }
 
         self.get_logger().info(
-            f'Joint adjustments - hip: {hip_delta:.3f}, '
-            f'shoulder: {shoulder_delta:.3f}, elbow: {elbow_delta:.3f}'
+            f'Joint adjustments - j1: {j1_delta:.3f}, '
+            f'j2: {j2_delta:.3f}, j3: {j3_delta:.3f}'
         )
         self.get_logger().info(f'New joint targets: {new_joints}')
 
@@ -165,7 +167,7 @@ class CameraFocusNode(Node):
 
         if success:
             response.success = True
-            response.message = f'Centered on pixel ({u}, {v}). Adjustments: hip={hip_delta:.3f}, shoulder={shoulder_delta:.3f}'
+            response.message = f'Centered on pixel ({u}, {v}). Adjustments: j1={j1_delta:.3f}, j2={j2_delta:.3f}'
         else:
             response.success = False
             response.message = 'Motion execution failed'

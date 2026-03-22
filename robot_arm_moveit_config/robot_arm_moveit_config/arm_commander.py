@@ -71,8 +71,8 @@ class ArmCommander(Node):
         if 'home' not in self.named_targets:
             self.named_targets['home'] = [0.3, 0.0, 0.6]  # Safe home (forward and up)
 
-        # Joint names for the "arm" planning group (4 joints only, no gripper)
-        self.arm_joint_names = ['hip', 'shoulder', 'elbow', 'wrist']
+        # Joint names for the "arm" planning group (M1013 6-DOF, no gripper)
+        self.arm_joint_names = ['joint1', 'joint2', 'joint3', 'joint4', 'joint5', 'joint6']
 
         # Planning frame (use base_link for MoveIt)
         self.planning_frame = "world"  # or "base_link" if preferred
@@ -109,7 +109,7 @@ class ArmCommander(Node):
 
         # Auto-home on startup: move arm to safe home position
         self.get_logger().info("Moving to HOME position on startup...")
-        home_joints = [0.0, -1.3, 1.5, 0.0]  # hip, shoulder, elbow, wrist
+        home_joints = [0.0, -0.922, 2.4494, 0.0, -1.5708, 0.0]  # M1013 home
         if self.send_joint_goal(home_joints):
             self.get_logger().info("HOME position reached!")
         else:
@@ -213,9 +213,8 @@ class ArmCommander(Node):
 
         # SPECIAL CASE: 'home' uses joint goal for reliability
         if target_name == 'home':
-            # Use "home" pose: Retracted safe position (pulled back, elbow down)
-            # Hip=0, Shoulder=-1.3 (back ~75deg), Elbow=1.5 (bend down), Wrist=0
-            joint_values = [0.0, -1.3, 1.5, 0.0]
+            # Use "home" pose: M1013 retracted safe position
+            joint_values = [0.0, -0.922, 2.4494, 0.0, -1.5708, 0.0]
             self.get_logger().info(f"Moving to '{target_name}' using JOINT goal: {joint_values}")
             success = self.send_joint_goal(joint_values)
             response.success = success
@@ -302,7 +301,7 @@ class ArmCommander(Node):
             self.get_logger().error(f"Failed: error_code={result.result.error_code.val}")
             return False
 
-    def send_pose_goal(self, x, y, z, orientation_constraint=False, wrist_constraint=True):
+    def send_pose_goal(self, x, y, z, orientation_constraint=False, wrist_constraint=False):
         """Send Cartesian pose goal to MoveGroup."""
         goal_msg = MoveGroup.Goal()
 
@@ -359,8 +358,8 @@ class ArmCommander(Node):
             ori_constraint.orientation.y = 0.0
             ori_constraint.orientation.z = 0.0
             ori_constraint.orientation.w = 1.0
-            # Loose tolerances - 4DOF arm can't fully control orientation
-            # Allow ~30° variation on each axis for feasibility
+            # Loose tolerances for M1013 6-DOF
+            # Allow variation on each axis for feasibility
             ori_constraint.absolute_x_axis_tolerance = 0.5
             ori_constraint.absolute_y_axis_tolerance = 0.5
             ori_constraint.absolute_z_axis_tolerance = 3.14  # Allow yaw freedom
@@ -373,8 +372,8 @@ class ArmCommander(Node):
         if wrist_constraint:
             from moveit_msgs.msg import JointConstraint
             jc = JointConstraint()
-            jc.joint_name = "wrist"
-            # Keep wrist near neutral to prevent gripper from flipping wildly
+            jc.joint_name = "joint5"
+            # Keep joint5 (wrist2) near neutral to prevent gripper from flipping
             jc.position = 0.0
             jc.tolerance_above = 1.0  # ~57 degrees
             jc.tolerance_below = 1.0
