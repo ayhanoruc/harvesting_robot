@@ -1,33 +1,36 @@
 joint_limits:
-  hip:
-    has_position_limits: false
+  joint1:
     has_velocity_limits: true
-    max_velocity: 1.0
+    max_velocity: 2.0944
     has_acceleration_limits: true
-    max_acceleration: 2.0
-  shoulder:
+    max_acceleration: 3.0
+  joint2:
     has_velocity_limits: true
-    max_velocity: 1.0
+    max_velocity: 2.0944
     has_acceleration_limits: true
-    max_acceleration: 2.0
-  elbow:
+    max_acceleration: 3.0
+  joint3:
     has_velocity_limits: true
-    max_velocity: 1.0
+    max_velocity: 3.1416
     has_acceleration_limits: true
-    max_acceleration: 2.0
-  wrist:
-    has_position_limits: false
+    max_acceleration: 4.0
+  joint4:
     has_velocity_limits: true
-    max_velocity: 1.0
+    max_velocity: 3.927
     has_acceleration_limits: true
-    max_acceleration: 2.0
-  l_g_base:
+    max_acceleration: 5.0
+  joint5:
     has_velocity_limits: true
-    max_velocity: 1.0
+    max_velocity: 3.927
     has_acceleration_limits: true
-    max_acceleration: 2.0
-  r_g_base:
+    max_acceleration: 5.0
+  joint6:
     has_velocity_limits: true
-    max_velocity: 1.0
+    max_velocity: 3.927
     has_acceleration_limits: true
-    max_acceleration: 2.0
+    max_acceleration: 5.0
+  hande_left_finger_joint:
+    has_velocity_limits: true
+    max_velocity: 0.15
+    has_acceleration_limits: true
+    max_acceleration: 0.5

@@ -31,7 +31,7 @@ arm:
     - RRT
     - PRM
     - EST
-  projection_evaluator: joints(joint1,joint2)
+  projection_evaluator: joints(hip,shoulder)
 
 gripper:
   default_planner_config: RRTConnect

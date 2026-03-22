@@ -1,5 +1,5 @@
 """
-MoveIt 2 Launch file for robot_arm
+MoveIt 2 Launch file for M1013 + Hand-E
 
 Launches move_group and RViz for motion planning.
 Connects to existing Gazebo simulation (run bot.launch.py first).
@@ -33,7 +33,7 @@ def generate_launch_description():
     moveit_config_pkg = get_package_share_directory('robot_arm_moveit_config')
 
     # Process URDF via xacro
-    xacro_file = os.path.join(robot_arm_pkg, 'urdf', 'mybot.urdf.xacro')
+    xacro_file = os.path.join(robot_arm_pkg, 'urdf', 'm1013_robocot.urdf.xacro')
     robot_description_content = xacro.process_file(xacro_file).toxml()
     robot_description = {'robot_description': robot_description_content}
 
