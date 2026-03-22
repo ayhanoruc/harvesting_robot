@@ -27,13 +27,14 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}
 )
 
-# Install URDF, config, world files, and models
+# Install URDF, config, world files, models, and meshes
 install(DIRECTORY
   urdf
   yaml
   worlds
   config
   models
+  meshes
   DESTINATION share/${PROJECT_NAME}
 )
 

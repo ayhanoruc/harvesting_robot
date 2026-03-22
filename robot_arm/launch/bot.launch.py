@@ -1,5 +1,5 @@
 """
-ROS2 Launch file for 4-DOF Robot Arm in Gazebo Sim (Ignition Fortress)
+ROS2 Launch file for M1013 + Hand-E Robot in Gazebo Sim (Ignition Fortress)
 
 Launches:
   - Gazebo Sim with cotton_field world
@@ -7,7 +7,8 @@ Launches:
   - Spawns robot in Gazebo (gz_ros2_control plugin handles hardware)
   - ROS-Gazebo bridges for topics
   - joint_state_broadcaster
-  - arm_controller (joint trajectory controller)
+  - arm_controller (6-DOF joint trajectory controller)
+  - gripper_controller (Hand-E prismatic finger)
   - landmark_publisher (static TF + collision objects)
 
 Note: The gz_ros2_control plugin in the URDF creates the controller_manager
@@ -47,7 +48,7 @@ def generate_launch_description():
     bridge_params = os.path.join(pkg_path, 'config', 'gz_bridge.yaml')
 
     # Process xacro file with mappings
-    xacro_file = os.path.join(pkg_path, 'urdf', 'mybot.urdf.xacro')
+    xacro_file = os.path.join(pkg_path, 'urdf', 'm1013_robocot.urdf.xacro')
     robot_description_content = xacro.process_file(
         xacro_file,
         mappings={'controllers_yaml': controllers_yaml}
@@ -76,6 +77,16 @@ def generate_launch_description():
     set_ign_resource_path = AppendEnvironmentVariable(
         'IGN_GAZEBO_RESOURCE_PATH',
         os.path.join(pkg_path, 'models')
+    )
+
+    # Add share/ parent so Gazebo can resolve package://robot_arm/meshes/... URIs
+    set_gz_mesh_path = AppendEnvironmentVariable(
+        'GZ_SIM_RESOURCE_PATH',
+        os.path.join(pkg_path, '..')
+    )
+    set_ign_mesh_path = AppendEnvironmentVariable(
+        'IGN_GAZEBO_RESOURCE_PATH',
+        os.path.join(pkg_path, '..')
     )
 
     # Gazebo Sim launch (Ignition Fortress)
@@ -152,6 +163,14 @@ def generate_launch_description():
         output='screen',
     )
 
+    # Spawn gripper_controller
+    gripper_controller_spawner = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=['gripper_controller', '--controller-manager', '/controller_manager'],
+        output='screen',
+    )
+
     # Delay controller spawning until robot is spawned in Gazebo
     delay_joint_state_broadcaster = RegisterEventHandler(
         event_handler=OnProcessExit(
@@ -165,6 +184,14 @@ def generate_launch_description():
         event_handler=OnProcessExit(
             target_action=joint_state_broadcaster_spawner,
             on_exit=[arm_controller_spawner],
+        )
+    )
+
+    # Delay gripper_controller until arm_controller is ready
+    delay_gripper_controller = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=arm_controller_spawner,
+            on_exit=[gripper_controller_spawner],
         )
     )
 
@@ -183,10 +210,10 @@ def generate_launch_description():
         ]
     )
 
-    # Delay landmark publisher until arm_controller is ready
+    # Delay landmark publisher until gripper_controller is ready
     delay_landmark_publisher = RegisterEventHandler(
         event_handler=OnProcessExit(
-            target_action=arm_controller_spawner,
+            target_action=gripper_controller_spawner,
             on_exit=[landmark_publisher],
         )
     )
@@ -199,6 +226,8 @@ def generate_launch_description():
         ),
         set_gz_resource_path,
         set_ign_resource_path,
+        set_gz_mesh_path,
+        set_ign_mesh_path,
         gazebo,
         robot_state_publisher,
         spawn_entity,
@@ -206,5 +235,6 @@ def generate_launch_description():
         ros_gz_image_bridge,
         delay_joint_state_broadcaster,
         delay_arm_controller,
+        delay_gripper_controller,
         delay_landmark_publisher,
     ])
