@@ -279,7 +279,12 @@ Total scan time ~55s for 21 positions. See **Appendix Table 23** for detailed ti
 
 The camera_focus node implements image-based visual servoing (IBVS) [23], mapping pixel errors directly to joint adjustments:
 
-**Equation 8. Pixel Error:** `error_u = u - 320`, `error_v = v - 240`
+**Equation 8. Pixel Error**
+
+```
+    error_u = u - 320
+    error_v = v - 240
+```
 
 **Equation 9. Proportional Joint Adjustment**
 
