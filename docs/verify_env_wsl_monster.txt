@@ -1,0 +1,75 @@
+============================================
+  RoboCot Environment Verification
+  Date: Tue Mar 24 03:56:21 +03 2026
+  Host: ayhan
+  OS:   Linux x86_64
+============================================
+
+=== 1. SYSTEM ===
+Python:  bash: line 17: python: command not found
+Arch:    x86_64
+Distro:  "Ubuntu 22.04.5 LTS"
+
+=== 2. ROS2 ===
+ros2 CLI:     OK (/opt/ros/humble/bin/ros2)
+ROS_DISTRO:   humble
+RMW:          default
+Total pkgs:   0 ros packages
+
+=== 3. CUSTOM PACKAGES ===
+  robot_arm: OK
+  robot_arm_moveit_config: OK
+  orchestrator: OK
+  harvester_interfaces: OK
+
+=== 4. GAZEBO ===
+ign CLI:      Gazebo Sim, version 6.16.0
+
+=== 5. MOVEIT2 ===
+  moveit_msgs:     MISSING
+  moveit_ros_planning_interface: OK
+  moveit_ros_move_group: OK
+  moveit_kinematics: OK
+  moveit_planners_ompl: OK
+
+=== 6. ROS2_CONTROL ===
+  controller_manager: OK
+  joint_state_broadcaster: OK
+  joint_trajectory_controller: OK
+  gz_ros2_control: OK
+
+=== 7. VISION & ML ===
+  YOLO: MISSING
+  OpenCV: MISSING
+  cv_bridge: MISSING
+  PyTorch: MISSING
+  NumPy: MISSING
+
+=== 8. ROS-GZ BRIDGE ===
+  ros_gz_bridge: OK
+  ros_gz_image: OK
+  ros_gz_sim: OK
+
+=== 9. CUSTOM INTERFACES ===
+  msg/BoundingBox: OK
+  msg/DetectedCluster: OK
+  srv/YoloDetect: OK
+  srv/PixelTo3D: OK
+  srv/FocusFromPixel: OK
+  srv/FocusFromPosition: OK
+
+=== 10. URDF PARSE ===
+  URDF or controllers.yaml not found (run colcon build first)
+
+=== 11. BUILD TOOLS ===
+  colcon:   colcon-argcomplete 0.3.3: up-to-date
+  cmake:    cmake version 3.22.1
+  make:     GNU Make 4.3
+
+=== 12. SSH (Lab Access) ===
+  ssh:      OpenSSH_8.9p1 Ubuntu-3ubuntu0.13, OpenSSL 3.0.2 15 Mar 2022
+  ping:     available
+
+============================================
+  Verification Complete
+============================================
