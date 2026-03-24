@@ -135,6 +135,27 @@ ping -c 3 192.168.3.5    # Doosan controller
 - [ ] Emergency stop lokasyonu not alındı
 - [ ] Teach pendant'ta "Transfer Control" (ROS'a kontrol devri) nasıl yapılıyor?
 
+### 5a. KRITIK: Remote Mode Kontrolü
+
+Doosan'ın dışarıdan (ROS2/DRCF) komut kabul etmesi için teach pendant'ta **remote mode** aktif olmalı. Bu olmadan hiçbir ROS komutu çalışmaz.
+
+```
+Teach Pendant üzerinde:
+1. Settings → Control → External Control (veya Remote Mode)
+2. "Enable" yap
+3. IP/port doğrula: 192.168.3.5:12345
+4. Pendant'ta "Remote" ikonu görünmeli
+
+Xavier'dan doğrulama:
+nc -zv 192.168.3.5 12345    # Port açık mı?
+# Açıksa remote mode aktif demektir
+```
+
+- [ ] Remote mode menüsü bulundu (hangi menüde: _____)
+- [ ] Remote mode aktif edildi
+- [ ] Xavier'dan nc port testi başarılı
+- [ ] Pendant'ta remote mode nasıl açılıyor adım adım not alındı (gelecek ziyaretler için)
+
 ---
 
 ## 6. Hand-E Gripper (RS485)
@@ -166,6 +187,31 @@ print('OK')
 - [ ] Port adı: /dev/ttyUSB___ veya /dev/robotiq_gripper
 - [ ] Gripper fiziksel olarak parmakları hareket ettiriyor (elle test veya teach pendant'tan)
 - [ ] Serial port açılabiliyor
+
+### 6a. KRITIK: Hand-E İletişim Yolu Trace
+
+Hand-E'nin RS485 sinyali nerede sonlanıyor? İki olası yol var:
+
+```
+YOL A (Direkt): Xavier USB ← RS485 converter ← Hand-E kablo
+  → Bizim Docker container'dan direkt /dev/ttyUSB ile kontrol ederiz
+  → Robotiq ROS2 driver veya pymodbus ile haberleşme
+
+YOL B (Controller üzerinden): Xavier ← Doosan controller ← tool flange RS485 ← Hand-E
+  → Hand-E sinyali Doosan kontrolcüden geçiyor
+  → Doosan API (DRCF) üzerinden gripper komutları göndermek gerekir
+  → Direkt serial erişim mümkün değil bu durumda
+```
+
+Fiziksel kontrol:
+1. Hand-E'den çıkan kabloyu takip et — nereye gidiyor?
+2. Doosan tool flange'a mı giriyor yoksa ayrı bir RS485-USB converter'a mı?
+3. Xavier'da `lsusb` çıktısında RS485 converter var mı?
+
+- [ ] Kablo fiziksel olarak trace edildi
+- [ ] İletişim yolu: A (direkt USB) / B (Doosan controller üzerinden)
+- [ ] Yol B ise: Doosan API gripper komutları not alındı
+- [ ] Kablo routing fotoğrafı çekildi
 
 ---
 
