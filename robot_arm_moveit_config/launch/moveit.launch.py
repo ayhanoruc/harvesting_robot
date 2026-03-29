@@ -123,6 +123,14 @@ def generate_launch_description():
         ],
     )
 
+    gripper_controller_node = Node(
+        package='orchestrator',
+        executable='gripper_controller',
+        name='gripper_controller_node',
+        output='screen',
+        parameters=[{'use_sim_time': use_sim_time}],
+    )
+
     return LaunchDescription([
         DeclareLaunchArgument(
             'use_sim_time',
@@ -132,4 +140,5 @@ def generate_launch_description():
         move_group_node,
         rviz_node,
         arm_commander_node,
+        gripper_controller_node,
     ])

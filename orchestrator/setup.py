@@ -35,6 +35,7 @@ setup(
             'mock_yolo_detector = orchestrator.mock_yolo_detector:main',
             'spatial_detection_pipeline = orchestrator.spatial_detection_pipeline:main',
             'real_yolo_detector = orchestrator.real_yolo_detector:main',
+            'gripper_controller = orchestrator.gripper_controller:main',
         ],
     },
 )
