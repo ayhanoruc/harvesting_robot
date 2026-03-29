@@ -20,6 +20,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/FocusFromPosition.srv"
   "srv/YoloDetect.srv"
   "srv/RunDetectionPipeline.srv"
+  "srv/HarvestBoll.srv"
   DEPENDENCIES geometry_msgs std_msgs
 )
 

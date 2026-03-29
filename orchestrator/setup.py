@@ -36,6 +36,7 @@ setup(
             'spatial_detection_pipeline = orchestrator.spatial_detection_pipeline:main',
             'real_yolo_detector = orchestrator.real_yolo_detector:main',
             'gripper_controller = orchestrator.gripper_controller:main',
+            'harvest_executor = orchestrator.harvest_executor:main',
         ],
     },
 )

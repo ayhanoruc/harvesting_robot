@@ -1,0 +1,7 @@
+# Pick a single cotton boll at the given 3D position
+# Executor handles: pre-grasp → open → approach → close → lift → reservoir → open
+geometry_msgs/Point boll_position       # Boll center in world frame
+geometry_msgs/Point pre_grasp_position  # Pre-grasp viewpoint to return to after pick
+---
+bool success
+string message
