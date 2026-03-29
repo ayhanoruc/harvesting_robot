@@ -336,7 +336,6 @@
 		<origin rpy="0 0 0" xyz="0 0 0.099"/>
 		<axis xyz="1 0 0"/>
 		<limit effort="130" lower="0" upper="0.025" velocity="0.15"/>
-		<mimic joint="hande_left_finger_joint" multiplier="1" offset="0"/>
 	</joint>
 	<link name="hande_right_finger">
 		<inertial>
@@ -526,8 +525,16 @@
 			<state_interface name="position"/>
 			<state_interface name="velocity"/>
 		</joint>
-		<!-- Gripper joint (prismatic) -->
+		<!-- Gripper joints (prismatic) -->
 		<joint name="hande_left_finger_joint">
+			<command_interface name="position">
+				<param name="min">0</param>
+				<param name="max">0.025</param>
+			</command_interface>
+			<state_interface name="position"/>
+			<state_interface name="velocity"/>
+		</joint>
+		<joint name="hande_right_finger_joint">
 			<command_interface name="position">
 				<param name="min">0</param>
 				<param name="max">0.025</param>

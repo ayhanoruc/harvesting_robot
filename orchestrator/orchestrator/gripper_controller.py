@@ -46,10 +46,10 @@ class GripperController(Node):
         self.move_dur = self.get_parameter('move_duration').value
         self.tolerance = self.get_parameter('position_tolerance').value
 
-        self.joint_name = 'hande_left_finger_joint'
+        self.joint_names = ['hande_left_finger_joint', 'hande_right_finger_joint']
 
         # Current gripper position tracking
-        self.current_position = None
+        self.current_position = None  # left finger
         self.create_subscription(
             JointState, '/joint_states', self._joint_state_cb, 10)
 
@@ -86,8 +86,8 @@ class GripperController(Node):
         self.get_logger().info(f'  /gripper/close → {self.close_pos}m')
 
     def _joint_state_cb(self, msg: JointState):
-        if self.joint_name in msg.name:
-            idx = msg.name.index(self.joint_name)
+        if self.joint_names[0] in msg.name:
+            idx = msg.name.index(self.joint_names[0])
             self.current_position = msg.position[idx]
 
     def _open_cb(self, request, response):
@@ -109,10 +109,10 @@ class GripperController(Node):
     def _move_to(self, target: float) -> bool:
         """Publish trajectory and wait for gripper to reach target."""
         traj = JointTrajectory()
-        traj.joint_names = [self.joint_name]
+        traj.joint_names = self.joint_names
 
         point = JointTrajectoryPoint()
-        point.positions = [target]
+        point.positions = [target, target]  # both fingers same position
         point.time_from_start = Duration(
             sec=int(self.move_dur),
             nanosec=int((self.move_dur % 1) * 1e9)

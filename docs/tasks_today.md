@@ -139,3 +139,12 @@ aslında tabi realitede şöyle bi logic daha doğru olacak, onu da not edelim l
 - homeview'den clustera yaklaşıcak, yaklaşırken prediction almaya devam edicek
 - tüm cluster'ı gördüğümüz en yakın nokta(sürekli tahmin alıyorsun gibi düşün, en fazla boll tespit ettiğin en yakın anda)da dur bu noktayı pre-grasp view olarak kaydet(burda bi sağ sol random scan da yapabiliriz cluster içi), sonra boll'ların direkt 3d pozisyonlarını al -> bi boll topla -> pre-grasp'e gel, topla topla topla bitir 
 - home'a git.
+
+
+---
+
+Sim'de: Cotton boll rigid sphere — parmaklar fiziksel olarak duruyor, pozisyon farkı ile tespit edebiliyoruz. Çalışır.
+
+Gerçekte: Pamuk yumuşak, parmaklar tam kapanabilir. Pozisyon işe yaramaz. Ama gerçek Hand-E'de motor akımı feedback'i var — parmak bir şeye basınca akım artar, gOBJ=2 döner. Bunu Modbus üzerinden okuyoruz.
+
+Şimdilik sim'de rigid sphere yeterli. Gerçek robot'a geçince Hand-E driver'ın force feedback'ini kullanırız.

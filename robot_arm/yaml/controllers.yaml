@@ -24,6 +24,7 @@ joint_state_broadcaster:
       - joint5
       - joint6
       - hande_left_finger_joint
+      - hande_right_finger_joint
 
 # Arm Controller - 6-DOF trajectory control
 arm_controller:
@@ -55,6 +56,7 @@ gripper_controller:
   ros__parameters:
     joints:
       - hande_left_finger_joint
+      - hande_right_finger_joint
 
     command_interfaces:
       - position
