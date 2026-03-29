@@ -131,3 +131,11 @@ Flow:
 4. setup.py'ye yeni entry_points ekle
 5. Test: Gazebo'da 3 cluster'ı sırayla harvest et
 6. bizim cotton modellerinde cotton noktalarının içine fake sphereler ekleyebilir miyiz modelin üzerine??
+
+
+pick cycle
+aslında tabi realitede şöyle bi logic daha doğru olacak, onu da not edelim lütfen:
+- vision ml ile tespit edilen 3d cluster centerları toplanacak
+- homeview'den clustera yaklaşıcak, yaklaşırken prediction almaya devam edicek
+- tüm cluster'ı gördüğümüz en yakın nokta(sürekli tahmin alıyorsun gibi düşün, en fazla boll tespit ettiğin en yakın anda)da dur bu noktayı pre-grasp view olarak kaydet(burda bi sağ sol random scan da yapabiliriz cluster içi), sonra boll'ların direkt 3d pozisyonlarını al -> bi boll topla -> pre-grasp'e gel, topla topla topla bitir 
+- home'a git.

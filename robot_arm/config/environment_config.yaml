@@ -42,17 +42,17 @@ landmarks:
 # Positions are boll centers (what we want to reach)
 clusters:
   cluster_3:
-    position: [0.875, -0.475, 0.42]   # Right side
+    position: [0.875, -0.475, 0.46]   # Right side (boll center from Gazebo)
     stem_height: 0.42
     description: "Plant 1 - right"
 
   cluster_2:
-    position: [0.975, 0.0, 0.52]    # Center
+    position: [0.975, 0.0, 0.56]      # Center (boll center from Gazebo)
     stem_height: 0.52
     description: "Plant 2 - center"
 
   cluster_1:
-    position: [0.875, 0.475, 0.46]    # Left side
+    position: [0.875, 0.475, 0.50]    # Left side (boll center from Gazebo)
     stem_height: 0.46
     description: "Plant 3 - left"
 

@@ -48,6 +48,7 @@ class ArmCommander(Node):
         self.declare_parameter('target_y', 0.0)
         self.declare_parameter('target_z', 0.45)
         self.declare_parameter('target_name', '')
+        self.declare_parameter('pre_grasp_offset', 0.15)  # meters back from boll along approach
 
         # Config
         self.named_targets = self.load_targets_from_config()
@@ -352,8 +353,19 @@ class ArmCommander(Node):
         x, y, z = pos[0], pos[1], pos[2]
         use_orientation = target_name.startswith('cluster')
 
-        self.get_logger().info(f"Moving to '{target_name}' at ({x:.3f}, {y:.3f}, {z:.3f}), "
-                               f"approach_orientation={use_orientation}")
+        # Pre-grasp offset for cluster targets
+        if use_orientation:
+            offset = self.get_parameter('pre_grasp_offset').value
+            dx, dy = x - 0.0, y - 0.0  # from base
+            length = math.sqrt(dx * dx + dy * dy)
+            if length > 0.01:
+                x -= offset * (dx / length)
+                y -= offset * (dy / length)
+            self.get_logger().info(
+                f"Moving to '{target_name}' PRE-GRASP at ({x:.3f}, {y:.3f}, {z:.3f}), "
+                f"offset={offset}m from boll ({pos[0]:.3f}, {pos[1]:.3f}, {pos[2]:.3f})")
+        else:
+            self.get_logger().info(f"Moving to '{target_name}' at ({x:.3f}, {y:.3f}, {z:.3f})")
 
         success = self.move_to_pose(x, y, z, approach_orientation=use_orientation)
         response.success = success
