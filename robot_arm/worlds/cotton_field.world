@@ -224,6 +224,114 @@
       </joint>
     </model>
 
+    <!-- ===== Dynamic Cotton Bolls (graspable) ===== -->
+    <!-- These are separate from the static plants so the gripper can pick them up -->
+
+    <!-- Cotton Boll 1: at cluster_1 (left side plant_3) -->
+    <model name="cotton_boll_1">
+      <static>false</static>
+      <pose>0.875 0.475 0.50 0 0 0</pose>
+      <link name="boll">
+        <inertial>
+          <mass>0.01</mass>
+          <inertia>
+            <ixx>5.0e-06</ixx><ixy>0</ixy><ixz>0</ixz>
+            <iyy>5.0e-06</iyy><iyz>0</iyz>
+            <izz>5.0e-06</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry>
+            <sphere><radius>0.035</radius></sphere>
+          </geometry>
+          <surface>
+            <friction>
+              <ode><mu>1.0</mu><mu2>1.0</mu2></ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <sphere><radius>0.035</radius></sphere>
+          </geometry>
+          <material>
+            <ambient>0.9 0.9 0.85 1</ambient>
+            <diffuse>0.95 0.95 0.9 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Cotton Boll 2: at cluster_2 (center plant_2) -->
+    <model name="cotton_boll_2">
+      <static>false</static>
+      <pose>0.975 0.0 0.56 0 0 0</pose>
+      <link name="boll">
+        <inertial>
+          <mass>0.01</mass>
+          <inertia>
+            <ixx>5.0e-06</ixx><ixy>0</ixy><ixz>0</ixz>
+            <iyy>5.0e-06</iyy><iyz>0</iyz>
+            <izz>5.0e-06</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry>
+            <sphere><radius>0.035</radius></sphere>
+          </geometry>
+          <surface>
+            <friction>
+              <ode><mu>1.0</mu><mu2>1.0</mu2></ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <sphere><radius>0.035</radius></sphere>
+          </geometry>
+          <material>
+            <ambient>0.9 0.9 0.85 1</ambient>
+            <diffuse>0.95 0.95 0.9 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Cotton Boll 3: at cluster_3 (right side plant_1) -->
+    <model name="cotton_boll_3">
+      <static>false</static>
+      <pose>0.875 -0.475 0.46 0 0 0</pose>
+      <link name="boll">
+        <inertial>
+          <mass>0.01</mass>
+          <inertia>
+            <ixx>5.0e-06</ixx><ixy>0</ixy><ixz>0</ixz>
+            <iyy>5.0e-06</iyy><iyz>0</iyz>
+            <izz>5.0e-06</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry>
+            <sphere><radius>0.035</radius></sphere>
+          </geometry>
+          <surface>
+            <friction>
+              <ode><mu>1.0</mu><mu2>1.0</mu2></ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <sphere><radius>0.035</radius></sphere>
+          </geometry>
+          <material>
+            <ambient>0.9 0.9 0.85 1</ambient>
+            <diffuse>0.95 0.95 0.9 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
     <!-- Reservoir: To the right side -->
     <model name="reservoir">
       <static>true</static>

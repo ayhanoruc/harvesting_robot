@@ -42,3 +42,92 @@ Want me to start on Task 1 (copying meshes) and Task 2 (writing the M1013 xacro)
 ----
 
 - [ ] monster'da docker'ı build edip mac'te runlamak nasıl olur?? yani en azından commandleri çalıştırabildiğimizi, fundamental işleri halledebildiğimizi, simule edebildiğimiz, bi çeşit mocklama işi?? lab visit'e kadar olabildiğince hazırlıklı olalım ve tüm detayları planlayalım diye diyorum
+
+
+----
+
+Mevcut Componentler ve Bağlantıları
+
+
+┌─────────────────────────────────────────────────────────────┐
+│                    MEVCUT ÇALIŞAN PIPELINE                  │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  explorer.py ─── /arm_controller/follow_joint_trajectory    │
+│  (panoramic scan, 21 poz, joint-space)                      │
+│       │                                                     │
+│       ├── /explorer/panoramic_scan (Trigger)                │
+│       └── /explorer/start_scan (Trigger)                    │
+│                                                             │
+│  real_yolo_detector.py ─── /camera/color/image_raw          │
+│  (YOLO inference)                                           │
+│       └── /yolo/detect, /yolo/detect_clusters               │
+│                                                             │
+│  camera_focus.py ─── /joint_states                          │
+│  (pixel error → joint adjustment)                           │
+│       └── /camera_focus/center_on_pixel                     │
+│                                                             │
+│  depth_processor.py ─── /camera/depth/image_raw             │
+│  (pixel → 3D world via TF)                                  │
+│       └── /depth_processor/pixel_to_3d                      │
+│                                                             │
+│  spatial_detection_pipeline.py                               │
+│  (coordinates YOLO + focus + depth + clustering)            │
+│       └── /detection/run_at_position                        │
+│       └── /detection/validate                               │
+│                                                             │
+│  arm_commander.py ─── MoveIt /move_group action             │
+│  (Cartesian IK goals)                                       │
+│       └── /go_to_named, /go_to_pose                         │
+│                                                             │
+│  main.py (orchestrator_node) ← MOCK / PLACEHOLDER           │
+│  (5 saniyede bir mock cycle, gerçek bağlantı yok)           │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+
+Ne Eksik (Pick-and-Place İçin)
+
+┌─────────────────────────────────────────────────────────────┐
+│                   EKSİK COMPONENTLER                        │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  1. gripper_controller.py  ← YOK                            │
+│     /gripper/open   (Trigger)                               │
+│     /gripper/close  (Trigger)                               │
+│     Sim: gripper_controller/follow_joint_trajectory         │
+│     Real: Modbus RTU via serial                             │
+│                                                             │
+│  2. harvest_executor.py  ← YOK                              │
+│     Tam pick-and-place sequence:                            │
+│     approach → open → move_to_grasp → close → lift →       │
+│     move_to_reservoir → open → home → next                  │
+│     /harvest/pick_at_pose (custom srv)                      │
+│     /harvest/run_cycle (Trigger)                            │
+│                                                             │
+│  3. Graspable cotton bolls in world  ← YOK                  │
+│     Mevcut cluster'lar static=true, tutulamaz               │
+│     Dynamic sphere'ler lazım                                │
+│                                                             │
+│  4. main.py yeniden yazılmalı  ← MOCK                       │
+│     Gerçek state machine:                                   │
+│     IDLE → SCANNING → APPROACHING → HARVESTING →           │
+│     TRANSFERRING → CLUSTER_COMPLETE → next cluster          │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+
+
+Flow:
+1. World'e dynamic cotton sphere'ler ekle (cluster pozisyonlarında)
+2. gripper_controller.py yaz (open/close service wrapper)
+3. harvest_executor.py yaz (pick-and-place sequence):
+   a. arm_commander /go_to_named → cluster_N (approach)
+   b. /gripper/open
+   c. arm_commander /go_to_pose → cluster_N exact pos (grasp)  
+   d. /gripper/close
+   e. arm_commander /go_to_pose → lift (z + 0.15)
+   f. arm_commander /go_to_named → reservoir
+   g. /gripper/open
+   h. arm_commander /go_to_named → home
+4. setup.py'ye yeni entry_points ekle
+5. Test: Gazebo'da 3 cluster'ı sırayla harvest et
+6. bizim cotton modellerinde cotton noktalarının içine fake sphereler ekleyebilir miyiz modelin üzerine??

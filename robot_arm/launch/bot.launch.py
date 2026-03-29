@@ -118,7 +118,7 @@ def generate_launch_description():
             '-name', 'robot_arm',
             '-x', '0.0',
             '-y', '0.0',
-            '-z', '0.1'
+            '-z', '0.0'
         ],
         output='screen'
     )

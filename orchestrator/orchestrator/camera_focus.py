@@ -182,8 +182,8 @@ class CameraFocusNode(Node):
         goal_msg.request.group_name = "arm"
         goal_msg.request.num_planning_attempts = 10
         goal_msg.request.allowed_planning_time = 5.0
-        goal_msg.request.max_velocity_scaling_factor = 0.3
-        goal_msg.request.max_acceleration_scaling_factor = 0.3
+        goal_msg.request.max_velocity_scaling_factor = 0.6
+        goal_msg.request.max_acceleration_scaling_factor = 0.6
 
         # Joint constraints
         goal_constraints = Constraints()

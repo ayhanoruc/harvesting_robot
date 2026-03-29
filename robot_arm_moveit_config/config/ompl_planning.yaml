@@ -16,6 +16,11 @@ planner_configs:
     type: geometric::RRT
     range: 0.0
     goal_bias: 0.05
+  RRTstar:
+    type: geometric::RRTstar
+    range: 0.0
+    goal_bias: 0.05
+    delay_collision_checking: 1
   PRM:
     type: geometric::PRM
     max_nearest_neighbors: 10
@@ -25,8 +30,9 @@ planner_configs:
     goal_bias: 0.05
 
 arm:
-  default_planner_config: RRTConnect
+  default_planner_config: RRTstar
   planner_configs:
+    - RRTstar
     - RRTConnect
     - RRT
     - PRM
