@@ -110,7 +110,7 @@ Ne Eksik (Pick-and-Place İçin)
 │                                                             │
 │  4. main.py yeniden yazılmalı  ← MOCK                       │
 │     Gerçek state machine:                                   │
-│     IDLE → SCANNING → APPROACHING → HARVESTING →           │
+│     IDLE → SCANNING → APPROACHING → HARVESTING →            │
 │     TRANSFERRING → CLUSTER_COMPLETE → next cluster          │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘

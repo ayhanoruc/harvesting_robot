@@ -71,10 +71,24 @@ collision_objects:
     position: [0.0, 0.6, 0.1]      # Center of box
     dimensions: [0.3, 0.3, 0.2]
 
-  # Optional: plant stems as collision cylinders
+  # Plant stems as collision cylinders — DISABLED for now
+  # TCP targets are at plant positions, so collision avoidance blocks IK.
+  # TODO: use ACM (allowed collision matrix) to let gripper/tcp pass through plants
   # plant_1_stem:
   #   type: "cylinder"
   #   frame_id: "world"
-  #   position: [0.75, -0.45, 0.2]
-  #   radius: 0.03
-  #   height: 0.4
+  #   position: [0.875, -0.475, 0.21]
+  #   radius: 0.05
+  #   height: 0.42
+  # plant_2_stem:
+  #   type: "cylinder"
+  #   frame_id: "world"
+  #   position: [0.975, 0.0, 0.26]
+  #   radius: 0.05
+  #   height: 0.52
+  # plant_3_stem:
+  #   type: "cylinder"
+  #   frame_id: "world"
+  #   position: [0.875, 0.475, 0.23]
+  #   radius: 0.05
+  #   height: 0.46

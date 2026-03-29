@@ -192,66 +192,86 @@ class ArmCommander(Node):
 
     # ─── IK computation ───────────────────────────────────────
 
-    def compute_ik(self, x, y, z, orientation=None):
-        """Call MoveIt /compute_ik with current joint state as seed.
+    def compute_ik_multi_seed(self, x, y, z, orientation=None):
+        """Try IK with HOME seed and current seed, pick best solution.
 
         Returns joint values list on success, None on failure.
         """
+        if orientation:
+            self.get_logger().info(
+                f"[IK] Target: ({x:.3f}, {y:.3f}, {z:.3f}), "
+                f"q=({orientation.x:.3f}, {orientation.y:.3f}, "
+                f"{orientation.z:.3f}, {orientation.w:.3f})")
+
+        current_joints = self._get_current_joint_values()
+        candidates = []
+
+        # Seed 1: HOME (reliable, neutral starting point)
+        home_result = self._ik_call(x, y, z, orientation, self.HOME_JOINTS, "HOME")
+        if home_result is not None:
+            candidates.append(home_result)
+
+        # Seed 2: current joints (shorter path if already nearby)
+        curr_result = self._ik_call(x, y, z, orientation, current_joints, "CURRENT")
+        if curr_result is not None:
+            candidates.append(curr_result)
+
+        if not candidates:
+            self.get_logger().error("[IK] Both seeds failed — target unreachable")
+            return None
+
+        # Pick candidate with smallest total joint change from current position
+        best = None
+        best_cost = float('inf')
+        for jv in candidates:
+            cost = sum(abs(a - b) for a, b in zip(jv, current_joints))
+            if cost < best_cost:
+                best_cost = cost
+                best = jv
+
+        self.get_logger().info(
+            f"[IK] Best solution (cost={best_cost:.2f} rad): "
+            f"{[f'{v:.3f}' for v in best]}")
+
+        return best
+
+    def _ik_call(self, x, y, z, orientation, seed_joints, seed_label):
+        """Single IK call with given seed. Returns normalized joint values or None."""
         req = GetPositionIK.Request()
         req.ik_request.group_name = "arm"
-        req.ik_request.ik_link_name = "tcp"  # Solve for tcp frame, not tool0
+        req.ik_request.ik_link_name = "tcp"
         req.ik_request.avoid_collisions = True
 
-        # Target pose
         pose = PoseStamped()
         pose.header.frame_id = self.planning_frame
         pose.pose.position = Point(x=float(x), y=float(y), z=float(z))
-        if orientation:
-            pose.pose.orientation = orientation
-        else:
-            pose.pose.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+        pose.pose.orientation = orientation if orientation else Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
         req.ik_request.pose_stamped = pose
 
-        # Seed state = current joint values (CRITICAL for getting nearest solution)
         seed = RobotState()
         seed.joint_state.name = list(self.arm_joint_names)
-        seed.joint_state.position = self._get_current_joint_values()
+        seed.joint_state.position = list(seed_joints)
         req.ik_request.robot_state = seed
 
         self.get_logger().info(
-            f"[IK] Requesting IK: target=({x:.3f}, {y:.3f}, {z:.3f}), "
-            f"seed={[f'{v:.2f}' for v in seed.joint_state.position]}")
-        if orientation:
-            self.get_logger().info(
-                f"[IK] Orientation: q=({orientation.x:.3f}, {orientation.y:.3f}, "
-                f"{orientation.z:.3f}, {orientation.w:.3f})")
+            f"[IK] Seed={seed_label}: {[f'{v:.2f}' for v in seed_joints]}")
 
-        # Call service
         future = self._ik_client.call_async(req)
         rclpy.spin_until_future_complete(self, future, timeout_sec=5.0)
 
         result = future.result()
-        if result is None:
-            self.get_logger().error("[IK] Service call failed (timeout)")
+        if result is None or result.error_code.val != 1:
+            self.get_logger().warn(f"[IK] Seed={seed_label} failed")
             return None
 
-        if result.error_code.val != 1:
-            self.get_logger().error(f"[IK] IK failed: error_code={result.error_code.val}")
-            return None
-
-        # Extract joint values
         joint_values = []
         for name in self.arm_joint_names:
             idx = list(result.solution.joint_state.name).index(name)
             joint_values.append(result.solution.joint_state.position[idx])
 
-        self.get_logger().info(
-            f"[IK] Raw solution: {[f'{v:.3f}' for v in joint_values]}")
-
-        # Normalize joints to be closest to current (avoid full rotations)
         joint_values = self._normalize_joints(joint_values)
         self.get_logger().info(
-            f"[IK] Normalized:   {[f'{v:.3f}' for v in joint_values]}")
+            f"[IK] Seed={seed_label} solution: {[f'{v:.3f}' for v in joint_values]}")
 
         return joint_values
 
@@ -343,7 +363,9 @@ class ArmCommander(Node):
     # ─── Core: IK → validate → joint goal ─────────────────────
 
     def move_to_pose(self, x, y, z, approach_orientation=False):
-        """Compute IK for target pose, validate, send joint goal."""
+        """Compute IK for target pose, validate, send joint goal.
+        If position error > 5cm after execution, retries via HOME fallback.
+        """
         self._log_tcp_position("BEFORE move")
 
         # Compute orientation
@@ -351,8 +373,8 @@ class ArmCommander(Node):
         if approach_orientation:
             orientation = self.compute_approach_quaternion(x, y, z)
 
-        # Compute IK (seed = current joints)
-        joint_values = self.compute_ik(x, y, z, orientation=orientation)
+        # Compute IK (multi-seed: HOME + current)
+        joint_values = self.compute_ik_multi_seed(x, y, z, orientation=orientation)
         if joint_values is None:
             self.get_logger().error("IK failed — cannot reach target")
             return False
@@ -363,23 +385,56 @@ class ArmCommander(Node):
             return False
 
         # Send joint goal
-        self.get_logger().info(f"Sending joint goal from IK solution...")
+        self.get_logger().info("Sending joint goal from IK solution...")
         success = self.send_joint_goal(joint_values)
 
-        if success:
-            self._log_tcp_position(f"AFTER move (target was {x:.3f},{y:.3f},{z:.3f})")
-            # Error check
-            try:
-                t = self._tf_buffer.lookup_transform('world', 'tcp', rclpy.time.Time())
-                p = t.transform.translation
-                err = math.sqrt((p.x-x)**2 + (p.y-y)**2 + (p.z-z)**2)
-                self.get_logger().info(f"  Position error: {err:.4f}m")
-                if err > 0.05:
-                    self.get_logger().warn(f"  Position error > 5cm ({err:.3f}m)")
-            except Exception:
-                pass
+        if not success:
+            return False
 
-        return success
+        # Check position error
+        err = self._check_tcp_error(x, y, z)
+
+        # Fallback: if error > 5cm, go HOME and retry
+        if err is not None and err > 0.05:
+            self.get_logger().warn(f"[RETRY] Error {err:.3f}m > 5cm — going HOME then retrying")
+            home_ok = self.send_joint_goal(self.HOME_JOINTS)
+            if not home_ok:
+                self.get_logger().error("[RETRY] Failed to reach HOME")
+                return False
+
+            # Re-compute IK from HOME position (HOME seed will dominate)
+            joint_values = self.compute_ik_multi_seed(x, y, z, orientation=orientation)
+            if joint_values is None or not self.validate_joints(joint_values):
+                self.get_logger().error("[RETRY] IK failed after HOME reset")
+                return False
+
+            self.get_logger().info("[RETRY] Sending joint goal after HOME reset...")
+            success = self.send_joint_goal(joint_values)
+            if success:
+                err2 = self._check_tcp_error(x, y, z)
+                if err2 is not None and err2 > 0.05:
+                    self.get_logger().warn(f"[RETRY] Still off: {err2:.3f}m")
+                    return False
+            else:
+                return False
+
+        return True
+
+    def _check_tcp_error(self, x, y, z):
+        """Check TCP position error after move. Returns error in meters or None."""
+        try:
+            t = self._tf_buffer.lookup_transform('world', 'tcp', rclpy.time.Time())
+            p = t.transform.translation
+            r = t.transform.rotation
+            err = math.sqrt((p.x - x)**2 + (p.y - y)**2 + (p.z - z)**2)
+            self.get_logger().info(
+                f"  [TCP] AFTER pos=({p.x:.4f}, {p.y:.4f}, {p.z:.4f}) "
+                f"rot=({r.x:.3f}, {r.y:.3f}, {r.z:.3f}, {r.w:.3f})")
+            self.get_logger().info(f"  Position error: {err:.4f}m")
+            return err
+        except Exception as e:
+            self.get_logger().warn(f"  [TCP] TF lookup failed: {e}")
+            return None
 
     # ─── Joint goal execution ──────────────────────────────────
 
