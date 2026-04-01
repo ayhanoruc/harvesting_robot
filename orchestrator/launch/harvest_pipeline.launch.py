@@ -50,7 +50,7 @@ def generate_launch_description():
             'pan_joint2_range': [-0.922],
             'pan_joint3_range': [2.4494],
             'pan_joint4_range': [0.0],
-            'pan_joint5_range': [-1.5708],
+            'pan_joint5_range': [-1.3000],
             'pan_joint6_range': [0.0],
             'pan_pause_duration': 2.0,
             'pan_move_duration': 1.5,

@@ -383,20 +383,32 @@
 	<joint name="camera_joint" type="fixed">
 		<parent link="link6"/>
 		<child link="camera_link"/>
-		<origin xyz="-0.05 0 -0.02" rpy="0 -1.5708 0"/>
+		<!-- Camera +X (Gazebo look direction) aligned with link6 +Z (approach direction) -->
+		<!-- X=-0.08: far back from gripper, Z=-0.02: slight side offset -->
+		<origin xyz="-0.14 0 -0.02" rpy="0 -1.5708 0"/>
 	</joint>
 	<link name="camera_link">
 		<visual>
 			<geometry>
-				<box size="0.02 0.03 0.02"/>
+				<box size="0.06 0.09 0.06"/>
 			</geometry>
 			<material name="camera_black">
 				<color rgba="0.1 0.1 0.1 1"/>
 			</material>
 		</visual>
+		<!-- Mounting arm connecting camera back to link6 -->
+		<visual>
+			<origin xyz="0.01 0 -0.07" rpy="0 0 0"/>
+			<geometry>
+				<cylinder radius="0.012" length="0.14"/>
+			</geometry>
+			<material name="camera_mount_grey">
+				<color rgba="0.4 0.4 0.4 1"/>
+			</material>
+		</visual>
 		<collision>
 			<geometry>
-				<box size="0.02 0.03 0.02"/>
+				<box size="0.06 0.09 0.06"/>
 			</geometry>
 		</collision>
 		<inertial>
@@ -417,7 +429,7 @@
 	<gazebo reference="camera_link">
 		<sensor type="rgbd_camera" name="wrist_rgbd_camera">
 			<always_on>true</always_on>
-			<update_rate>1.0</update_rate>
+			<update_rate>30.0</update_rate>
 			<topic>camera</topic>
 			<ignition_frame_id>camera_optical_frame</ignition_frame_id>
 			<camera name="wrist_camera">

@@ -35,7 +35,7 @@ import tf2_ros
 class ArmCommander(Node):
     """Arm commander using IK + joint goals."""
 
-    HOME_JOINTS = [0.0, -0.922, 2.4494, 0.0, -1.5708, 0.0]
+    HOME_JOINTS = [0.0000, -0.922, 2.4494, 0.0, -1.3000, 0.0]
 
     def __init__(self):
         super().__init__('arm_commander')
@@ -50,6 +50,7 @@ class ArmCommander(Node):
         self.declare_parameter('target_name', '')
         self.declare_parameter('pre_grasp_offset', 0.15)  # meters back from boll along approach
         self.declare_parameter('use_approach_orientation', False)  # set by orchestrator before go_to_pose
+        self.declare_parameter('cluster_rotate_deg', 90.0)  # step-2: rotate wrist joint before gripper (joint5)
 
         # Config
         self.named_targets = self.load_targets_from_config()
@@ -81,6 +82,10 @@ class ArmCommander(Node):
                             callback_group=self.callback_group)
         self.create_service(SetBool, 'go_to_named', self.go_to_named_callback,
                             callback_group=self.callback_group)
+        self.create_service(SetBool, 'go_home_view', self.go_home_view_callback,
+                            callback_group=self.callback_group)
+        self.create_service(SetBool, 'rotate_home_view_to_clusters', self.rotate_home_view_to_clusters_callback,
+                            callback_group=self.callback_group)
 
         # Wait for servers
         self.get_logger().info("Waiting for MoveGroup action server...")
@@ -110,6 +115,9 @@ class ArmCommander(Node):
         self.get_logger().info("Moving to HOME position...")
         if self.send_joint_goal(self.HOME_JOINTS):
             self.get_logger().info("HOME position reached!")
+            # Immediately run step-2 on startup as requested.
+            delta_deg = float(self.get_parameter('cluster_rotate_deg').value)
+            self._rotate_joint5_by_delta_deg(delta_deg)
         else:
             self.get_logger().warn("Failed to reach HOME position")
 
@@ -374,6 +382,51 @@ class ArmCommander(Node):
         response.message = f"{'OK' if success else 'FAIL'}: {target_name}"
         return response
 
+    def go_home_view_callback(self, request, response):
+        """Go to HOME, then immediately rotate joint5 toward clusters."""
+        if not request.data:
+            response.success = False
+            response.message = "Set data=true to trigger"
+            return response
+
+        self.get_logger().info("[STEP-1] Moving to HOME view")
+        home_ok = self.send_joint_goal(self.HOME_JOINTS)
+        if not home_ok:
+            response.success = False
+            response.message = "FAIL: home_view"
+            return response
+
+        delta_deg = float(self.get_parameter('cluster_rotate_deg').value)
+        rot_ok = self._rotate_joint5_by_delta_deg(delta_deg)
+        response.success = rot_ok
+        response.message = f"{'OK' if rot_ok else 'FAIL'}: home_then_rotate_{delta_deg:.1f}deg"
+        return response
+
+    def rotate_home_view_to_clusters_callback(self, request, response):
+        """Step-2 only: rotate wrist joint before gripper (joint5) by configured angle."""
+        if not request.data:
+            response.success = False
+            response.message = "Set data=true to trigger"
+            return response
+
+        delta_deg = float(self.get_parameter('cluster_rotate_deg').value)
+        success = self._rotate_joint5_by_delta_deg(delta_deg)
+        response.success = success
+        response.message = f"{'OK' if success else 'FAIL'}: rotate_joint5_{delta_deg:.1f}deg"
+        return response
+
+    def _rotate_joint5_by_delta_deg(self, delta_deg: float) -> bool:
+        """Rotate only joint5 (wrist before gripper) by given delta degrees."""
+        current = self._get_current_joint_values()
+        target = list(current)
+        j5_idx = self.arm_joint_names.index('joint5')
+        target[j5_idx] = current[j5_idx] + math.radians(delta_deg)  # joint5 only
+
+        self.get_logger().info(
+            f"[STEP-2] Rotating joint5 only: {math.degrees(current[j5_idx]):.1f} deg -> "
+            f"{math.degrees(target[j5_idx]):.1f} deg (delta={delta_deg:.1f} deg)")
+        return self.send_joint_goal(target)
+
     # ─── Core: IK → validate → joint goal ─────────────────────
 
     def move_to_pose(self, x, y, z, approach_orientation=False):
@@ -520,3 +573,4 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
+
