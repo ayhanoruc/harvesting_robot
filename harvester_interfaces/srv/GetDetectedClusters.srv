@@ -1,0 +1,5 @@
+# Get all tracked cluster positions after a scan
+---
+harvester_interfaces/DetectedCluster[] clusters
+bool success
+string message

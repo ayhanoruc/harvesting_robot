@@ -21,6 +21,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/YoloDetect.srv"
   "srv/RunDetectionPipeline.srv"
   "srv/HarvestBoll.srv"
+  "srv/GetDetectedClusters.srv"
   DEPENDENCIES geometry_msgs std_msgs
 )
 

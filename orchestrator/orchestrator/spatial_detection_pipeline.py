@@ -32,7 +32,7 @@ from std_msgs.msg import String
 from std_srvs.srv import Trigger
 from geometry_msgs.msg import Point
 from harvester_interfaces.msg import BoundingBox, DetectedCluster
-from harvester_interfaces.srv import YoloDetect, PixelTo3D, FocusFromPixel
+from harvester_interfaces.srv import YoloDetect, PixelTo3D, FocusFromPixel, GetDetectedClusters
 
 import yaml
 import os
@@ -206,6 +206,12 @@ class SpatialDetectionPipeline(Node):
             Trigger,
             '/detection/wait_ready',
             self.wait_ready_callback,
+            callback_group=self.callback_group
+        )
+        self.create_service(
+            GetDetectedClusters,
+            '/detection/get_results',
+            self.get_results_callback,
             callback_group=self.callback_group
         )
 
@@ -754,6 +760,31 @@ class SpatialDetectionPipeline(Node):
 
         response.success = True
         response.message = f'{len(self.tracked_clusters)} clusters tracked'
+        return response
+
+    def get_results_callback(self, request, response):
+        """Return all tracked clusters as DetectedCluster messages."""
+        response.clusters = []
+        for cluster_id, cluster in self.tracked_clusters.items():
+            best = cluster.best_detection
+            if best is None:
+                continue
+            msg = DetectedCluster()
+            msg.cluster_id = cluster_id
+            msg.position = Point(
+                x=float(best.position_3d[0]),
+                y=float(best.position_3d[1]),
+                z=float(best.position_3d[2]))
+            msg.confidence = float(best.confidence)
+            msg.best_bbox_area = int(best.bbox_area)
+            msg.num_detections = cluster.num_detections
+            msg.best_scan_position = best.scan_position
+            response.clusters.append(msg)
+
+        response.success = True
+        response.message = f'{len(response.clusters)} clusters'
+        self.get_logger().info(
+            f'/detection/get_results: returning {len(response.clusters)} clusters')
         return response
 
     def clear_callback(self, request, response):
