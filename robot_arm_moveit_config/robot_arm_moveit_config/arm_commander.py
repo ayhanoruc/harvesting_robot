@@ -49,6 +49,7 @@ class ArmCommander(Node):
         self.declare_parameter('target_z', 0.45)
         self.declare_parameter('target_name', '')
         self.declare_parameter('pre_grasp_offset', 0.15)  # meters back from boll along approach
+        self.declare_parameter('use_approach_orientation', False)  # set by orchestrator before go_to_pose
 
         # Config
         self.named_targets = self.load_targets_from_config()
@@ -322,8 +323,9 @@ class ArmCommander(Node):
         x = self.get_parameter('target_x').value
         y = self.get_parameter('target_y').value
         z = self.get_parameter('target_z').value
+        approach = self.get_parameter('use_approach_orientation').value
 
-        success = self.move_to_pose(x, y, z)
+        success = self.move_to_pose(x, y, z, approach_orientation=approach)
         response.success = success
         response.message = f"{'OK' if success else 'FAIL'}: ({x}, {y}, {z})"
         return response

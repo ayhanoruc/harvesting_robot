@@ -14,6 +14,8 @@ setup(
         ('share/' + package_name, ['package.xml']),
         # Include YOLO model
         ('share/' + package_name + '/models', glob('models/*')),
+        # Launch files
+        (os.path.join('share', package_name, 'launch'), glob('launch/*.py')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

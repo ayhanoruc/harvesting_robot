@@ -3,52 +3,37 @@
 Harvest Orchestrator — Main state machine for cotton harvesting
 
 Top-level controller that coordinates the full harvest cycle:
-    IDLE → SCANNING → [per cluster: APPROACHING → HARVESTING → TRANSFERRING] → IDLE
+    IDLE -> SCANNING -> [per cluster: APPROACHING -> HARVESTING] -> RETURNING -> IDLE
 
-Full flow (target behavior):
-    1. SCANNING: Panoramic scan → vision ML detects cluster centers
-    2. For each cluster:
-       a. APPROACHING: Move toward cluster, continuous prediction en route
-          - Find optimal pre-grasp view (closest point with max boll visibility)
-          - Optional: mini left-right scan for full cluster coverage
-       b. HARVESTING: Get individual boll 3D positions, pick each one
-          - Per boll: pick → deposit in reservoir → return to pre-grasp
-          - Re-scan between picks to update boll list (future)
-       c. TRANSFERRING: (handled within harvest_executor per boll)
-    3. All clusters done → HOME → IDLE
+Full flow:
+    1. SCANNING: Panoramic scan (3 positions, j1 rotate from HOME)
+       -> YOLO detects clusters -> depth -> 3D positions -> merge
+    2. Per cluster:
+       a. APPROACHING: Go to pre-grasp cluster view
+          -> Run YOLO detect (individual bolls) + depth -> boll 3D positions
+       b. HARVESTING: Pick each boll via harvest_executor
+          -> pre-grasp -> open -> approach -> close -> lift -> reservoir -> open -> return
+    3. RETURNING: Go HOME
 
 Services Provided:
     /orchestrator/start_harvest (std_srvs/Trigger)
-        - Kick off the full harvest cycle
     /orchestrator/stop (std_srvs/Trigger)
-        - Emergency stop / abort current cycle
-    /orchestrator/status (→ publishes to /orchestrator/status topic)
-
-Service Clients Used:
-    /explorer/start_scan         — Panoramic scan
-    /detection/run_at_position   — Run vision pipeline at current pose
-    /go_to_named                 — Named arm targets (home, cluster_N)
-    /go_to_pose                  — Arbitrary Cartesian arm target
-    /harvest/pick_boll           — Pick-and-place single boll
-    /gripper/open                — Open gripper
-    /gripper/close               — Close gripper
 
 Topics Published:
-    /orchestrator/status (std_msgs/String) — Current state
-    /orchestrator/progress (std_msgs/String) — Detailed progress info
-
-Parameters:
-    config_file — Path to environment_config.yaml
+    /orchestrator/status (std_msgs/String)
+    /orchestrator/progress (std_msgs/String)
 """
 
 import rclpy
 from rclpy.node import Node
 from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.executors import MultiThreadedExecutor
 
 from std_msgs.msg import String
 from std_srvs.srv import Trigger, SetBool
-from harvester_interfaces.srv import HarvestBoll, RunDetectionPipeline
 from geometry_msgs.msg import Point
+from harvester_interfaces.srv import (
+    HarvestBoll, GetDetectedClusters, YoloDetect, PixelTo3D)
 from rcl_interfaces.srv import SetParameters
 from rcl_interfaces.msg import Parameter, ParameterValue, ParameterType
 
@@ -59,8 +44,6 @@ import time
 from enum import Enum
 from dataclasses import dataclass, field
 from typing import List, Optional
-
-from ament_index_python.packages import get_package_share_directory
 
 
 # ─── State definitions ──────────────────────────────────────────
@@ -79,6 +62,7 @@ class BollTarget:
     """A single boll to be picked."""
     position: List[float]       # [x, y, z] world frame
     cluster_id: str
+    confidence: float = 0.0
     picked: bool = False
 
 
@@ -87,7 +71,7 @@ class ClusterPlan:
     """Plan for harvesting one cluster."""
     cluster_id: str
     center: List[float]         # [x, y, z] cluster center
-    pre_grasp_view: Optional[List[float]] = None   # Determined during approach
+    pre_grasp_view: Optional[List[float]] = None
     bolls: List[BollTarget] = field(default_factory=list)
     completed: bool = False
 
@@ -104,13 +88,23 @@ class OrchestratorNode(Node):
         # ── Parameters ──────────────────────────────────────
         self.declare_parameter('config_file', '')
         self.declare_parameter('pre_grasp_offset', 0.15)
+        self.declare_parameter('scan_timeout', 600.0)     # wall-clock seconds
+        self.declare_parameter('camera_settle_time', 3.0)  # seconds after move
+        self.declare_parameter('use_vision_for_bolls', True)
+        self.declare_parameter('use_vision_for_scan', True)
 
         self.pre_grasp_offset = self.get_parameter('pre_grasp_offset').value
+        self.scan_timeout = self.get_parameter('scan_timeout').value
+        self.camera_settle_time = self.get_parameter('camera_settle_time').value
+        self.use_vision_for_bolls = self.get_parameter('use_vision_for_bolls').value
+        self.use_vision_for_scan = self.get_parameter('use_vision_for_scan').value
 
         # ── State ───────────────────────────────────────────
         self.state = State.IDLE
         self.cluster_plans: List[ClusterPlan] = []
         self.current_cluster_idx = 0
+        self._scan_complete = False
+        self._stop_requested = False
 
         # ── Config ──────────────────────────────────────────
         self.config = self._load_config()
@@ -119,21 +113,42 @@ class OrchestratorNode(Node):
         self.status_pub = self.create_publisher(String, '/orchestrator/status', 10)
         self.progress_pub = self.create_publisher(String, '/orchestrator/progress', 10)
 
+        # ── Subscriptions ───────────────────────────────────
+        self.create_subscription(
+            String, '/explorer/scan_status', self._scan_status_cb, 10)
+
         # ── Service clients ─────────────────────────────────
-        self.scan_cli = self.create_client(
-            Trigger, '/explorer/start_scan', callback_group=self.cb)
-        self.detect_cli = self.create_client(
-            RunDetectionPipeline, '/detection/run_at_position', callback_group=self.cb)
+        # Explorer
+        self.panoramic_scan_cli = self.create_client(
+            Trigger, '/explorer/panoramic_scan', callback_group=self.cb)
+
+        # Detection pipeline
+        self.detect_clear_cli = self.create_client(
+            Trigger, '/detection/clear', callback_group=self.cb)
+        self.detect_results_cli = self.create_client(
+            GetDetectedClusters, '/detection/get_results', callback_group=self.cb)
+
+        # Direct YOLO + depth (for boll-level detection at cluster view)
+        self.yolo_detect_cli = self.create_client(
+            YoloDetect, '/yolo/detect', callback_group=self.cb)
+        self.pixel_to_3d_cli = self.create_client(
+            PixelTo3D, '/depth_processor/pixel_to_3d', callback_group=self.cb)
+
+        # Arm commander
         self.go_to_named_cli = self.create_client(
             SetBool, '/go_to_named', callback_group=self.cb)
         self.go_to_pose_cli = self.create_client(
             SetBool, '/go_to_pose', callback_group=self.cb)
-        self.pick_boll_cli = self.create_client(
-            HarvestBoll, '/harvest/pick_boll', callback_group=self.cb)
-        self.gripper_open_cli = self.create_client(
-            Trigger, '/gripper/open', callback_group=self.cb)
         self.arm_set_params_cli = self.create_client(
             SetParameters, '/arm_commander/set_parameters', callback_group=self.cb)
+
+        # Harvest executor
+        self.pick_boll_cli = self.create_client(
+            HarvestBoll, '/harvest/pick_boll', callback_group=self.cb)
+
+        # Gripper
+        self.gripper_open_cli = self.create_client(
+            Trigger, '/gripper/open', callback_group=self.cb)
 
         # ── Services provided ───────────────────────────────
         self.create_service(
@@ -144,19 +159,25 @@ class OrchestratorNode(Node):
             callback_group=self.cb)
 
         self._set_state(State.IDLE)
-        self.get_logger().info('='*50)
+        self.get_logger().info('=' * 60)
         self.get_logger().info('HARVEST ORCHESTRATOR ready')
+        self.get_logger().info(f'  pre_grasp_offset: {self.pre_grasp_offset}m')
+        self.get_logger().info(f'  use_vision_for_scan: {self.use_vision_for_scan}')
+        self.get_logger().info(f'  use_vision_for_bolls: {self.use_vision_for_bolls}')
+        self.get_logger().info(f'  scan_timeout: {self.scan_timeout}s')
         self.get_logger().info('  Call /orchestrator/start_harvest to begin')
-        self.get_logger().info('='*50)
+        self.get_logger().info('=' * 60)
 
-    # ─── Config loading ─────────────────────────────────────────
+    # ─── Config ─────────────────────────────────────────────────
 
     def _load_config(self) -> dict:
         config_file = self.get_parameter('config_file').value
         if config_file and os.path.exists(config_file):
             with open(config_file, 'r') as f:
-                return yaml.safe_load(f)
-        self.get_logger().warn('No config file specified')
+                config = yaml.safe_load(f)
+            self.get_logger().info(f'Config loaded: {config_file}')
+            return config
+        self.get_logger().warn('No config file specified, using defaults')
         return {}
 
     # ─── State management ───────────────────────────────────────
@@ -165,31 +186,42 @@ class OrchestratorNode(Node):
         old = self.state
         self.state = new_state
         self.status_pub.publish(String(data=new_state.value))
-        self.get_logger().info(f'STATE: {old.value} → {new_state.value}')
+        if old != new_state:
+            self.get_logger().info(f'[STATE] {old.value} -> {new_state.value}')
 
-    def _publish_progress(self, msg: str):
+    def _progress(self, msg: str):
         self.progress_pub.publish(String(data=msg))
-        self.get_logger().info(f'PROGRESS: {msg}')
+        self.get_logger().info(f'[PROGRESS] {msg}')
+
+    # ─── Scan status subscription ───────────────────────────────
+
+    def _scan_status_cb(self, msg: String):
+        self.get_logger().debug(f'[SCAN STATUS] {msg.data}')
+        if msg.data == 'COMPLETE':
+            self._scan_complete = True
+            self.get_logger().info('[SCAN STATUS] Panoramic scan COMPLETE')
 
     # ─── Service callbacks ──────────────────────────────────────
 
     def _start_harvest_cb(self, request, response):
-        """Entry point: kick off the full harvest cycle."""
         if self.state != State.IDLE:
             response.success = False
-            response.message = f'Cannot start: currently in {self.state.value}'
+            response.message = f'Cannot start: currently {self.state.value}'
             return response
 
-        self.get_logger().info('='*50)
+        self._stop_requested = False
+        self.get_logger().info('=' * 60)
         self.get_logger().info('HARVEST CYCLE STARTING')
-        self.get_logger().info('='*50)
+        self.get_logger().info('=' * 60)
 
         try:
             self._run_harvest_cycle()
             response.success = True
             response.message = 'Harvest cycle completed'
         except Exception as e:
-            self.get_logger().error(f'Harvest cycle failed: {e}')
+            self.get_logger().error(f'Harvest cycle FAILED: {e}')
+            import traceback
+            self.get_logger().error(traceback.format_exc())
             self._set_state(State.ERROR)
             response.success = False
             response.message = str(e)
@@ -197,30 +229,45 @@ class OrchestratorNode(Node):
         return response
 
     def _stop_cb(self, request, response):
-        """Emergency stop."""
-        self.get_logger().warn('STOP requested')
+        self.get_logger().warn('[STOP] Stop requested')
+        self._stop_requested = True
         self._set_state(State.IDLE)
         response.success = True
-        response.message = 'Stopped'
+        response.message = 'Stop requested'
         return response
+
+    def _check_stop(self):
+        if self._stop_requested:
+            raise RuntimeError('Stop requested by user')
+
+    def _wait_future(self, future, timeout_sec=30.0):
+        """Poll-wait for a service future (safe with MultiThreadedExecutor).
+
+        Unlike rclpy.spin_until_future_complete, this does not steal the node
+        from the executor — it just sleeps while the executor's other threads
+        process the response callback.
+        """
+        t0 = time.time()
+        while not future.done():
+            if time.time() - t0 > timeout_sec:
+                self.get_logger().warn(
+                    f'Service call timed out after {timeout_sec}s')
+                return None
+            time.sleep(0.05)
+        return future.result()
 
     # ─── Main harvest cycle ─────────────────────────────────────
 
     def _run_harvest_cycle(self):
-        """
-        Full harvest cycle:
-            1. SCANNING   — scan field, find clusters
-            2. Per cluster:
-               a. APPROACHING  — move toward cluster (+ vision)
-               b. HARVESTING   — pick each boll
-            3. RETURNING  — go home
-        """
+        t_start = time.time()
+
         # ── Phase 1: SCANNING ──────────────────────────────
         self._set_state(State.SCANNING)
         cluster_positions = self._phase_scanning()
+        self._check_stop()
 
         if not cluster_positions:
-            self._publish_progress('No clusters found, returning home')
+            self._progress('No clusters found, returning home')
             self._go_home()
             self._set_state(State.IDLE)
             return
@@ -228,197 +275,339 @@ class OrchestratorNode(Node):
         # ── Build cluster plans ────────────────────────────
         self.cluster_plans = []
         for cid, pos in cluster_positions.items():
-            plan = ClusterPlan(cluster_id=cid, center=pos)
+            plan = ClusterPlan(cluster_id=cid, center=list(pos))
             self.cluster_plans.append(plan)
-        self._publish_progress(
+
+        self._progress(
             f'Found {len(self.cluster_plans)} clusters: '
             f'{[p.cluster_id for p in self.cluster_plans]}')
 
         # ── Phase 2: Per-cluster harvest ───────────────────
         for idx, plan in enumerate(self.cluster_plans):
+            self._check_stop()
             self.current_cluster_idx = idx
-            self._publish_progress(
-                f'Cluster {idx+1}/{len(self.cluster_plans)}: {plan.cluster_id}')
+            self._progress(
+                f'=== Cluster {idx+1}/{len(self.cluster_plans)}: '
+                f'{plan.cluster_id} ===')
 
-            # 2a. APPROACHING — move toward cluster
+            # 2a. APPROACHING
             self._set_state(State.APPROACHING)
             self._phase_approaching(plan)
+            self._check_stop()
 
-            # 2b. HARVESTING — pick all bolls in cluster
+            # 2b. HARVESTING
             self._set_state(State.HARVESTING)
             self._phase_harvesting(plan)
 
             plan.completed = True
+            self._progress(f'=== {plan.cluster_id} DONE ===')
 
         # ── Phase 3: RETURNING ─────────────────────────────
         self._set_state(State.RETURNING)
+        self._progress('All clusters done, returning HOME')
         self._go_home()
 
-        # ── Done ───────────────────────────────────────────
-        picked = sum(1 for p in self.cluster_plans
-                     for b in p.bolls if b.picked)
+        # ── Summary ────────────────────────────────────────
+        elapsed = time.time() - t_start
+        picked = sum(1 for p in self.cluster_plans for b in p.bolls if b.picked)
         total = sum(len(p.bolls) for p in self.cluster_plans)
-        self._publish_progress(f'HARVEST COMPLETE: {picked}/{total} bolls picked')
+        self.get_logger().info('=' * 60)
+        self._progress(
+            f'HARVEST COMPLETE: {picked}/{total} bolls, '
+            f'{elapsed:.0f}s wall time')
+        self.get_logger().info('=' * 60)
         self._set_state(State.IDLE)
 
     # ─── Phase: SCANNING ────────────────────────────────────────
 
     def _phase_scanning(self) -> dict:
         """
-        Scan the field and return cluster positions.
+        Scan field and return cluster positions.
 
-        Target behavior:
-            1. Run panoramic scan (explorer)
-            2. Run detection pipeline at each viewpoint
-            3. Collect and merge cluster 3D positions
-
-        Sim placeholder:
-            Return cluster positions from config file directly.
-            (No actual scan — positions are ground truth.)
+        With vision: explorer panoramic scan + detection pipeline
+        Without vision: read from config (fallback)
         """
-        self._publish_progress('Scanning field for clusters...')
+        if not self.use_vision_for_scan:
+            self._progress('Scan: using config positions (vision disabled)')
+            return self._get_clusters_from_config()
 
-        # ── PLACEHOLDER: Use config positions as ground truth ──
+        self._progress('Scan: starting panoramic scan with detection...')
+
+        # Step 1: Go HOME first
+        self._progress('Scan: going HOME before scan')
+        self._go_home()
+
+        # Step 2: Clear previous detections
+        self._progress('Scan: clearing previous detections')
+        self._call_trigger(self.detect_clear_cli, '/detection/clear')
+
+        # Step 3: Start panoramic scan
+        self._scan_complete = False
+        self._progress('Scan: starting panoramic scan (3 positions)')
+        scan_ok = self._call_trigger(
+            self.panoramic_scan_cli, '/explorer/panoramic_scan')
+        if not scan_ok:
+            self.get_logger().warn(
+                'Scan: panoramic_scan service failed, falling back to config')
+            return self._get_clusters_from_config()
+
+        # Step 4: Wait for scan completion
+        self._progress('Scan: waiting for scan to complete...')
+        t_start = time.time()
+        while not self._scan_complete:
+            if time.time() - t_start > self.scan_timeout:
+                self.get_logger().error(
+                    f'Scan: timeout after {self.scan_timeout}s, '
+                    f'falling back to config')
+                return self._get_clusters_from_config()
+            self._check_stop()
+            time.sleep(1.0)
+
+        elapsed = time.time() - t_start
+        self._progress(f'Scan: completed in {elapsed:.0f}s wall time')
+
+        # Step 5: Get detection results
+        self._progress('Scan: retrieving detection results...')
+        results = self._call_get_results()
+
+        if not results:
+            self.get_logger().warn(
+                'Scan: no clusters detected, falling back to config')
+            return self._get_clusters_from_config()
+
+        # Convert to dict
+        cluster_positions = {}
+        for cluster in results:
+            pos = [cluster.position.x, cluster.position.y, cluster.position.z]
+            cluster_positions[cluster.cluster_id] = pos
+            self._progress(
+                f'Scan: detected {cluster.cluster_id} at '
+                f'({pos[0]:.3f}, {pos[1]:.3f}, {pos[2]:.3f}), '
+                f'confidence={cluster.confidence:.2f}, '
+                f'detections={cluster.num_detections}')
+
+        self._progress(f'Scan: {len(cluster_positions)} clusters detected')
+        return cluster_positions
+
+    def _get_clusters_from_config(self) -> dict:
+        """Fallback: get cluster positions from config file."""
         clusters = self.config.get('clusters', {})
         result = {}
         for cid, cdata in clusters.items():
             pos = cdata.get('position', [0, 0, 0])
             result[cid] = pos
-            self.get_logger().info(f'  Cluster {cid}: {pos}')
-
-        # ── TODO (real implementation): ──
-        # 1. self._go_home()
-        # 2. Call /explorer/start_scan → panoramic sweep
-        # 3. At each viewpoint, call /detection/run_at_position
-        # 4. Merge detections, return cluster centers
-        # Example:
-        #   scan_result = self._call_trigger(self.scan_cli)
-        #   for viewpoint in scan_viewpoints:
-        #       detections = self._call_detection()
-        #       merge into result...
-
+            self.get_logger().info(f'  Config cluster {cid}: {pos}')
         return result
 
     # ─── Phase: APPROACHING ─────────────────────────────────────
 
     def _phase_approaching(self, plan: ClusterPlan):
         """
-        Approach a cluster and determine pre-grasp view + boll positions.
+        Approach cluster and detect individual bolls.
 
-        Target behavior:
-            1. Move from current position toward cluster center
-            2. While moving, run continuous vision predictions
-            3. At each intermediate position, count visible bolls
-            4. Stop at the position with maximum boll visibility
-               → this becomes the "pre-grasp view"
-            5. Optional: mini left-right scan for full coverage
-            6. Get 3D positions of all visible bolls
-
-        Sim placeholder:
-            - Compute pre-grasp view as fixed offset from cluster center
-            - Use config boll position as the single boll target
-            - Move arm to pre-grasp view
+        1. Go to pre-grasp cluster view (arm_commander handles offset)
+        2. Wait for camera to settle
+        3. Run YOLO detect + depth for individual boll 3D positions
+        4. Fallback to cluster center if detection fails
         """
         cx, cy, cz = plan.center
-        self._publish_progress(
-            f'Approaching {plan.cluster_id} at ({cx:.2f}, {cy:.2f}, {cz:.2f})')
 
-        # ── PLACEHOLDER: Fixed pre-grasp computation ───────
+        # Step 1: Compute pre-grasp view position
         pre_x, pre_y, pre_z = self._compute_pre_grasp(cx, cy, cz)
         plan.pre_grasp_view = [pre_x, pre_y, pre_z]
 
-        # Move to pre-grasp view
-        self._go_to_xyz(pre_x, pre_y, pre_z)
+        self._progress(
+            f'Approach {plan.cluster_id}: going to pre-grasp view '
+            f'({pre_x:.3f}, {pre_y:.3f}, {pre_z:.3f})')
 
-        # Use config position as the single boll target
-        plan.bolls = [
-            BollTarget(
+        # Go to pre-grasp view with approach orientation toward cluster
+        success = self._go_to_xyz(pre_x, pre_y, pre_z, approach_orientation=True)
+        if not success:
+            self.get_logger().error(
+                f'Approach {plan.cluster_id}: failed to reach pre-grasp view')
+            # Still try with config position as fallback boll
+            plan.bolls = [BollTarget(
+                position=plan.center.copy(), cluster_id=plan.cluster_id)]
+            return
+
+        # Step 2: Wait for camera to settle
+        settle = self.camera_settle_time
+        self._progress(
+            f'Approach {plan.cluster_id}: at pre-grasp, '
+            f'waiting {settle}s for camera...')
+        time.sleep(settle)
+
+        # Step 3: Detect individual bolls
+        if self.use_vision_for_bolls:
+            self._progress(
+                f'Approach {plan.cluster_id}: running boll detection...')
+            bolls = self._detect_bolls()
+
+            if bolls:
+                plan.bolls = bolls
+                self._progress(
+                    f'Approach {plan.cluster_id}: detected {len(bolls)} boll(s)')
+                for i, b in enumerate(bolls):
+                    self.get_logger().info(
+                        f'  Boll {i+1}: ({b.position[0]:.3f}, '
+                        f'{b.position[1]:.3f}, {b.position[2]:.3f}), '
+                        f'conf={b.confidence:.2f}')
+            else:
+                self.get_logger().warn(
+                    f'Approach {plan.cluster_id}: '
+                    f'no bolls detected, using cluster center')
+                plan.bolls = [BollTarget(
+                    position=plan.center.copy(),
+                    cluster_id=plan.cluster_id)]
+        else:
+            self._progress(
+                f'Approach {plan.cluster_id}: '
+                f'vision disabled, using cluster center')
+            plan.bolls = [BollTarget(
                 position=plan.center.copy(),
-                cluster_id=plan.cluster_id)
-        ]
-        self._publish_progress(
-            f'Pre-grasp view: ({pre_x:.2f}, {pre_y:.2f}, {pre_z:.2f}), '
+                cluster_id=plan.cluster_id)]
+
+        self._progress(
+            f'Approach {plan.cluster_id}: '
             f'{len(plan.bolls)} boll(s) to pick')
 
-        # ── TODO (real implementation): ──
-        # 1. Compute intermediate waypoints from current pos → cluster
-        # 2. At each waypoint:
-        #    a. Move arm there
-        #    b. Run /detection/run_at_position
-        #    c. Count bolls, track best viewpoint
-        # 3. Optimal viewpoint → plan.pre_grasp_view
-        # 4. Run final detection → plan.bolls = detected boll positions
-        # 5. Optional: mini scan (rotate ±15° around cluster axis)
-        #
-        # Example pseudocode:
-        #   best_count = 0
-        #   for t in [0.3, 0.5, 0.7, 0.85, 1.0]:  # approach fractions
-        #       wp = interpolate(current_pos, cluster_center, t)
-        #       self._go_to_xyz(*wp)
-        #       detections = self._call_detection()
-        #       if len(detections) > best_count:
-        #           best_count = len(detections)
-        #           plan.pre_grasp_view = wp
-        #   self._go_to_xyz(*plan.pre_grasp_view)
-        #   final_detections = self._call_detection()
-        #   plan.bolls = [BollTarget(d.position, ...) for d in final_detections]
+    def _detect_bolls(self) -> List[BollTarget]:
+        """
+        Detect individual bolls at current camera view.
+        Calls /yolo/detect (raw) then /depth_processor/pixel_to_3d for each.
+        """
+        # Call YOLO raw detection
+        if not self.yolo_detect_cli.wait_for_service(timeout_sec=5.0):
+            self.get_logger().error('_detect_bolls: /yolo/detect not available')
+            return []
+
+        yolo_req = YoloDetect.Request()
+        future = self.yolo_detect_cli.call_async(yolo_req)
+        self._wait_future(future,10.0)
+
+        if future.result() is None:
+            self.get_logger().error('_detect_bolls: YOLO call returned None')
+            return []
+
+        yolo_result = future.result()
+        if not yolo_result.success:
+            self.get_logger().warn(
+                f'_detect_bolls: YOLO failed: {yolo_result.message}')
+            return []
+
+        detections = yolo_result.detections
+        self.get_logger().info(
+            f'_detect_bolls: YOLO returned {len(detections)} detections')
+
+        if not detections:
+            return []
+
+        # For each detection, get 3D position via depth
+        bolls = []
+        for i, bbox in enumerate(detections):
+            # Filter: only cotton_boll class
+            if 'cotton' not in bbox.label.lower() and 'boll' not in bbox.label.lower():
+                self.get_logger().debug(
+                    f'  Detection {i}: skipping label={bbox.label}')
+                continue
+
+            cx = (bbox.u_min + bbox.u_max) // 2
+            cy = (bbox.v_min + bbox.v_max) // 2
+
+            self.get_logger().info(
+                f'  Detection {i}: {bbox.label} conf={bbox.confidence:.2f}, '
+                f'pixel=({cx}, {cy}), area={bbox.area}')
+
+            # Call depth processor
+            pos_3d = self._call_pixel_to_3d(cx, cy)
+            if pos_3d is None:
+                self.get_logger().warn(
+                    f'  Detection {i}: depth lookup failed, skipping')
+                continue
+
+            self.get_logger().info(
+                f'  Detection {i}: 3D position = '
+                f'({pos_3d[0]:.3f}, {pos_3d[1]:.3f}, {pos_3d[2]:.3f})')
+
+            bolls.append(BollTarget(
+                position=pos_3d,
+                cluster_id='detected',
+                confidence=bbox.confidence))
+
+        self.get_logger().info(
+            f'_detect_bolls: {len(bolls)} bolls with valid 3D positions')
+        return bolls
+
+    def _call_pixel_to_3d(self, u: int, v: int) -> Optional[List[float]]:
+        """Call /depth_processor/pixel_to_3d, return [x,y,z] or None."""
+        if not self.pixel_to_3d_cli.wait_for_service(timeout_sec=5.0):
+            self.get_logger().error('pixel_to_3d service not available')
+            return None
+
+        req = PixelTo3D.Request()
+        req.u = u
+        req.v = v
+
+        future = self.pixel_to_3d_cli.call_async(req)
+        self._wait_future(future,10.0)
+
+        if future.result() is None:
+            return None
+
+        result = future.result()
+        if not result.success:
+            self.get_logger().debug(f'pixel_to_3d failed: {result.message}')
+            return None
+
+        return [result.position.x, result.position.y, result.position.z]
 
     # ─── Phase: HARVESTING ──────────────────────────────────────
 
     def _phase_harvesting(self, plan: ClusterPlan):
-        """
-        Pick all bolls in a cluster, one by one.
-
-        For each boll:
-            1. Call /harvest/pick_boll with boll position + pre-grasp view
-            2. Executor handles: pre-grasp → open → approach → close → lift
-                                 → reservoir → release → return to pre-grasp
-            3. Mark boll as picked
-            4. (Future: re-scan to update remaining boll positions)
-
-        After all bolls: cluster is complete.
-        """
+        """Pick all bolls in a cluster via harvest_executor."""
         if not plan.bolls:
-            self._publish_progress(f'{plan.cluster_id}: no bolls to pick')
+            self._progress(f'Harvest {plan.cluster_id}: no bolls to pick')
             return
 
-        self._publish_progress(
-            f'{plan.cluster_id}: picking {len(plan.bolls)} boll(s)')
+        self._progress(
+            f'Harvest {plan.cluster_id}: picking {len(plan.bolls)} boll(s)')
 
         for i, boll in enumerate(plan.bolls):
+            self._check_stop()
+
             if boll.picked:
                 continue
 
-            self._publish_progress(
-                f'{plan.cluster_id}: boll {i+1}/{len(plan.bolls)} '
-                f'at ({boll.position[0]:.2f}, {boll.position[1]:.2f}, '
-                f'{boll.position[2]:.2f})')
+            self._progress(
+                f'Harvest {plan.cluster_id}: boll {i+1}/{len(plan.bolls)} '
+                f'at ({boll.position[0]:.3f}, {boll.position[1]:.3f}, '
+                f'{boll.position[2]:.3f})')
 
-            # Call harvest executor
             success = self._pick_single_boll(boll, plan.pre_grasp_view)
             boll.picked = success
 
             if success:
-                self._publish_progress(f'  Boll {i+1} picked successfully')
+                self._progress(
+                    f'Harvest {plan.cluster_id}: '
+                    f'boll {i+1} PICKED successfully')
             else:
-                self._publish_progress(f'  Boll {i+1} FAILED, skipping')
-                # TODO: retry logic? re-scan? skip to next?
-
-            # ── TODO (real implementation): ──
-            # After each pick, optionally re-scan from pre-grasp view
-            # to update boll positions (bolls may have shifted):
-            #   self._go_to_xyz(*plan.pre_grasp_view)
-            #   new_detections = self._call_detection()
-            #   update plan.bolls with new positions...
+                self._progress(
+                    f'Harvest {plan.cluster_id}: '
+                    f'boll {i+1} FAILED, continuing to next')
 
         picked = sum(1 for b in plan.bolls if b.picked)
-        self._publish_progress(
-            f'{plan.cluster_id}: DONE ({picked}/{len(plan.bolls)} picked)')
+        self._progress(
+            f'Harvest {plan.cluster_id}: '
+            f'{picked}/{len(plan.bolls)} bolls picked')
 
-    # ─── Arm movement helpers ───────────────────────────────────
+    # ─── Arm helpers ────────────────────────────────────────────
 
-    def _go_to_xyz(self, x, y, z) -> bool:
+    def _go_to_xyz(self, x, y, z, approach_orientation=False) -> bool:
         """Set arm_commander params and call /go_to_pose."""
+        self.get_logger().info(
+            f'[ARM] go_to_xyz({x:.3f}, {y:.3f}, {z:.3f},'
+            f' approach={approach_orientation})')
+
         params = [
             Parameter(name='target_x',
                       value=ParameterValue(
@@ -429,53 +618,90 @@ class OrchestratorNode(Node):
             Parameter(name='target_z',
                       value=ParameterValue(
                           type=ParameterType.PARAMETER_DOUBLE, double_value=z)),
+            Parameter(name='use_approach_orientation',
+                      value=ParameterValue(
+                          type=ParameterType.PARAMETER_BOOL,
+                          bool_value=approach_orientation)),
         ]
-        req = SetParameters.Request(parameters=params)
-
-        if not self.arm_set_params_cli.wait_for_service(timeout_sec=5.0):
-            self.get_logger().error('arm_commander set_parameters not available')
+        if not self._set_arm_params(params):
             return False
-        future = self.arm_set_params_cli.call_async(req)
-        rclpy.spin_until_future_complete(self, future, timeout_sec=5.0)
 
         if not self.go_to_pose_cli.wait_for_service(timeout_sec=5.0):
-            self.get_logger().error('/go_to_pose not available')
+            self.get_logger().error('[ARM] /go_to_pose not available')
             return False
-        go_req = SetBool.Request(data=True)
-        future = self.go_to_pose_cli.call_async(go_req)
-        rclpy.spin_until_future_complete(self, future, timeout_sec=120.0)
+        future = self.go_to_pose_cli.call_async(SetBool.Request(data=True))
+        self._wait_future(future,120.0)
         if future.result() is not None:
-            return future.result().success
+            ok = future.result().success
+            self.get_logger().info(
+                f'[ARM] go_to_xyz result: {"OK" if ok else "FAIL"} '
+                f'- {future.result().message}')
+            return ok
+        self.get_logger().error('[ARM] go_to_xyz timeout')
         return False
 
-    def _go_home(self) -> bool:
-        """Go to home position via /go_to_named."""
+    def _go_to_named(self, name: str) -> bool:
+        """Set target_name and call /go_to_named."""
+        self.get_logger().info(f'[ARM] go_to_named({name})')
+
         params = [
             Parameter(name='target_name',
                       value=ParameterValue(
                           type=ParameterType.PARAMETER_STRING,
-                          string_value='home')),
+                          string_value=name)),
         ]
-        req = SetParameters.Request(parameters=params)
-        if not self.arm_set_params_cli.wait_for_service(timeout_sec=5.0):
+        if not self._set_arm_params(params):
             return False
-        future = self.arm_set_params_cli.call_async(req)
-        rclpy.spin_until_future_complete(self, future, timeout_sec=5.0)
 
         if not self.go_to_named_cli.wait_for_service(timeout_sec=5.0):
+            self.get_logger().error('[ARM] /go_to_named not available')
             return False
-        go_req = SetBool.Request(data=True)
-        future = self.go_to_named_cli.call_async(go_req)
-        rclpy.spin_until_future_complete(self, future, timeout_sec=120.0)
+        future = self.go_to_named_cli.call_async(SetBool.Request(data=True))
+        self._wait_future(future,120.0)
         if future.result() is not None:
-            return future.result().success
+            ok = future.result().success
+            self.get_logger().info(
+                f'[ARM] go_to_named({name}) result: {"OK" if ok else "FAIL"} '
+                f'- {future.result().message}')
+            return ok
+        self.get_logger().error(f'[ARM] go_to_named({name}) timeout')
         return False
+
+    def _go_home(self) -> bool:
+        """Go HOME via /go_to_named."""
+        self._progress('Going HOME...')
+        return self._go_to_named('home')
+
+    def _set_arm_params(self, params) -> bool:
+        """Set parameters on arm_commander."""
+        if not self.arm_set_params_cli.wait_for_service(timeout_sec=5.0):
+            self.get_logger().error('[ARM] set_parameters not available')
+            return False
+        req = SetParameters.Request(parameters=params)
+        future = self.arm_set_params_cli.call_async(req)
+        self._wait_future(future,5.0)
+        if future.result() is None:
+            self.get_logger().error('[ARM] set_parameters returned None')
+            return False
+        if not all(r.successful for r in future.result().results):
+            self.get_logger().error('[ARM] set_parameters failed')
+            return False
+        return True
+
+    # ─── Harvest executor helper ────────────────────────────────
 
     def _pick_single_boll(self, boll: BollTarget,
                           pre_grasp_view: List[float]) -> bool:
         """Call /harvest/pick_boll service."""
+        self.get_logger().info(
+            f'[PICK] Calling /harvest/pick_boll: '
+            f'boll=({boll.position[0]:.3f}, {boll.position[1]:.3f}, '
+            f'{boll.position[2]:.3f}), '
+            f'pre_grasp=({pre_grasp_view[0]:.3f}, '
+            f'{pre_grasp_view[1]:.3f}, {pre_grasp_view[2]:.3f})')
+
         if not self.pick_boll_cli.wait_for_service(timeout_sec=5.0):
-            self.get_logger().error('/harvest/pick_boll not available')
+            self.get_logger().error('[PICK] /harvest/pick_boll not available')
             return False
 
         req = HarvestBoll.Request()
@@ -485,11 +711,53 @@ class OrchestratorNode(Node):
             x=pre_grasp_view[0], y=pre_grasp_view[1], z=pre_grasp_view[2])
 
         future = self.pick_boll_cli.call_async(req)
-        rclpy.spin_until_future_complete(self, future, timeout_sec=600.0)
+        self._wait_future(future,600.0)
 
         if future.result() is not None:
-            return future.result().success
+            ok = future.result().success
+            msg = future.result().message
+            self.get_logger().info(
+                f'[PICK] Result: {"OK" if ok else "FAIL"} - {msg}')
+            return ok
+        self.get_logger().error('[PICK] /harvest/pick_boll timeout')
         return False
+
+    # ─── Service call helpers ───────────────────────────────────
+
+    def _call_trigger(self, client, name: str) -> bool:
+        """Generic trigger service call."""
+        if not client.wait_for_service(timeout_sec=5.0):
+            self.get_logger().warn(f'{name} not available')
+            return False
+        future = client.call_async(Trigger.Request())
+        self._wait_future(future,30.0)
+        if future.result() is not None:
+            ok = future.result().success
+            msg = future.result().message
+            self.get_logger().info(f'{name}: {"OK" if ok else "FAIL"} - {msg}')
+            return ok
+        self.get_logger().error(f'{name}: timeout')
+        return False
+
+    def _call_get_results(self):
+        """Call /detection/get_results and return cluster list."""
+        if not self.detect_results_cli.wait_for_service(timeout_sec=5.0):
+            self.get_logger().error('/detection/get_results not available')
+            return []
+        req = GetDetectedClusters.Request()
+        future = self.detect_results_cli.call_async(req)
+        self._wait_future(future,10.0)
+        if future.result() is None:
+            self.get_logger().error('/detection/get_results returned None')
+            return []
+        result = future.result()
+        if not result.success:
+            self.get_logger().warn(
+                f'/detection/get_results failed: {result.message}')
+            return []
+        self.get_logger().info(
+            f'/detection/get_results: {len(result.clusters)} clusters')
+        return list(result.clusters)
 
     # ─── Geometry helpers ───────────────────────────────────────
 
@@ -507,41 +775,14 @@ class OrchestratorNode(Node):
         pre_z = boll_z
         return pre_x, pre_y, pre_z
 
-    # ─── Detection helpers (for future use) ─────────────────────
-
-    def _call_detection(self):
-        """
-        Call /detection/run_at_position and return detected bolls.
-
-        TODO: Implement when connecting vision pipeline.
-        Returns list of BollTarget from detection results.
-        """
-        # req = RunDetectionPipeline.Request()
-        # req.focus_iterations = 2
-        # future = self.detect_cli.call_async(req)
-        # rclpy.spin_until_future_complete(self, future, timeout_sec=30.0)
-        # result = future.result()
-        # return [BollTarget(position=[d.position.x, d.position.y, d.position.z],
-        #                    cluster_id=d.cluster_id)
-        #         for d in result.detections]
-        return []
-
-    def _call_trigger(self, client) -> bool:
-        """Generic trigger service call."""
-        if not client.wait_for_service(timeout_sec=5.0):
-            return False
-        future = client.call_async(Trigger.Request())
-        rclpy.spin_until_future_complete(self, future, timeout_sec=120.0)
-        if future.result() is not None:
-            return future.result().success
-        return False
-
 
 def main(args=None):
     rclpy.init(args=args)
     node = OrchestratorNode()
+    executor = MultiThreadedExecutor(num_threads=4)
+    executor.add_node(node)
     try:
-        rclpy.spin(node)
+        executor.spin()
     except KeyboardInterrupt:
         pass
     finally:
