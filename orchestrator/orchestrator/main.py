@@ -263,7 +263,9 @@ class OrchestratorNode(Node):
 
         # ── Phase 1: SCANNING ──────────────────────────────
         self._set_state(State.SCANNING)
+        t_phase = time.time()
         cluster_positions = self._phase_scanning()
+        self._progress(f'SCAN phase took {time.time()-t_phase:.0f}s wall')
         self._check_stop()
 
         if not cluster_positions:
@@ -281,31 +283,50 @@ class OrchestratorNode(Node):
         self._progress(
             f'Found {len(self.cluster_plans)} clusters: '
             f'{[p.cluster_id for p in self.cluster_plans]}')
+        for p in self.cluster_plans:
+            self.get_logger().info(
+                f'  {p.cluster_id}: center=({p.center[0]:.3f}, '
+                f'{p.center[1]:.3f}, {p.center[2]:.3f})')
 
         # ── Phase 2: Per-cluster harvest ───────────────────
         for idx, plan in enumerate(self.cluster_plans):
             self._check_stop()
             self.current_cluster_idx = idx
+            t_cluster = time.time()
             self._progress(
                 f'=== Cluster {idx+1}/{len(self.cluster_plans)}: '
-                f'{plan.cluster_id} ===')
+                f'{plan.cluster_id} at ({plan.center[0]:.3f}, '
+                f'{plan.center[1]:.3f}, {plan.center[2]:.3f}) ===')
 
             # 2a. APPROACHING
             self._set_state(State.APPROACHING)
+            t_phase = time.time()
             self._phase_approaching(plan)
+            self._progress(
+                f'APPROACH phase took {time.time()-t_phase:.0f}s wall, '
+                f'{len(plan.bolls)} boll(s) found')
             self._check_stop()
 
             # 2b. HARVESTING
             self._set_state(State.HARVESTING)
+            t_phase = time.time()
             self._phase_harvesting(plan)
+            picked_in_cluster = sum(1 for b in plan.bolls if b.picked)
+            self._progress(
+                f'HARVEST phase took {time.time()-t_phase:.0f}s wall, '
+                f'{picked_in_cluster}/{len(plan.bolls)} picked')
 
             plan.completed = True
-            self._progress(f'=== {plan.cluster_id} DONE ===')
+            self._progress(
+                f'=== {plan.cluster_id} DONE in '
+                f'{time.time()-t_cluster:.0f}s ===')
 
         # ── Phase 3: RETURNING ─────────────────────────────
         self._set_state(State.RETURNING)
         self._progress('All clusters done, returning HOME')
+        t_phase = time.time()
         self._go_home()
+        self._progress(f'HOME reached in {time.time()-t_phase:.0f}s')
 
         # ── Summary ────────────────────────────────────────
         elapsed = time.time() - t_start
@@ -315,6 +336,10 @@ class OrchestratorNode(Node):
         self._progress(
             f'HARVEST COMPLETE: {picked}/{total} bolls, '
             f'{elapsed:.0f}s wall time')
+        for p in self.cluster_plans:
+            p_picked = sum(1 for b in p.bolls if b.picked)
+            self.get_logger().info(
+                f'  {p.cluster_id}: {p_picked}/{len(p.bolls)} bolls picked')
         self.get_logger().info('=' * 60)
         self._set_state(State.IDLE)
 
@@ -507,8 +532,8 @@ class OrchestratorNode(Node):
         for i, bbox in enumerate(detections):
             # Filter: only cotton_boll class
             if 'cotton' not in bbox.label.lower() and 'boll' not in bbox.label.lower():
-                self.get_logger().debug(
-                    f'  Detection {i}: skipping label={bbox.label}')
+                self.get_logger().info(
+                    f'  Detection {i}: skipping non-boll label={bbox.label}')
                 continue
 
             cx = (bbox.u_min + bbox.u_max) // 2
@@ -552,11 +577,13 @@ class OrchestratorNode(Node):
         self._wait_future(future,10.0)
 
         if future.result() is None:
+            self.get_logger().warn(f'pixel_to_3d({u},{v}): call returned None')
             return None
 
         result = future.result()
         if not result.success:
-            self.get_logger().debug(f'pixel_to_3d failed: {result.message}')
+            self.get_logger().warn(
+                f'pixel_to_3d({u},{v}): {result.message}')
             return None
 
         return [result.position.x, result.position.y, result.position.z]
@@ -686,6 +713,7 @@ class OrchestratorNode(Node):
         if not all(r.successful for r in future.result().results):
             self.get_logger().error('[ARM] set_parameters failed')
             return False
+        self.get_logger().debug('[ARM] set_parameters OK')
         return True
 
     # ─── Harvest executor helper ────────────────────────────────

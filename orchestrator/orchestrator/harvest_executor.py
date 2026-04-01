@@ -142,12 +142,13 @@ class HarvestExecutor(Node):
         t_start = time.time()
 
         try:
-            # Step 1: Go to pre-grasp position
+            # Step 1: Go to pre-grasp position (face cluster)
             self.get_logger().info(
                 f'[1/8] PRE-GRASP: going to '
                 f'({pre_grasp.x:.3f}, {pre_grasp.y:.3f}, {pre_grasp.z:.3f})')
             t_step = time.time()
-            if not self._go_to_xyz(pre_grasp.x, pre_grasp.y, pre_grasp.z):
+            if not self._go_to_xyz(pre_grasp.x, pre_grasp.y, pre_grasp.z,
+                                   approach_orientation=True):
                 raise RuntimeError('Failed to reach pre-grasp')
             self.get_logger().info(
                 f'[1/8] PRE-GRASP: reached in {time.time()-t_step:.1f}s')
@@ -160,12 +161,13 @@ class HarvestExecutor(Node):
             self.get_logger().info(
                 f'[2/8] GRIPPER OPEN: done in {time.time()-t_step:.1f}s')
 
-            # Step 3: Go to grasp position (boll center)
+            # Step 3: Go to grasp position (boll center, face it)
             self.get_logger().info(
                 f'[3/8] APPROACH BOLL: going to '
                 f'({boll.x:.3f}, {boll.y:.3f}, {boll.z:.3f})')
             t_step = time.time()
-            if not self._go_to_xyz(boll.x, boll.y, boll.z):
+            if not self._go_to_xyz(boll.x, boll.y, boll.z,
+                                   approach_orientation=True):
                 raise RuntimeError('Failed to reach boll')
             self.get_logger().info(
                 f'[3/8] APPROACH BOLL: reached in {time.time()-t_step:.1f}s')
@@ -207,12 +209,13 @@ class HarvestExecutor(Node):
             self.get_logger().info(
                 f'[7/8] RELEASE: done in {time.time()-t_step:.1f}s')
 
-            # Step 8: Return to pre-grasp viewpoint
+            # Step 8: Return to pre-grasp viewpoint (face cluster again)
             self.get_logger().info(
                 f'[8/8] RETURN: going back to pre-grasp '
                 f'({pre_grasp.x:.3f}, {pre_grasp.y:.3f}, {pre_grasp.z:.3f})')
             t_step = time.time()
-            if not self._go_to_xyz(pre_grasp.x, pre_grasp.y, pre_grasp.z):
+            if not self._go_to_xyz(pre_grasp.x, pre_grasp.y, pre_grasp.z,
+                                   approach_orientation=True):
                 raise RuntimeError('Failed to return to pre-grasp')
             self.get_logger().info(
                 f'[8/8] RETURN: reached in {time.time()-t_step:.1f}s')
@@ -239,10 +242,11 @@ class HarvestExecutor(Node):
 
     # ─── Arm movement helpers ───────────────────────────────────
 
-    def _go_to_xyz(self, x, y, z) -> bool:
+    def _go_to_xyz(self, x, y, z, approach_orientation=False) -> bool:
         """Set arm_commander params and call /go_to_pose."""
-        self.get_logger().debug(
-            f'[ARM] Setting target: ({x:.3f}, {y:.3f}, {z:.3f})')
+        self.get_logger().info(
+            f'[ARM] Setting target: ({x:.3f}, {y:.3f}, {z:.3f})'
+            f' approach={approach_orientation}')
 
         params = [
             Parameter(name='target_x',
@@ -254,6 +258,10 @@ class HarvestExecutor(Node):
             Parameter(name='target_z',
                       value=ParameterValue(
                           type=ParameterType.PARAMETER_DOUBLE, double_value=z)),
+            Parameter(name='use_approach_orientation',
+                      value=ParameterValue(
+                          type=ParameterType.PARAMETER_BOOL,
+                          bool_value=approach_orientation)),
         ]
         req = SetParameters.Request(parameters=params)
 

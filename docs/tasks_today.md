@@ -159,6 +159,7 @@ _set_state(IDLE)
 - Cotton boll 70mm vs Hand-E 50mm — boll fiziksel tutulmaz sim'de
 - Sim ~%3-4 realtime — full cycle 5-10 dk wall clock surebilir
 - Pre-grasp'da cluster full frame'e sigmayabilir — TODO: heuristic view adjustment ekle (hafif sag/sol/yukari/asagi kaydirarak tum boll'lerin frame icinde oldugunu dogrula, kenar boll'ler kesiliyorsa geri cekil veya pan yap)
+- Pre-grasp view adjustment sirasinda cluster-level prediction kullanilmali (boll degil!). Once cluster bbox'in tamami frame icinde olsun, sonra boll-level detect + pick baslasin. Akis: approach → cluster predict → view adjust → cluster full frame'de → boll detect → pick
 
 ---
 
