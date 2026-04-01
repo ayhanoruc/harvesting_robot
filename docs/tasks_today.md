@@ -160,6 +160,12 @@ _set_state(IDLE)
 - Sim ~%3-4 realtime — full cycle 5-10 dk wall clock surebilir
 - Pre-grasp'da cluster full frame'e sigmayabilir — TODO: heuristic view adjustment ekle (hafif sag/sol/yukari/asagi kaydirarak tum boll'lerin frame icinde oldugunu dogrula, kenar boll'ler kesiliyorsa geri cekil veya pan yap)
 - Pre-grasp view adjustment sirasinda cluster-level prediction kullanilmali (boll degil!). Once cluster bbox'in tamami frame icinde olsun, sonra boll-level detect + pick baslasin. Akis: approach → cluster predict → view adjust → cluster full frame'de → boll detect → pick
+  - Implementasyon (visual servoing lite — locate → center → verify → proceed):
+    - CASE 1 (gorunuyor, frame icinde): direkt boll detect'e gec
+    - CASE 2 (gorunuyor ama kesilmis): /camera_focus/center_on_pixel(bbox_center) → hala sigmiyorsa 5cm geri cekil → max 3-4 iter
+    - CASE 3 (hicbir sey yok): local search grid [-5,0,+5]° j1 × [-3,0,+3]° j2 = 9 poz, her pozda detect_clusters → bulursa CASE 1/2'ye dus, bulamazsa fallback config
+  - Visibility check: margin=40px, 4 kenar (u_min>margin, v_min>margin, u_max<600, v_max<440)
+  - Mevcut camera_focus + detect_clusters altyapisi yeterli, yeni node gerek yok.
 
 ---
 
