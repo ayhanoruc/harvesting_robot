@@ -523,8 +523,8 @@ class ArmCommander(Node):
 
         goal_msg = MoveGroup.Goal()
         goal_msg.request.group_name = "arm"
-        goal_msg.request.num_planning_attempts = 5
-        goal_msg.request.allowed_planning_time = 5.0
+        goal_msg.request.num_planning_attempts = 3
+        goal_msg.request.allowed_planning_time = 3.0
         goal_msg.request.max_velocity_scaling_factor = 1.0
         goal_msg.request.max_acceleration_scaling_factor = 1.0
 

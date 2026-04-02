@@ -87,9 +87,9 @@ class OrchestratorNode(Node):
 
         # ── Parameters ──────────────────────────────────────
         self.declare_parameter('config_file', '')
-        self.declare_parameter('pre_grasp_offset', 0.15)
+        self.declare_parameter('pre_grasp_offset', 0.08)
         self.declare_parameter('scan_timeout', 600.0)     # wall-clock seconds
-        self.declare_parameter('camera_settle_time', 3.0)  # seconds after move
+        self.declare_parameter('camera_settle_time', 1.0)  # seconds after move
         self.declare_parameter('use_vision_for_bolls', True)
         self.declare_parameter('use_vision_for_scan', True)
 

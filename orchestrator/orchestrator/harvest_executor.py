@@ -54,7 +54,7 @@ class HarvestExecutor(Node):
         self.cb = ReentrantCallbackGroup()
 
         # ── Parameters ──────────────────────────────────────────
-        self.declare_parameter('pre_grasp_offset', 0.15)
+        self.declare_parameter('pre_grasp_offset', 0.08)
         self.declare_parameter('lift_height', 0.15)
         self.declare_parameter('config_file', '')
 
@@ -348,23 +348,28 @@ class HarvestExecutor(Node):
 
     def _call_gripper(self, action: str) -> bool:
         """Call gripper open or close service."""
-        cli = self.gripper_open_cli if action == 'open' else self.gripper_close_cli
-        if not cli.wait_for_service(timeout_sec=5.0):
-            self.get_logger().error(f'[GRIPPER] /gripper/{action} not available')
-            return False
+        # BYPASS: gripper disabled for demo — always succeed
+        self.get_logger().info(f'[GRIPPER] {action}: BYPASSED (demo mode)')
+        return True
 
-        future = cli.call_async(Trigger.Request())
-        self._wait_future(future,120.0)
-
-        if future.result() is not None:
-            ok = future.result().success
-            msg = future.result().message
-            self.get_logger().info(
-                f'[GRIPPER] {action}: {"OK" if ok else "FAIL"} - {msg}')
-            return ok
-
-        self.get_logger().error(f'[GRIPPER] {action} timeout (120s)')
-        return False
+        # --- original implementation (re-enable when gripper works) ---
+        # cli = self.gripper_open_cli if action == 'open' else self.gripper_close_cli
+        # if not cli.wait_for_service(timeout_sec=5.0):
+        #     self.get_logger().error(f'[GRIPPER] /gripper/{action} not available')
+        #     return False
+        #
+        # future = cli.call_async(Trigger.Request())
+        # self._wait_future(future,120.0)
+        #
+        # if future.result() is not None:
+        #     ok = future.result().success
+        #     msg = future.result().message
+        #     self.get_logger().info(
+        #         f'[GRIPPER] {action}: {"OK" if ok else "FAIL"} - {msg}')
+        #     return ok
+        #
+        # self.get_logger().error(f'[GRIPPER] {action} timeout (120s)')
+        # return False
 
     # ─── Pre-grasp computation ──────────────────────────────────
 
