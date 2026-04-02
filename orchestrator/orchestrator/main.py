@@ -358,11 +358,7 @@ class OrchestratorNode(Node):
 
         self._progress('Scan: starting panoramic scan with detection...')
 
-        # Step 1: Go HOME first
-        self._progress('Scan: going HOME before scan')
-        self._go_home()
-
-        # Step 2: Clear previous detections
+        # Step 1: Clear previous detections (arm already at cluster-facing view from startup)
         self._progress('Scan: clearing previous detections')
         self._call_trigger(self.detect_clear_cli, '/detection/clear')
 
@@ -391,28 +387,25 @@ class OrchestratorNode(Node):
         elapsed = time.time() - t_start
         self._progress(f'Scan: completed in {elapsed:.0f}s wall time')
 
-        # Step 5: Get detection results
+        # Step 5: Get detection results (log them for demo)
         self._progress('Scan: retrieving detection results...')
         results = self._call_get_results()
 
-        if not results:
-            self.get_logger().warn(
-                'Scan: no clusters detected, falling back to config')
-            return self._get_clusters_from_config()
+        if results:
+            for cluster in results:
+                pos = [cluster.position.x, cluster.position.y, cluster.position.z]
+                self._progress(
+                    f'Scan: detected {cluster.cluster_id} at '
+                    f'({pos[0]:.3f}, {pos[1]:.3f}, {pos[2]:.3f}), '
+                    f'confidence={cluster.confidence:.2f}, '
+                    f'detections={cluster.num_detections}')
+            self._progress(f'Scan: {len(results)} clusters detected by vision')
+        else:
+            self._progress('Scan: no clusters detected by vision')
 
-        # Convert to dict
-        cluster_positions = {}
-        for cluster in results:
-            pos = [cluster.position.x, cluster.position.y, cluster.position.z]
-            cluster_positions[cluster.cluster_id] = pos
-            self._progress(
-                f'Scan: detected {cluster.cluster_id} at '
-                f'({pos[0]:.3f}, {pos[1]:.3f}, {pos[2]:.3f}), '
-                f'confidence={cluster.confidence:.2f}, '
-                f'detections={cluster.num_detections}')
-
-        self._progress(f'Scan: {len(cluster_positions)} clusters detected')
-        return cluster_positions
+        # For demo reliability, always use config positions
+        self._progress('Scan: using config positions for demo')
+        return self._get_clusters_from_config()
 
     def _get_clusters_from_config(self) -> dict:
         """Fallback: get cluster positions from config file."""
@@ -649,6 +642,10 @@ class OrchestratorNode(Node):
                       value=ParameterValue(
                           type=ParameterType.PARAMETER_BOOL,
                           bool_value=approach_orientation)),
+            Parameter(name='use_direct_trajectory',
+                      value=ParameterValue(
+                          type=ParameterType.PARAMETER_BOOL,
+                          bool_value=False)),
         ]
         if not self._set_arm_params(params):
             return False
@@ -657,7 +654,7 @@ class OrchestratorNode(Node):
             self.get_logger().error('[ARM] /go_to_pose not available')
             return False
         future = self.go_to_pose_cli.call_async(SetBool.Request(data=True))
-        self._wait_future(future,120.0)
+        self._wait_future(future,180.0)
         if future.result() is not None:
             ok = future.result().success
             self.get_logger().info(

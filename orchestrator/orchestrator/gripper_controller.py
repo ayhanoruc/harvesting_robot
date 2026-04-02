@@ -46,7 +46,8 @@ class GripperController(Node):
         self.move_dur = self.get_parameter('move_duration').value
         self.tolerance = self.get_parameter('position_tolerance').value
 
-        self.joint_names = ['hande_left_finger_joint', 'hande_right_finger_joint']
+        # Only left finger — right follows via URDF mimic tag
+        self.joint_names = ['hande_left_finger_joint']
 
         # Current gripper position tracking
         self.current_position = None  # left finger
@@ -112,7 +113,7 @@ class GripperController(Node):
         traj.joint_names = self.joint_names
 
         point = JointTrajectoryPoint()
-        point.positions = [target, target]  # both fingers same position
+        point.positions = [target]  # left finger only, right follows via mimic
         point.time_from_start = Duration(
             sec=int(self.move_dur),
             nanosec=int((self.move_dur % 1) * 1e9)

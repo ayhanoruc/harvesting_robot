@@ -25,6 +25,8 @@ from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints, RobotState
 from moveit_msgs.srv import GetPositionIK
 from geometry_msgs.msg import PoseStamped, Pose, Point, Quaternion
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+from builtin_interfaces.msg import Duration
 
 import yaml
 import os
@@ -51,6 +53,7 @@ class ArmCommander(Node):
         self.declare_parameter('pre_grasp_offset', 0.15)  # meters back from boll along approach
         self.declare_parameter('use_approach_orientation', False)  # set by orchestrator before go_to_pose
         self.declare_parameter('cluster_rotate_deg', 90.0)  # step-2: rotate wrist joint before gripper (joint5)
+        self.declare_parameter('use_direct_trajectory', False)  # bypass MoveGroup, direct joint traj
 
         # Config
         self.named_targets = self.load_targets_from_config()
@@ -69,9 +72,13 @@ class ArmCommander(Node):
         self._tf_buffer = tf2_ros.Buffer()
         self._tf_listener = tf2_ros.TransformListener(self._tf_buffer, self)
 
-        # MoveGroup action client (for joint goals)
+        # MoveGroup action client (for HOME, rotation — internal use)
         self._action_client = ActionClient(
             self, MoveGroup, 'move_action', callback_group=self.callback_group)
+
+        # Direct joint trajectory publisher (for pipeline moves — bypasses OMPL)
+        self._traj_pub = self.create_publisher(
+            JointTrajectory, '/arm_controller/joint_trajectory', 10)
 
         # IK service client
         self._ik_client = self.create_client(
@@ -451,9 +458,14 @@ class ArmCommander(Node):
             self.get_logger().error("Joint validation failed — solution looks wrong, aborting")
             return False
 
-        # Send joint goal
-        self.get_logger().info("Sending joint goal from IK solution...")
-        success = self.send_joint_goal(joint_values)
+        # Send joint goal — direct trajectory or MoveGroup depending on param
+        use_direct = self.get_parameter('use_direct_trajectory').value
+        if use_direct:
+            self.get_logger().info("Sending joint goal (DIRECT trajectory)...")
+            success = self.send_joint_goal_direct(joint_values)
+        else:
+            self.get_logger().info("Sending joint goal (MoveGroup)...")
+            success = self.send_joint_goal(joint_values)
 
         if not success:
             return False
@@ -557,6 +569,33 @@ class ArmCommander(Node):
         else:
             self.get_logger().error(f"Failed: error_code={result.result.error_code.val}")
             return False
+
+    def send_joint_goal_direct(self, joint_values, duration_sec=1.5):
+        """Send joint-space goal via direct JointTrajectory publish (no OMPL).
+
+        Same pattern as explorer._move_to_joints_sync: publish and sleep.
+        No convergence polling — just wait enough wall-clock time for sim.
+        """
+        self.get_logger().info(f"Joint goal (direct): {[f'{v:.3f}' for v in joint_values]}")
+
+        traj_msg = JointTrajectory()
+        traj_msg.joint_names = list(self.arm_joint_names)
+
+        point = JointTrajectoryPoint()
+        point.positions = list(joint_values[:6])
+        point.time_from_start = Duration(
+            sec=int(duration_sec),
+            nanosec=int((duration_sec % 1) * 1e9))
+        traj_msg.points = [point]
+
+        self._traj_pub.publish(traj_msg)
+
+        # Wait like explorer does: duration + buffer
+        import time
+        time.sleep(duration_sec + 0.5)
+
+        self.get_logger().info("Direct trajectory sent and waited.")
+        return True
 
 
 def main(args=None):

@@ -332,7 +332,7 @@
       </link>
     </model>
 
-    <!-- Reservoir: To the right side -->
+    <!-- Reservoir: Left side of robot -->
     <model name="reservoir">
       <static>true</static>
       <pose>0 0.6 0 0 0 0</pose>

@@ -161,12 +161,22 @@ class HarvestExecutor(Node):
             self.get_logger().info(
                 f'[2/8] GRIPPER OPEN: done in {time.time()-t_step:.1f}s')
 
-            # Step 3: Go to grasp position (boll center, face it)
+            # Step 3: Go to grasp position (3cm before boll center to avoid collision)
+            standoff = 0.03
+            dx, dy = boll.x, boll.y
+            dist = math.sqrt(dx*dx + dy*dy)
+            if dist > 0.01:
+                gx = boll.x - standoff * (dx / dist)
+                gy = boll.y - standoff * (dy / dist)
+            else:
+                gx, gy = boll.x, boll.y
+            gz = boll.z
             self.get_logger().info(
                 f'[3/8] APPROACH BOLL: going to '
-                f'({boll.x:.3f}, {boll.y:.3f}, {boll.z:.3f})')
+                f'({gx:.3f}, {gy:.3f}, {gz:.3f}) '
+                f'(3cm standoff from boll center)')
             t_step = time.time()
-            if not self._go_to_xyz(boll.x, boll.y, boll.z,
+            if not self._go_to_xyz(gx, gy, gz,
                                    approach_orientation=True):
                 raise RuntimeError('Failed to reach boll')
             self.get_logger().info(
@@ -180,23 +190,26 @@ class HarvestExecutor(Node):
             self.get_logger().info(
                 f'[4/8] GRIPPER CLOSE: done in {time.time()-t_step:.1f}s')
 
-            # Step 5: Lift
-            lift_z = boll.z + self.lift_height
+            # Step 5: Retract to pre-grasp (safer than lifting in place at workspace edge)
             self.get_logger().info(
-                f'[5/8] LIFT: going to z={lift_z:.3f} '
-                f'(+{self.lift_height}m from boll)')
+                f'[5/8] RETRACT: going to pre-grasp '
+                f'({pre_grasp.x:.3f}, {pre_grasp.y:.3f}, {pre_grasp.z:.3f})')
             t_step = time.time()
-            if not self._go_to_xyz(boll.x, boll.y, lift_z):
-                raise RuntimeError('Failed to lift')
+            if not self._go_to_xyz(pre_grasp.x, pre_grasp.y, pre_grasp.z,
+                                   approach_orientation=True):
+                raise RuntimeError('Failed to retract to pre-grasp')
             self.get_logger().info(
-                f'[5/8] LIFT: reached in {time.time()-t_step:.1f}s')
+                f'[5/8] RETRACT: reached in {time.time()-t_step:.1f}s')
 
-            # Step 6: Go to reservoir
+            # Step 6: Go to reservoir (hover 15cm above box top to avoid collision)
             rx, ry, rz = self.reservoir_pos
+            rz_hover = rz + 0.15
             self.get_logger().info(
-                f'[6/8] RESERVOIR: going to ({rx:.3f}, {ry:.3f}, {rz:.3f})')
+                f'[6/8] RESERVOIR: going to ({rx:.3f}, {ry:.3f}, {rz_hover:.3f})'
+                f' (config z={rz:.2f} + 0.15m hover)')
             t_step = time.time()
-            if not self._go_to_xyz(rx, ry, rz):
+            if not self._go_to_xyz(rx, ry, rz_hover,
+                                   approach_orientation=True, use_direct=True):
                 raise RuntimeError('Failed to reach reservoir')
             self.get_logger().info(
                 f'[6/8] RESERVOIR: reached in {time.time()-t_step:.1f}s')
@@ -242,11 +255,12 @@ class HarvestExecutor(Node):
 
     # ─── Arm movement helpers ───────────────────────────────────
 
-    def _go_to_xyz(self, x, y, z, approach_orientation=False) -> bool:
+    def _go_to_xyz(self, x, y, z, approach_orientation=False,
+                   use_direct=False) -> bool:
         """Set arm_commander params and call /go_to_pose."""
         self.get_logger().info(
             f'[ARM] Setting target: ({x:.3f}, {y:.3f}, {z:.3f})'
-            f' approach={approach_orientation}')
+            f' approach={approach_orientation} direct={use_direct}')
 
         params = [
             Parameter(name='target_x',
@@ -262,6 +276,10 @@ class HarvestExecutor(Node):
                       value=ParameterValue(
                           type=ParameterType.PARAMETER_BOOL,
                           bool_value=approach_orientation)),
+            Parameter(name='use_direct_trajectory',
+                      value=ParameterValue(
+                          type=ParameterType.PARAMETER_BOOL,
+                          bool_value=use_direct)),
         ]
         req = SetParameters.Request(parameters=params)
 

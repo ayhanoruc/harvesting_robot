@@ -766,7 +766,7 @@ class ExplorerNode(Node):
 
         # Scan complete - return to home (M1013 home position)
         self.get_logger().info("Returning to HOME position...")
-        home_joints = [0.0000, -0.922, 2.4494, 0.0, -1.3000, 0.0]
+        home_joints = [0.0000, -0.922, 2.4494, 0.0, 0.2708, 0.0]  # rotated j5 to face clusters
         self._move_to_joints_sync(home_joints, duration_sec=move_duration)
 
         with self._scan_lock:

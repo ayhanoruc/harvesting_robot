@@ -329,13 +329,14 @@
 		</collision>
 	</link>
 
-	<!-- Right finger (mimic of left) -->
+	<!-- Right finger (mimic of left — Gazebo drives this automatically) -->
 	<joint name="hande_right_finger_joint" type="prismatic">
 		<parent link="hand_e_link"/>
 		<child link="hande_right_finger"/>
 		<origin rpy="0 0 0" xyz="0 0 0.099"/>
 		<axis xyz="1 0 0"/>
 		<limit effort="130" lower="0" upper="0.025" velocity="0.15"/>
+		<mimic joint="hande_left_finger_joint" multiplier="1.0" offset="0.0"/>
 	</joint>
 	<link name="hande_right_finger">
 		<inertial>
@@ -546,14 +547,7 @@
 			<state_interface name="position"/>
 			<state_interface name="velocity"/>
 		</joint>
-		<joint name="hande_right_finger_joint">
-			<command_interface name="position">
-				<param name="min">0</param>
-				<param name="max">0.025</param>
-			</command_interface>
-			<state_interface name="position"/>
-			<state_interface name="velocity"/>
-		</joint>
+		<!-- hande_right_finger_joint: mimic of left, driven by Gazebo physics (no ros2_control interface) -->
 	</ros2_control>
 
 	<!-- ==================== Gazebo Sim ROS2 Control Plugin ==================== -->
