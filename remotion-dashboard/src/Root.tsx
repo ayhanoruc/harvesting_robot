@@ -5,7 +5,7 @@ import timeline from "./timeline";
 // Video is 30fps. Duration will be set after user provides final video length.
 // For now, use a placeholder — user will adjust.
 const FPS = 30;
-const DURATION_SEC = 120; // placeholder — will match final edited video
+const DURATION_SEC = 88; // matches edited_full.mp4
 
 export const Root: React.FC = () => {
   return (

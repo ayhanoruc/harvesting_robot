@@ -46,86 +46,157 @@ function getSection(id: string) {
 
 // ─── PREDICTION IMAGE ──────────────────────────────────────
 
-const PredictionImage: React.FC<{ image?: string }> = ({ image }) => (
-  <div
-    style={{
-      flex: "0 0 44%",
-      background: C.panel,
-      borderRadius: 10,
-      border: `2px solid ${C.border}`,
-      overflow: "hidden",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      position: "relative",
-    }}
-  >
+// Detection stats per image (from YOLO logs)
+const IMAGE_STATS: Record<string, { bolls: number; conf: string }> = {
+  "cluster1.png":    { bolls: 12, conf: "0.73–0.92" },
+  "cluster2.png":    { bolls: 12, conf: "0.73–0.93" },
+  "cluster3.png":    { bolls: 12, conf: "0.73–0.92" },
+};
+
+const PredictionImage: React.FC<{ image?: string }> = ({ image }) => {
+  const stats = image ? IMAGE_STATS[image] : null;
+  return (
     <div
       style={{
-        position: "absolute",
-        top: 12,
-        left: 16,
-        fontSize: 18,
-        color: C.white,
-        fontWeight: 700,
-        letterSpacing: 1.5,
-        textTransform: "uppercase",
-        zIndex: 1,
-        textShadow: "0 1px 6px rgba(0,0,0,0.9)",
-        background: "rgba(0,0,0,0.5)",
-        padding: "4px 10px",
-        borderRadius: 4,
+        flex: 1,
+        background: C.panel,
+        borderRadius: 10,
+        border: `2px solid ${C.border}`,
+        overflow: "hidden",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        position: "relative",
+        minHeight: 0,
       }}
     >
-      YOLO Detection
+      {/* Top-left: title */}
+      <div
+        style={{
+          position: "absolute",
+          top: 10,
+          left: 12,
+          fontSize: 16,
+          color: C.white,
+          fontWeight: 700,
+          letterSpacing: 1.5,
+          textTransform: "uppercase",
+          zIndex: 1,
+          textShadow: "0 1px 6px rgba(0,0,0,0.9)",
+          background: "rgba(0,0,0,0.6)",
+          padding: "3px 10px",
+          borderRadius: 4,
+        }}
+      >
+        YOLO Detection
+      </div>
+      {/* Bottom-left: stats overlay */}
+      {stats && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 10,
+            left: 12,
+            zIndex: 1,
+            display: "flex",
+            gap: 8,
+          }}
+        >
+          <div
+            style={{
+              background: "rgba(0,0,0,0.7)",
+              padding: "4px 10px",
+              borderRadius: 4,
+              fontSize: 15,
+              fontWeight: 700,
+              color: C.green,
+            }}
+          >
+            {stats.bolls} bolls
+          </div>
+          <div
+            style={{
+              background: "rgba(0,0,0,0.7)",
+              padding: "4px 10px",
+              borderRadius: 4,
+              fontSize: 15,
+              fontWeight: 600,
+              color: C.accent,
+            }}
+          >
+            conf {stats.conf}
+          </div>
+        </div>
+      )}
+      {image ? (
+        <Img
+          src={staticFile(image)}
+          style={{ width: "100%", height: "100%", objectFit: "contain" }}
+        />
+      ) : (
+        <span style={{ color: C.dim, fontSize: 24 }}>
+          Awaiting detection...
+        </span>
+      )}
     </div>
-    {image ? (
-      <Img
-        src={staticFile(image)}
-        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-      />
-    ) : (
-      <span style={{ color: C.dim, fontSize: 24 }}>
-        Awaiting detection...
-      </span>
-    )}
-  </div>
-);
+  );
+};
 
 // ─── STEP INFO ─────────────────────────────────────────────
 
-const StepInfo: React.FC<{ section: any; stepHighlight?: string }> = ({
-  section,
-  stepHighlight,
-}) => {
+const StepInfo: React.FC<{
+  section: any;
+  stepHighlight?: string;
+  pickNumber?: number;
+  pickTotal?: number;
+}> = ({ section, stepHighlight, pickNumber, pickTotal }) => {
   const steps = (section?.events || []).filter((e: any) => e.type === "step");
   const hasSteps = steps.length > 0;
 
   return (
     <div
       style={{
-        flex: "0 0 24%",
+        flex: "0 0 auto",
         background: C.panel,
         borderRadius: 10,
         border: `2px solid ${C.border}`,
-        padding: "14px 20px",
+        padding: "8px 16px",
         display: "flex",
         flexDirection: "column",
-        gap: 5,
-        overflow: "hidden",
+        gap: 0,
       }}
     >
       <div
         style={{
-          fontSize: 18,
-          color: C.white,
-          fontWeight: 700,
-          letterSpacing: 1.5,
-          textTransform: "uppercase",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
           marginBottom: 2,
         }}
       >
-        Pick Steps
+        <span
+          style={{
+            fontSize: 16,
+            color: C.white,
+            fontWeight: 700,
+            letterSpacing: 1.5,
+            textTransform: "uppercase",
+          }}
+        >
+          Pick Steps
+        </span>
+        {pickNumber && pickTotal && (
+          <span
+            style={{
+              fontSize: 15,
+              fontWeight: 700,
+              color: C.green,
+              fontFamily: "monospace",
+            }}
+          >
+            Boll {pickNumber}/{pickTotal}
+          </span>
+        )}
       </div>
       {hasSteps ? (
         steps.map((step: any, i: number) => {
@@ -138,9 +209,9 @@ const StepInfo: React.FC<{ section: any; stepHighlight?: string }> = ({
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 10,
-                padding: "4px 10px",
-                borderRadius: 5,
+                gap: 8,
+                padding: "2px 8px",
+                borderRadius: 4,
                 background: isActive ? "rgba(88,166,255,0.12)" : "transparent",
                 borderLeft: isActive
                   ? `3px solid ${C.accent}`
@@ -149,18 +220,18 @@ const StepInfo: React.FC<{ section: any; stepHighlight?: string }> = ({
             >
               <span
                 style={{
-                  fontSize: 18,
+                  fontSize: 15,
                   fontWeight: 700,
                   color: isActive ? C.accent : isPast ? C.green : C.dim,
                   fontFamily: "monospace",
-                  minWidth: 40,
+                  minWidth: 32,
                 }}
               >
                 {step.step}
               </span>
               <span
                 style={{
-                  fontSize: 18,
+                  fontSize: 15,
                   color: isActive ? C.white : C.dim,
                   fontWeight: isActive ? 600 : 400,
                 }}
@@ -171,7 +242,7 @@ const StepInfo: React.FC<{ section: any; stepHighlight?: string }> = ({
           );
         })
       ) : (
-        <div style={{ color: C.text, fontSize: 22, fontWeight: 500 }}>
+        <div style={{ color: C.text, fontSize: 18, fontWeight: 500 }}>
           {section?.state === "SCANNING"
             ? "Scan in progress..."
             : section?.state === "APPROACHING"
@@ -198,14 +269,14 @@ const PipelineInfo: React.FC<{ section: any }> = ({ section }) => {
   return (
     <div
       style={{
-        flex: 1,
+        flex: "0 0 auto",
         background: C.panel,
         borderRadius: 10,
         border: `2px solid ${C.border}`,
-        padding: "14px 20px",
+        padding: "10px 16px",
         display: "flex",
         flexDirection: "column",
-        gap: 8,
+        gap: 6,
         overflow: "hidden",
       }}
     >
@@ -226,25 +297,25 @@ const PipelineInfo: React.FC<{ section: any }> = ({ section }) => {
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <div
           style={{
-            padding: "6px 16px",
+            padding: "4px 14px",
             borderRadius: 5,
             background: STATE_COLOR[state] || C.dim,
             color: C.bg,
-            fontSize: 22,
+            fontSize: 18,
             fontWeight: 800,
             letterSpacing: 1,
           }}
         >
           {state}
         </div>
-        <span style={{ color: C.white, fontSize: 22, fontWeight: 600 }}>
+        <span style={{ color: C.white, fontSize: 18, fontWeight: 600 }}>
           {label}
         </span>
       </div>
 
       {/* Cluster target */}
       {cluster && (
-        <div style={{ fontSize: 20, color: C.text, lineHeight: 1.4 }}>
+        <div style={{ fontSize: 16, color: C.text, lineHeight: 1.3 }}>
           Target:{" "}
           <span style={{ color: C.accent, fontWeight: 700 }}>{cluster}</span>
           {section?.cluster_pos && (
@@ -252,7 +323,7 @@ const PipelineInfo: React.FC<{ section: any }> = ({ section }) => {
               style={{
                 marginLeft: 8,
                 fontFamily: "monospace",
-                fontSize: 17,
+                fontSize: 14,
                 color: C.dim,
               }}
             >
@@ -264,27 +335,25 @@ const PipelineInfo: React.FC<{ section: any }> = ({ section }) => {
 
       {/* Transition arrow */}
       {transition && (
-        <div style={{ fontSize: 17, color: C.dim, fontFamily: "monospace" }}>
+        <div style={{ fontSize: 14, color: C.dim, fontFamily: "monospace" }}>
           {transition}
         </div>
       )}
 
-      {/* Events — wrap enabled, max 3 */}
+      {/* Events — max 3 */}
       <div
         style={{
-          flex: 1,
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
-          gap: 5,
-          marginTop: 2,
+          gap: 3,
         }}
       >
         {infoEvents.slice(-3).map((ev: any, i: number) => (
           <div
             key={i}
             style={{
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: 500,
               lineHeight: 1.3,
               color:
@@ -344,7 +413,12 @@ export const Dashboard: React.FC<{
         }}
       >
         <PredictionImage image={kf.image} />
-        <StepInfo section={section} stepHighlight={kf.stepHighlight} />
+        <StepInfo
+          section={section}
+          stepHighlight={kf.stepHighlight}
+          pickNumber={kf.pickNumber}
+          pickTotal={kf.pickTotal}
+        />
         <PipelineInfo section={section} />
       </div>
 
