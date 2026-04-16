@@ -1,0 +1,80 @@
+# =============================================================
+# RoboCot Docker — LOCAL TEST (x86_64)
+# =============================================================
+# This mirrors the real Dockerfile but uses an x86_64 ROS2 Humble
+# base image so we can validate the build logic on Windows/Linux.
+# The real Xavier build uses dustynv/ros:humble-desktop-l4t-rXX.
+# =============================================================
+
+FROM ros:humble-ros-base
+
+ENV DEBIAN_FRONTEND=noninteractive
+SHELL ["/bin/bash", "-c"]
+
+# ---- System dependencies ----
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # ROS2 packages
+    ros-humble-moveit \
+    ros-humble-ros2-control \
+    ros-humble-ros2-controllers \
+    ros-humble-controller-manager \
+    ros-humble-joint-state-broadcaster \
+    ros-humble-joint-trajectory-controller \
+    ros-humble-xacro \
+    ros-humble-robot-state-publisher \
+    ros-humble-tf2-ros \
+    ros-humble-tf2-geometry-msgs \
+    ros-humble-cv-bridge \
+    ros-humble-image-geometry \
+    ros-humble-moveit-planners-ompl \
+    ros-humble-moveit-ros-move-group \
+    ros-humble-moveit-ros-planning-interface \
+    ros-humble-moveit-kinematics \
+    ros-humble-moveit-ros-visualization \
+    # Build tools
+    python3-pip \
+    python3-colcon-common-extensions \
+    git \
+    wget \
+    nano \
+    iputils-ping \
+    net-tools \
+    netcat-openbsd \
+    python3-serial \
+    usbutils \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---- Python dependencies (YOLO + vision) ----
+RUN pip3 install --no-cache-dir \
+    ultralytics \
+    opencv-python-headless \
+    numpy \
+    PyYAML \
+    pymodbus \
+    setuptools==58.2.0
+
+# ---- Workspace setup ----
+RUN mkdir -p /ros2_ws/src
+WORKDIR /ros2_ws
+
+# ---- Copy our source code ----
+COPY harvester_interfaces/ /ros2_ws/src/harvester_interfaces/
+COPY robot_arm/ /ros2_ws/src/robot_arm/
+COPY robot_arm_moveit_config/ /ros2_ws/src/robot_arm_moveit_config/
+COPY orchestrator/ /ros2_ws/src/orchestrator/
+COPY scripts/ /ros2_ws/src/scripts/
+
+# ---- Build: interfaces first, then the rest ----
+RUN source /opt/ros/humble/setup.bash && \
+    cd /ros2_ws && \
+    colcon build --symlink-install \
+        --packages-select harvester_interfaces && \
+    source install/setup.bash && \
+    colcon build --symlink-install \
+        --packages-select robot_arm robot_arm_moveit_config orchestrator
+
+# ---- Shell setup ----
+RUN echo 'source /opt/ros/humble/setup.bash' >> /root/.bashrc && \
+    echo 'source /ros2_ws/install/setup.bash 2>/dev/null' >> /root/.bashrc
+
+CMD ["/bin/bash"]
