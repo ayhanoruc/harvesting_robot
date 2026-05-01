@@ -22,6 +22,9 @@
 	<xacro:arg name="controllers_yaml" default=""/>
 	<!-- Force standalone=false in the included m1013 URDF -->
 	<xacro:arg name="standalone" default="false"/>
+	<!-- mobile=false: Husky fixed to world (F1.4 sanity)
+	     mobile=true:  Husky is a free body; DiffDrive plugin drives wheels via /cmd_vel -->
+	<xacro:arg name="mobile" default="true"/>
 
 	<!-- ==================== Husky dimensions ==================== -->
 	<xacro:property name="husky_length" value="0.99"/>
@@ -42,13 +45,22 @@
 	<xacro:property name="reservoir_lz"  value="0.2"/>
 	<xacro:property name="reservoir_wall" value="0.01"/>
 
-	<!-- ==================== World root (TEMP — F2 will remove for free base) ==================== -->
-	<link name="world"/>
-	<joint name="world_to_husky" type="fixed">
-		<origin xyz="0 0 0" rpy="0 0 0"/>
-		<parent link="world"/>
-		<child link="husky_base_link"/>
-	</joint>
+	<!-- ==================== World root ==================== -->
+	<!-- mobile=false: keep Husky fixed to world (debug/sanity).
+	     mobile=true:  Husky is the URDF root; world->husky_base_link is published
+	     dynamically by the DiffDrive plugin via odom. -->
+	<xacro:if value="$(arg mobile)">
+		<!-- No world joint; husky_base_link is the URDF root.
+		     The launch file publishes a static world->odom TF (identity). -->
+	</xacro:if>
+	<xacro:unless value="$(arg mobile)">
+		<link name="world"/>
+		<joint name="world_to_husky" type="fixed">
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<parent link="world"/>
+			<child link="husky_base_link"/>
+		</joint>
+	</xacro:unless>
 
 	<!-- ==================== Husky body ==================== -->
 	<link name="husky_base_link">
@@ -253,5 +265,30 @@
 			</geometry>
 		</collision>
 	</link>
+
+	<!-- ==================== DiffDrive (skid-steer 4-wheel) ==================== -->
+	<!-- Subscribes ignition.msgs.Twist on /cmd_vel, drives both left wheels and
+	     both right wheels symmetrically. Publishes /odom and /tf. -->
+	<gazebo>
+		<plugin filename="ignition-gazebo-diff-drive-system"
+		        name="ignition::gazebo::systems::DiffDrive">
+			<left_joint>front_left_wheel_joint</left_joint>
+			<left_joint>rear_left_wheel_joint</left_joint>
+			<right_joint>front_right_wheel_joint</right_joint>
+			<right_joint>rear_right_wheel_joint</right_joint>
+			<wheel_separation>${wheel_track}</wheel_separation>
+			<wheel_radius>${wheel_radius}</wheel_radius>
+			<topic>cmd_vel</topic>
+			<odom_topic>odom</odom_topic>
+			<frame_id>odom</frame_id>
+			<child_frame_id>husky_base_link</child_frame_id>
+			<odom_publish_frequency>50</odom_publish_frequency>
+			<tf_topic>/tf</tf_topic>
+			<max_linear_acceleration>2.0</max_linear_acceleration>
+			<max_angular_acceleration>3.0</max_angular_acceleration>
+			<max_linear_velocity>1.0</max_linear_velocity>
+			<max_angular_velocity>1.5</max_angular_velocity>
+		</plugin>
+	</gazebo>
 
 </robot>

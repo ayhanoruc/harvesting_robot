@@ -32,7 +32,8 @@ def generate_launch_description():
 
     world_file = os.path.join(pkg_path, 'worlds', 'orchard.world')
     controllers_yaml = os.path.join(pkg_path, 'yaml', 'controllers.yaml')
-    bridge_params = os.path.join(pkg_path, 'config', 'gz_bridge.yaml')
+    # Husky-specific bridge (adds cmd_vel, odom, tf on top of base)
+    bridge_params = os.path.join(pkg_path, 'config', 'husky_gz_bridge.yaml')
 
     # Process the Husky composition xacro
     xacro_file = os.path.join(pkg_path, 'urdf', 'husky_robocot.urdf.xacro')
@@ -41,6 +42,7 @@ def generate_launch_description():
         mappings={
             'controllers_yaml': controllers_yaml,
             'standalone': 'false',
+            'mobile': 'true',  # free-base + DiffDrive on /cmd_vel
         }
     ).toxml()
 
@@ -87,6 +89,19 @@ def generate_launch_description():
         name='robot_state_publisher',
         output='screen',
         parameters=[robot_description, {'use_sim_time': use_sim_time}]
+    )
+
+    # Static TF: world -> odom (identity).
+    # DiffDrive plugin publishes odom -> husky_base_link dynamically.
+    # Together this gives world -> odom -> husky_base_link, so orchestrator
+    # code (which queries "world" frame) keeps working.
+    static_tf_world_to_odom = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='static_tf_world_to_odom',
+        arguments=['0', '0', '0', '0', '0', '0', 'world', 'odom'],
+        output='screen',
+        parameters=[{'use_sim_time': use_sim_time}],
     )
 
     # Spawn at orchard SW corner facing tree row 0
@@ -174,6 +189,7 @@ def generate_launch_description():
         set_ign_mesh_path,
         gazebo,
         robot_state_publisher,
+        static_tf_world_to_odom,
         spawn_entity,
         ros_gz_bridge,
         ros_gz_image_bridge,
