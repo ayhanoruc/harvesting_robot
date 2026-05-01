@@ -1,0 +1,135 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="orchard">
+
+    <!-- Physics: 5x speed (step_size 0.005 vs default 0.001) -->
+    <physics name="fast_physics" type="dart">
+      <max_step_size>0.005</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <!-- Required Gazebo Sim world plugins -->
+    <plugin filename="ignition-gazebo-physics-system"
+            name="ignition::gazebo::systems::Physics">
+    </plugin>
+    <plugin filename="ignition-gazebo-user-commands-system"
+            name="ignition::gazebo::systems::UserCommands">
+    </plugin>
+    <plugin filename="ignition-gazebo-scene-broadcaster-system"
+            name="ignition::gazebo::systems::SceneBroadcaster">
+    </plugin>
+    <plugin filename="ignition-gazebo-sensors-system"
+            name="ignition::gazebo::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="ignition-gazebo-imu-system"
+            name="ignition::gazebo::systems::Imu">
+    </plugin>
+
+    <!-- Sky + ambient -->
+    <scene>
+      <ambient>0.4 0.4 0.4 1</ambient>
+      <background>0.7 0.85 1.0 1</background>
+      <shadows>true</shadows>
+    </scene>
+
+    <!-- Sun: directional light -->
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.9 0.9 0.85 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <attenuation>
+        <range>1000</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>-0.4 -0.3 -0.85</direction>
+    </light>
+
+    <!-- Flat ground physics covering orchard extent + margin -->
+    <!-- Orchard bbox X[4,41] Y[3,35], so 50x50 ground is enough -->
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>60 60</size>
+            </plane>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>100</mu>
+                <mu2>50</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <!-- No visual: orchard_world.dae mesh provides ground texture -->
+      </link>
+    </model>
+
+    <!-- ===== Orchard mesh (terrain + trunks + leaves) ===== -->
+    <!-- Original cpr_orchard_gazebo bakes all trees into single .dae files.
+         We spawn them as static visual-only links so robots can't collide.
+         NOTE: The original cpr URDF applied rpy="0 0 1.5708" (90 deg yaw) on
+         each mesh visual. We DO NOT apply that rotation here — instead we
+         use raw mesh coordinates so they match the tree_positions YAML
+         extracted by extract_tree_positions.py. Tree bbox: X[4,41] Y[3,35]. -->
+    <model name="orchard_static">
+      <static>true</static>
+      <pose>0 0 0 0 0 0</pose>
+      <link name="terrain">
+        <visual name="terrain_visual">
+          <geometry>
+            <mesh>
+              <uri>package://robot_arm/meshes/orchard/orchard_world.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <!-- No collision on terrain mesh — flat ground_plane handles physics -->
+      </link>
+      <link name="trunks">
+        <visual name="trunks_visual">
+          <geometry>
+            <mesh>
+              <uri>package://robot_arm/meshes/orchard/orchard_trunks.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <!-- No collision: trees pass-through (visual-only per Phase 2 plan) -->
+      </link>
+      <link name="leaves">
+        <visual name="leaves_visual">
+          <geometry>
+            <mesh>
+              <uri>package://robot_arm/meshes/orchard/orchard_leaves.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <!-- No collision: leaves pass-through -->
+      </link>
+      <joint name="trunks_joint" type="fixed">
+        <parent>terrain</parent>
+        <child>trunks</child>
+      </joint>
+      <joint name="leaves_joint" type="fixed">
+        <parent>terrain</parent>
+        <child>leaves</child>
+      </joint>
+    </model>
+
+    <!-- ===== GUI camera (good initial viewpoint over orchard) ===== -->
+    <gui fullscreen="0">
+      <camera name="user_camera">
+        <pose>10 5 12 0 0.7 0.6</pose>
+        <view_controller>orbit</view_controller>
+      </camera>
+    </gui>
+
+  </world>
+</sdf>
