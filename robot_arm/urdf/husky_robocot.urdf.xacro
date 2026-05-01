@@ -1,0 +1,257 @@
+<?xml version="1.0"?>
+<!--
+  RoboCot Mobile Platform — Husky + Mount + M1013 + Reservoir
+
+  Composition:
+    world (TEMP fixed for F1.4 sanity; F2 will free this for Nav2)
+      └─ husky_base_link  (Husky body; 0.99×0.67×0.30m)
+           ├─ 4 wheels  (continuous, no controller in F1, F2 adds diff_drive)
+           ├─ deck_link (top surface @ z=0.43)
+           │    ├─ arm_mount_link  (0.05m plate)
+           │    │    └─ base_0  (M1013 chain via include, standalone=false)
+           │    │         └─ link1..6 → tool0 → hand_e → fingers + camera + tcp
+           │    └─ reservoir_link  (open box for picked bolls)
+           └─ ... (no caster, simplified Husky)
+
+  IMPORTANT: m1013_robocot.urdf.xacro is included with $(arg standalone:=false)
+  so its built-in world/base_0 fixed joint is NOT instantiated. We define our
+  own joint from arm_mount_link → base_0 below.
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="husky_robocot">
+
+	<xacro:arg name="controllers_yaml" default=""/>
+	<!-- Force standalone=false in the included m1013 URDF -->
+	<xacro:arg name="standalone" default="false"/>
+
+	<!-- ==================== Husky dimensions ==================== -->
+	<xacro:property name="husky_length" value="0.99"/>
+	<xacro:property name="husky_width"  value="0.67"/>
+	<xacro:property name="husky_body_height" value="0.30"/>
+	<xacro:property name="husky_body_z_min"  value="0.13"/>  <!-- bottom of body above ground -->
+	<xacro:property name="wheel_radius" value="0.165"/>
+	<xacro:property name="wheel_width"  value="0.10"/>
+	<xacro:property name="wheel_track"  value="0.555"/>  <!-- left-right separation (between wheel centers) -->
+	<xacro:property name="wheel_base"   value="0.51"/>   <!-- front-rear separation (between wheel centers) -->
+	<xacro:property name="husky_mass"   value="50.0"/>
+	<xacro:property name="wheel_mass"   value="2.0"/>
+
+	<xacro:property name="deck_z"        value="${husky_body_z_min + husky_body_height}"/>  <!-- 0.43m -->
+	<xacro:property name="mount_height"  value="0.05"/>
+	<xacro:property name="reservoir_lx"  value="0.4"/>
+	<xacro:property name="reservoir_ly"  value="0.4"/>
+	<xacro:property name="reservoir_lz"  value="0.2"/>
+	<xacro:property name="reservoir_wall" value="0.01"/>
+
+	<!-- ==================== World root (TEMP — F2 will remove for free base) ==================== -->
+	<link name="world"/>
+	<joint name="world_to_husky" type="fixed">
+		<origin xyz="0 0 0" rpy="0 0 0"/>
+		<parent link="world"/>
+		<child link="husky_base_link"/>
+	</joint>
+
+	<!-- ==================== Husky body ==================== -->
+	<link name="husky_base_link">
+		<inertial>
+			<origin xyz="0 0 ${husky_body_z_min + husky_body_height/2}" rpy="0 0 0"/>
+			<mass value="${husky_mass}"/>
+			<inertia ixx="2.0" ixy="0" ixz="0" iyy="3.0" iyz="0" izz="4.0"/>
+		</inertial>
+		<visual>
+			<origin xyz="0 0 ${husky_body_z_min + husky_body_height/2}" rpy="0 0 0"/>
+			<geometry>
+				<box size="${husky_length} ${husky_width} ${husky_body_height}"/>
+			</geometry>
+			<material name="husky_yellow">
+				<color rgba="0.95 0.65 0.05 1"/>
+			</material>
+		</visual>
+		<collision>
+			<origin xyz="0 0 ${husky_body_z_min + husky_body_height/2}" rpy="0 0 0"/>
+			<geometry>
+				<box size="${husky_length} ${husky_width} ${husky_body_height}"/>
+			</geometry>
+		</collision>
+	</link>
+
+	<!-- ==================== Wheels (4x continuous, simplified) ==================== -->
+	<xacro:macro name="husky_wheel" params="name x y">
+		<link name="${name}_wheel">
+			<inertial>
+				<mass value="${wheel_mass}"/>
+				<origin xyz="0 0 0"/>
+				<inertia ixx="0.02" ixy="0" ixz="0" iyy="0.02" iyz="0" izz="0.04"/>
+			</inertial>
+			<visual>
+				<origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+				<geometry>
+					<cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+				</geometry>
+				<material name="wheel_black">
+					<color rgba="0.05 0.05 0.05 1"/>
+				</material>
+			</visual>
+			<collision>
+				<origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+				<geometry>
+					<cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+				</geometry>
+			</collision>
+		</link>
+		<joint name="${name}_wheel_joint" type="continuous">
+			<parent link="husky_base_link"/>
+			<child link="${name}_wheel"/>
+			<origin xyz="${x} ${y} ${wheel_radius}" rpy="0 0 0"/>
+			<axis xyz="0 1 0"/>
+		</joint>
+		<gazebo reference="${name}_wheel">
+			<mu1>1.5</mu1>
+			<mu2>1.5</mu2>
+			<kp>1000000.0</kp>
+			<kd>1.0</kd>
+		</gazebo>
+	</xacro:macro>
+
+	<xacro:husky_wheel name="front_left"  x="${ wheel_base/2}" y="${ wheel_track/2}"/>
+	<xacro:husky_wheel name="front_right" x="${ wheel_base/2}" y="${-wheel_track/2}"/>
+	<xacro:husky_wheel name="rear_left"   x="${-wheel_base/2}" y="${ wheel_track/2}"/>
+	<xacro:husky_wheel name="rear_right"  x="${-wheel_base/2}" y="${-wheel_track/2}"/>
+
+	<!-- ==================== Deck (logical reference frame on top of body) ==================== -->
+	<joint name="deck_joint" type="fixed">
+		<parent link="husky_base_link"/>
+		<child link="deck_link"/>
+		<origin xyz="0 0 ${deck_z}" rpy="0 0 0"/>
+	</joint>
+	<link name="deck_link"/>
+
+	<!-- ==================== Arm mount plate ==================== -->
+	<!-- Mount sits at front-center of deck so reservoir can be at rear -->
+	<joint name="arm_mount_joint" type="fixed">
+		<parent link="deck_link"/>
+		<child link="arm_mount_link"/>
+		<origin xyz="0.20 0 ${mount_height/2}" rpy="0 0 0"/>
+	</joint>
+	<link name="arm_mount_link">
+		<visual>
+			<geometry>
+				<box size="0.20 0.20 ${mount_height}"/>
+			</geometry>
+			<material name="mount_grey">
+				<color rgba="0.4 0.4 0.4 1"/>
+			</material>
+		</visual>
+		<collision>
+			<geometry>
+				<box size="0.20 0.20 ${mount_height}"/>
+			</geometry>
+		</collision>
+		<inertial>
+			<mass value="2.0"/>
+			<inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+		</inertial>
+	</link>
+
+	<!-- ==================== Include M1013 (standalone=false → no world joint) ==================== -->
+	<xacro:include filename="$(find robot_arm)/urdf/m1013_robocot.urdf.xacro"/>
+
+	<!-- Connect M1013 base_0 to the mount top -->
+	<joint name="arm_to_mount_joint" type="fixed">
+		<parent link="arm_mount_link"/>
+		<child link="base_0"/>
+		<origin xyz="0 0 ${mount_height/2}" rpy="0 0 0"/>
+	</joint>
+
+	<!-- ==================== Reservoir (open-top box, walled) ==================== -->
+	<!-- Place at rear of deck, opposite of arm -->
+	<joint name="reservoir_joint" type="fixed">
+		<parent link="deck_link"/>
+		<child link="reservoir_link"/>
+		<origin xyz="-0.30 0 ${reservoir_lz/2}" rpy="0 0 0"/>
+	</joint>
+	<link name="reservoir_link">
+		<inertial>
+			<mass value="2.0"/>
+			<origin xyz="0 0 0"/>
+			<inertia ixx="0.05" ixy="0" ixz="0" iyy="0.05" iyz="0" izz="0.05"/>
+		</inertial>
+
+		<!-- Floor -->
+		<visual name="floor_visual">
+			<origin xyz="0 0 ${-reservoir_lz/2 + reservoir_wall/2}"/>
+			<geometry>
+				<box size="${reservoir_lx} ${reservoir_ly} ${reservoir_wall}"/>
+			</geometry>
+			<material name="reservoir_blue">
+				<color rgba="0.2 0.3 0.6 1"/>
+			</material>
+		</visual>
+		<collision name="floor_collision">
+			<origin xyz="0 0 ${-reservoir_lz/2 + reservoir_wall/2}"/>
+			<geometry>
+				<box size="${reservoir_lx} ${reservoir_ly} ${reservoir_wall}"/>
+			</geometry>
+		</collision>
+
+		<!-- Wall +X -->
+		<visual name="wall_xp_visual">
+			<origin xyz="${reservoir_lx/2 - reservoir_wall/2} 0 0"/>
+			<geometry>
+				<box size="${reservoir_wall} ${reservoir_ly} ${reservoir_lz}"/>
+			</geometry>
+			<material name="reservoir_blue"/>
+		</visual>
+		<collision name="wall_xp_collision">
+			<origin xyz="${reservoir_lx/2 - reservoir_wall/2} 0 0"/>
+			<geometry>
+				<box size="${reservoir_wall} ${reservoir_ly} ${reservoir_lz}"/>
+			</geometry>
+		</collision>
+
+		<!-- Wall -X -->
+		<visual name="wall_xn_visual">
+			<origin xyz="${-reservoir_lx/2 + reservoir_wall/2} 0 0"/>
+			<geometry>
+				<box size="${reservoir_wall} ${reservoir_ly} ${reservoir_lz}"/>
+			</geometry>
+			<material name="reservoir_blue"/>
+		</visual>
+		<collision name="wall_xn_collision">
+			<origin xyz="${-reservoir_lx/2 + reservoir_wall/2} 0 0"/>
+			<geometry>
+				<box size="${reservoir_wall} ${reservoir_ly} ${reservoir_lz}"/>
+			</geometry>
+		</collision>
+
+		<!-- Wall +Y -->
+		<visual name="wall_yp_visual">
+			<origin xyz="0 ${reservoir_ly/2 - reservoir_wall/2} 0"/>
+			<geometry>
+				<box size="${reservoir_lx} ${reservoir_wall} ${reservoir_lz}"/>
+			</geometry>
+			<material name="reservoir_blue"/>
+		</visual>
+		<collision name="wall_yp_collision">
+			<origin xyz="0 ${reservoir_ly/2 - reservoir_wall/2} 0"/>
+			<geometry>
+				<box size="${reservoir_lx} ${reservoir_wall} ${reservoir_lz}"/>
+			</geometry>
+		</collision>
+
+		<!-- Wall -Y -->
+		<visual name="wall_yn_visual">
+			<origin xyz="0 ${-reservoir_ly/2 + reservoir_wall/2} 0"/>
+			<geometry>
+				<box size="${reservoir_lx} ${reservoir_wall} ${reservoir_lz}"/>
+			</geometry>
+			<material name="reservoir_blue"/>
+		</visual>
+		<collision name="wall_yn_collision">
+			<origin xyz="0 ${-reservoir_ly/2 + reservoir_wall/2} 0"/>
+			<geometry>
+				<box size="${reservoir_lx} ${reservoir_wall} ${reservoir_lz}"/>
+			</geometry>
+		</collision>
+	</link>
+
+</robot>

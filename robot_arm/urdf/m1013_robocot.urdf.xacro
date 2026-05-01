@@ -10,16 +10,20 @@
 -->
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="m1013_robocot">
 	<xacro:arg name="controllers_yaml" default=""/>
+	<!-- standalone=true: arm sits on its own at world (orchard_test, sim demo)
+	     standalone=false: arm is attached to a parent (Husky deck) by the
+	     including URDF, which defines its own world/base joint. -->
+	<xacro:arg name="standalone" default="true"/>
 
-	<!-- ==================== World ==================== -->
-	<link name="world"/>
-
-	<!-- Must match bot.launch.py spawn (-z 0.1): TF world == Gazebo world for base pose -->
-	<joint name="world_fixed" type="fixed">
-		<origin xyz="0 0 0.1" rpy="0 0 0"/>
-		<parent link="world"/>
-		<child link="base_0"/>
-	</joint>
+	<!-- ==================== Standalone-only world fixture ==================== -->
+	<xacro:if value="$(arg standalone)">
+		<link name="world"/>
+		<joint name="world_fixed" type="fixed">
+			<origin xyz="0 0 0.1" rpy="0 0 0"/>
+			<parent link="world"/>
+			<child link="base_0"/>
+		</joint>
+	</xacro:if>
 
 	<!-- ==================== M1013 Arm ==================== -->
 	<!-- Base (link0) -->
