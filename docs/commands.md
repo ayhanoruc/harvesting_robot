@@ -24,6 +24,10 @@ ros2 service call /explorer/start_scan std_srvs/srv/Trigger "{}"
 
 ros2 service call /explorer/panoramic_scan std_srvs/srv/Trigger "{}"
 
+
+ros2 run orchestrator wasd_teleop
+
+
 # Build with detection pipeline
 colcon build --packages-select harvester_interfaces orchestrator robot_arm robot_arm_moveit_config
 

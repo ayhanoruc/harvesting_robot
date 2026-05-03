@@ -5,6 +5,32 @@
 
 ---
 
+## 0. Progress Log
+
+### Faz 1 — Environment Setup
+
+| Task | Status | Output |
+|------|--------|--------|
+| **F1.1** Mesh port | ✅ DONE | `robot_arm/meshes/orchard/` — 3 .dae (orchard_world, orchard_trunks, orchard_leaves) + 5 textures (~111MB) |
+| **F1.2** `orchard.world` (Ignition Fortress) | ✅ DONE | `robot_arm/worlds/orchard.world` — terrain physics + sky/sun + mesh visual-only (no trunk/leaf collision) |
+| **F1.3** Tree positions YAML | ✅ DONE | `robot_arm/config/orchard_tree_positions.yaml` — 236 trees, 11 rows, bbox X[4,41] Y[3,35], canopy Z[0.4,2.0]m. Extracted via `robot_arm/scripts/extract_tree_positions.py` (voxel-cluster on low-Z trunk vertices). |
+| **Sanity #1** M1013 in orchard.world | ✅ PASS | `orchard_test.launch.py` — standalone arm spawns at (0,0), TF saglikli, 3 controller aktif, mesh renderlendi |
+| **F1.4** Husky URDF + mount + arm + reservoir | ✅ DONE | `robot_arm/urdf/husky_robocot.urdf.xacro` + `m1013_robocot.urdf.xacro` refactored with `standalone` xacro arg. Husky body 0.99×0.67×0.30m, 4 wheels (r=0.165m), arm mount @ x=+0.20 (front-center), reservoir walled box @ x=-0.30 (rear). |
+| **Sanity #2** Husky composition spawn | ✅ PASS | All 23 link segments loaded in robot_state_publisher; world_to_husky fixed joint skipped by gz_ros2_control as expected; controllers all green. |
+| **Bonus** WASD teleop drivability | ✅ DONE | `husky_robocot.urdf.xacro` `mobile=true` arg → DiffDrive plugin (skid-steer, 4 wheels). `husky_gz_bridge.yaml` (cmd_vel ROS→GZ, odom GZ→ROS, tf GZ→ROS). `static_tf_world_to_odom` (identity, for orchestrator "world" frame compatibility). `orchestrator/wasd_teleop` node (w/s/a/d/q/e/z/c/+/-). Confirmed working. |
+| **F1.5** MoveIt config update | ⏳ TODO | SRDF: yeni named pose'lar (scout_left/right, harvest_ready). arm_commander D1 fix (j1 validation gevset). |
+| **F1.6** Reach validation | ⏳ TODO | Hardcoded test pozisyonlari, IK + canopy reach |
+| **F1.7 v1** Boll spawner (static) | ✅ DONE | `scripts/generate_bolls.py` → 1416 boll (236 tree × 5-7), 70/30 ripe/unripe. `config/orchard_bolls.yaml` (ground truth) + `worlds/orchard_bolls.world` (auto-gen). Static visual-only. |
+| **F1.7 v2** Active-radius dynamic toggling | ⏳ NEXT | `boll_spawner.py` ROS node, robot_pose → 3-5m yariçap → static↔dynamic toggle. F1.8'e prerequisite. |
+| **F1.8** Vehicle-independent pick test | ⏳ TODO | D2 fix (gripper bypass kaldir), 8-step pick on real boll |
+
+### Bilinen Notlar / Park Edilenler
+- **KDL warning** (`root link husky_base_link has inertia, KDL doesn't support`) — non-critical; F1.5 MoveIt entegrasyonunda problem yaratirsa `base_footprint` dummy link eklenir.
+- **Deprecated `ign_ros2_control`** — Gazebo Fortress versiyonu, non-blocking warning. Yeni `gz_ros2_control` adi gelecek release'lerde gerekecek.
+- **Controller update period 0.01s vs sim 0.005s** — performans warning, sim hizini etkilemiyor.
+
+---
+
 ## 1. Yeni Sistem Tanimi
 
 ```

@@ -41,9 +41,17 @@ from rcl_interfaces.srv import SetParameters
 from rcl_interfaces.msg import Parameter, ParameterValue, ParameterType
 
 import math
+import shutil
+import subprocess
 import time
 import yaml
 import os
+
+from ament_index_python.packages import get_package_share_directory
+
+import rclpy.time
+from rclpy.duration import Duration
+from tf2_ros import Buffer, TransformListener
 
 
 class HarvestExecutor(Node):
@@ -58,8 +66,50 @@ class HarvestExecutor(Node):
         self.declare_parameter('lift_height', 0.15)
         self.declare_parameter('config_file', '')
 
+        # Plan B1: static orchard bolls + Gazebo teleport (no rigid-body coupling)
+        self.declare_parameter('mock_gazebo_teleport', True)
+        self.declare_parameter('gripper_demo_bypass', True)
+        self.declare_parameter('boll_inventory_yaml', '')
+        self.declare_parameter('gz_world_name', 'orchard')
+        self.declare_parameter('boll_match_radius', 0.75)
+        self.declare_parameter('tcp_frame', 'tcp')
+        self.declare_parameter('world_frame', 'world')
+        self.declare_parameter('reservoir_tf_frame', 'reservoir_link')
+        self.declare_parameter('reservoir_drop_clearance_m', 0.12)
+
         self.pre_grasp_offset = self.get_parameter('pre_grasp_offset').value
         self.lift_height = self.get_parameter('lift_height').value
+
+        self.mock_gazebo_teleport = self.get_parameter('mock_gazebo_teleport').value
+        self.gripper_demo_bypass = self.get_parameter('gripper_demo_bypass').value
+        self.gz_world_name = self.get_parameter('gz_world_name').value
+        self.boll_match_radius = float(self.get_parameter('boll_match_radius').value)
+        self.tcp_frame = self.get_parameter('tcp_frame').value
+        self.world_frame = self.get_parameter('world_frame').value
+        self.reservoir_tf_frame = self.get_parameter('reservoir_tf_frame').value
+        self.reservoir_drop_clearance_m = float(
+            self.get_parameter('reservoir_drop_clearance_m').value)
+
+        self._carry_model_name = None
+        self._carry_item = None
+
+        bi = self.get_parameter('boll_inventory_yaml').value
+        self._boll_items = []
+        self._boll_index = {}
+        try:
+            if bi and os.path.isfile(bi):
+                self._boll_items = self._load_boll_items(bi)
+            else:
+                sp = os.path.join(
+                    get_package_share_directory('robot_arm'), 'config', 'orchard_bolls.yaml')
+                if os.path.isfile(sp):
+                    self._boll_items = self._load_boll_items(sp)
+            self._boll_index = {it.get('id'): it for it in self._boll_items if it.get('id')}
+        except Exception as e:
+            self.get_logger().warn(f'boll_inventory load failed ({e}); teleport disabled.')
+
+        self.tf_buffer = Buffer(cache_duration=rclpy.duration.Duration(seconds=30.0))
+        self.tf_listener = TransformListener(self.tf_buffer, self, spin_thread=True)
 
         # Load reservoir position from config
         self.reservoir_pos = self._load_reservoir_position()
@@ -90,6 +140,14 @@ class HarvestExecutor(Node):
         self.get_logger().info(f'  pre_grasp_offset: {self.pre_grasp_offset}m')
         self.get_logger().info(f'  lift_height:      {self.lift_height}m')
         self.get_logger().info(f'  reservoir:        {self.reservoir_pos}')
+        self.get_logger().info(
+            f'  mock teleport: {self.mock_gazebo_teleport} '
+            f'(bolls known: {len(self._boll_items)}) '
+            f'world={self.gz_world_name}'
+        )
+        self.get_logger().info(
+            f'  gripper demo bypass: {self.gripper_demo_bypass}'
+        )
         self.get_logger().info(f'  service:          /harvest/pick_boll')
         self.get_logger().info('=' * 50)
 
@@ -106,6 +164,119 @@ class HarvestExecutor(Node):
             return pos
         self.get_logger().warn('No config file, using default reservoir [0.0, 0.6, 0.3]')
         return [0.0, 0.6, 0.3]
+
+    def _load_boll_items(self, path):
+        with open(path, 'r') as f:
+            data = yaml.safe_load(f)
+        return data.get('items', []) or []
+
+    def _nearest_boll_model(self, bx, by, bz):
+        if not self._boll_items:
+            return None, None
+        rmax2 = self.boll_match_radius * self.boll_match_radius
+        best_id = None
+        best_d2 = rmax2 + 1.0
+        for it in self._boll_items:
+            if bool(it.get('picked', False)):
+                continue
+            dx = it['x'] - bx
+            dy = it['y'] - by
+            dz = it['z'] - bz
+            d2 = dx * dx + dy * dy + dz * dz
+            if d2 < best_d2:
+                best_d2 = d2
+                best_id = it.get('id')
+        if best_id is None or best_d2 > rmax2:
+            self.get_logger().warn(
+                f'No boll YAML entry within match radius {self.boll_match_radius}m '
+                f'(best_dist={math.sqrt(best_d2):.3f}).'
+            )
+            return None, None
+        return best_id, self._boll_index.get(best_id)
+
+    def _world_pose_of_frame(self, frame_id):
+        try:
+            t = self.tf_buffer.lookup_transform(
+                self.world_frame, frame_id, rclpy.time.Time(),
+                timeout=Duration(seconds=2.0),
+            )
+            tr = t.transform.translation
+            q = t.transform.rotation
+            return (tr.x, tr.y, tr.z, q.x, q.y, q.z, q.w)
+        except Exception as ex:
+            self.get_logger().warn(f'TF {self.world_frame} <- {frame_id}: {ex}')
+            return None
+
+    def _ign_or_gz_set_pose(self, name, x, y, z,
+                            ox=0.0, oy=0.0, oz=0.0, ow=1.0):
+        srv = f'/world/{self.gz_world_name}/set_pose'
+        # ignition.msgs.Pose (protobuf-text)
+        req_txt = (
+            f'name: "{name}"\n'
+            f'position {{ x: {x} y: {y} z: {z} }}\n'
+            f'orientation {{ x: {ox} y: {oy} z: {oz} w: {ow} }}\n'
+        )
+        cli_args = ['-s', srv,
+                    '--reqtype', 'ignition.msgs.Pose',
+                    '--reptype', 'ignition.msgs.Boolean',
+                    '--timeout', '2500',
+                    '--req', req_txt]
+        for exe in ('ign', 'gz'):
+            exe_path = shutil.which(exe)
+            if not exe_path:
+                continue
+            cmd = [exe_path, 'service'] + cli_args
+            try:
+                ret = subprocess.run(
+                    cmd, capture_output=True, text=True,
+                    timeout=6.0, check=False)
+                out = (ret.stdout or '') + (ret.stderr or '')
+                if ret.returncode == 0:
+                    ok = ('true' in out.lower())
+                    self.get_logger().info(
+                        f'[GZ] set_pose {name} @ ({x:.3f},{y:.3f},{z:.3f}) via {exe}')
+                    return ok
+                self.get_logger().warn(f'[GZ] {exe} set_pose rc={ret.returncode}: {out[:300]}')
+            except Exception as e:
+                self.get_logger().warn(f'[GZ] {exe} subprocess failed: {e}')
+        self.get_logger().error('[GZ] Neither ign nor gz found on PATH; cannot teleport.')
+        return False
+
+    def _teleport_carry_to_tcp(self):
+        """Snap carried static boll mesh to wrist TCP pose (identity rot)."""
+        if not self.mock_gazebo_teleport or not self._carry_model_name:
+            return True
+        p = self._world_pose_of_frame(self.tcp_frame)
+        if not p:
+            return False
+        wx, wy, wz = p[0], p[1], p[2]
+        qx, qy, qz, qw = p[3], p[4], p[5], p[6]
+        return self._ign_or_gz_set_pose(
+            self._carry_model_name, wx, wy, wz,
+            ox=qx, oy=qy, oz=qz, ow=qw,
+        )
+
+    def _teleport_carry_to_drop(self):
+        """After release pose: stash boll in reservoir approximate drop point."""
+        if not self.mock_gazebo_teleport or not self._carry_model_name:
+            return True
+        rp = self._world_pose_of_frame(self.reservoir_tf_frame)
+        if rp:
+            x, y = rp[0], rp[1]
+            z = rp[2] + self.reservoir_drop_clearance_m
+        else:
+            x = self.reservoir_pos[0]
+            y = self.reservoir_pos[1]
+            z = self.reservoir_pos[2] + self.reservoir_drop_clearance_m
+        # Scatter dropped bolls in a small grid so they don't overlap visually.
+        slot = max(0, self.successful_picks)
+        row = slot // 5
+        col = slot % 5
+        x += -0.08 + 0.04 * col
+        y += -0.08 + 0.04 * row
+        return self._ign_or_gz_set_pose(
+            self._carry_model_name, x, y, z,
+        )
 
     def _wait_future(self, future, timeout_sec=30.0):
         """Poll-wait for a service future (safe with MultiThreadedExecutor)."""
@@ -125,6 +296,8 @@ class HarvestExecutor(Node):
         boll = request.boll_position
         pre_grasp = request.pre_grasp_position
         self.total_picks += 1
+        self._carry_model_name = None
+        self._carry_item = None
 
         self.get_logger().info('=' * 50)
         self.get_logger().info(
@@ -138,6 +311,12 @@ class HarvestExecutor(Node):
             f'{self.reservoir_pos[1]:.3f}, {self.reservoir_pos[2]:.3f})')
         self.get_logger().info(
             f'  lift_height={self.lift_height}m')
+
+        if self.mock_gazebo_teleport and self._boll_items:
+            self._carry_model_name, self._carry_item = self._nearest_boll_model(
+                boll.x, boll.y, boll.z)
+            self.get_logger().info(
+                f'  teleport model match: {self._carry_model_name}')
 
         t_start = time.time()
 
@@ -190,6 +369,9 @@ class HarvestExecutor(Node):
             self.get_logger().info(
                 f'[4/8] GRIPPER CLOSE: done in {time.time()-t_step:.1f}s')
 
+            if self.mock_gazebo_teleport:
+                self._teleport_carry_to_tcp()
+
             # Step 5: Retract to pre-grasp (safer than lifting in place at workspace edge)
             self.get_logger().info(
                 f'[5/8] RETRACT: going to pre-grasp '
@@ -200,6 +382,9 @@ class HarvestExecutor(Node):
                 raise RuntimeError('Failed to retract to pre-grasp')
             self.get_logger().info(
                 f'[5/8] RETRACT: reached in {time.time()-t_step:.1f}s')
+
+            if self.mock_gazebo_teleport:
+                self._teleport_carry_to_tcp()
 
             # Step 6: Go to reservoir (hover 15cm above box top to avoid collision)
             rx, ry, rz = self.reservoir_pos
@@ -214,11 +399,22 @@ class HarvestExecutor(Node):
             self.get_logger().info(
                 f'[6/8] RESERVOIR: reached in {time.time()-t_step:.1f}s')
 
+            if self.mock_gazebo_teleport:
+                self._teleport_carry_to_tcp()
+
             # Step 7: Open gripper (release boll)
             self.get_logger().info('[7/8] RELEASE: opening gripper to drop boll')
             t_step = time.time()
+            if self.mock_gazebo_teleport:
+                self._teleport_carry_to_tcp()
             if not self._call_gripper('open'):
                 raise RuntimeError('Failed to release')
+            if self.mock_gazebo_teleport:
+                self._teleport_carry_to_drop()
+                if self._carry_item is not None:
+                    self._carry_item['picked'] = True
+            self._carry_model_name = None
+            self._carry_item = None
             self.get_logger().info(
                 f'[7/8] RELEASE: done in {time.time()-t_step:.1f}s')
 
@@ -348,28 +544,27 @@ class HarvestExecutor(Node):
 
     def _call_gripper(self, action: str) -> bool:
         """Call gripper open or close service."""
-        # BYPASS: gripper disabled for demo — always succeed
-        self.get_logger().info(f'[GRIPPER] {action}: BYPASSED (demo mode)')
-        return True
+        if self.gripper_demo_bypass:
+            self.get_logger().info(f'[GRIPPER] {action}: bypass (demo)')
+            return True
 
-        # --- original implementation (re-enable when gripper works) ---
-        # cli = self.gripper_open_cli if action == 'open' else self.gripper_close_cli
-        # if not cli.wait_for_service(timeout_sec=5.0):
-        #     self.get_logger().error(f'[GRIPPER] /gripper/{action} not available')
-        #     return False
-        #
-        # future = cli.call_async(Trigger.Request())
-        # self._wait_future(future,120.0)
-        #
-        # if future.result() is not None:
-        #     ok = future.result().success
-        #     msg = future.result().message
-        #     self.get_logger().info(
-        #         f'[GRIPPER] {action}: {"OK" if ok else "FAIL"} - {msg}')
-        #     return ok
-        #
-        # self.get_logger().error(f'[GRIPPER] {action} timeout (120s)')
-        # return False
+        cli = (self.gripper_open_cli if action == 'open' else self.gripper_close_cli)
+        if not cli.wait_for_service(timeout_sec=5.0):
+            self.get_logger().error(f'[GRIPPER] /gripper/{action} not available')
+            return False
+
+        future = cli.call_async(Trigger.Request())
+        self._wait_future(future, 120.0)
+
+        if future.result() is not None:
+            ok = future.result().success
+            msg = future.result().message
+            self.get_logger().info(
+                f'[GRIPPER] {action}: {"OK" if ok else "FAIL"} - {msg}')
+            return ok
+
+        self.get_logger().error(f'[GRIPPER] {action} timeout (120s)')
+        return False
 
     # ─── Pre-grasp computation ──────────────────────────────────
 
