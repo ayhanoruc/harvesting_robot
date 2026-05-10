@@ -56,6 +56,7 @@ import math
 import os
 import shutil
 import subprocess
+import threading
 import time
 from typing import List, Optional
 
@@ -100,6 +101,13 @@ class SimpleClusterHarvester(Node):
         self._reservoir_pos_default = [0.0, 0.6, 0.3]
         self._drop_slot = 0  # incremented per successful drop for grid scatter
 
+        # Continuous-carry thread state
+        self._carry_lock = threading.Lock()
+        self._carry_model_name: Optional[str] = None
+        self._carry_thread: Optional[threading.Thread] = None
+        self._carry_active = False
+        self._carry_rate_hz = 10.0
+
         # ── Boll inventory ──────────────────────────────────────
         self._boll_items: List[dict] = self._load_boll_inventory()
         if not self._boll_items:
@@ -115,6 +123,8 @@ class SimpleClusterHarvester(Node):
             SetBool, '/go_to_pose', callback_group=self.cb)
         self.go_to_named_cli = self.create_client(
             SetBool, '/go_to_named', callback_group=self.cb)
+        self.go_to_reservoir_cli = self.create_client(
+            SetBool, '/go_to_reservoir', callback_group=self.cb)
         self.arm_set_params_cli = self.create_client(
             SetParameters, '/arm_commander/set_parameters', callback_group=self.cb)
 
@@ -221,6 +231,45 @@ class SimpleClusterHarvester(Node):
             model_name, p[0], p[1], p[2],
             qx=p[3], qy=p[4], qz=p[5], qw=p[6])
 
+    # ─── Continuous "carry" thread: keeps boll glued to TCP during arm motion ──
+
+    def _carry_loop(self):
+        """Background loop: while active, snap carry model to TCP at carry_rate_hz."""
+        period = 1.0 / max(1.0, self._carry_rate_hz)
+        tcp_frame = self.get_parameter('tcp_frame').value
+        while True:
+            with self._carry_lock:
+                active = self._carry_active
+                model = self._carry_model_name
+            if not active or not model:
+                break
+            p = self._world_pose_of_frame(tcp_frame)
+            if p:
+                # Don't log every snap — silent unless _gz_set_pose failure spam
+                self._gz_set_pose(
+                    model, p[0], p[1], p[2],
+                    qx=p[3], qy=p[4], qz=p[5], qw=p[6])
+            time.sleep(period)
+
+    def _carry_start(self, model_name: str):
+        with self._carry_lock:
+            self._carry_model_name = model_name
+            self._carry_active = True
+        self._carry_thread = threading.Thread(target=self._carry_loop, daemon=True)
+        self._carry_thread.start()
+        self.get_logger().info(f'[CARRY] continuous TCP-snap started for {model_name}')
+
+    def _carry_stop(self):
+        with self._carry_lock:
+            self._carry_active = False
+            model = self._carry_model_name
+            self._carry_model_name = None
+        if self._carry_thread is not None:
+            self._carry_thread.join(timeout=1.0)
+        self._carry_thread = None
+        if model:
+            self.get_logger().info(f'[CARRY] continuous TCP-snap stopped (was {model})')
+
     def _teleport_to_reservoir(self, model_name: str) -> bool:
         # Anchor to live reservoir TF (Husky moves) → fall back to default
         rp = self._world_pose_of_frame(self.get_parameter('reservoir_tf_frame').value)
@@ -301,6 +350,20 @@ class SimpleClusterHarvester(Node):
         self._wait_future(future, 120.0)
         return (future.result() is not None and future.result().success)
 
+    def _go_reservoir(self) -> bool:
+        """Heuristic 3-stage reach to reservoir hover (HOME → joint1 rotate → IK).
+
+        Implemented in arm_commander.go_to_reservoir_callback. Avoids the
+        single-shot 'reach behind' IK problem by first rotating the base so
+        the arm physically faces the reservoir.
+        """
+        if not self.go_to_reservoir_cli.wait_for_service(timeout_sec=5.0):
+            self.get_logger().error('[ARM] /go_to_reservoir unavailable')
+            return False
+        future = self.go_to_reservoir_cli.call_async(SetBool.Request(data=True))
+        self._wait_future(future, 180.0)
+        return (future.result() is not None and future.result().success)
+
     def _wait_future(self, future, timeout_sec: float) -> Optional[object]:
         t0 = time.time()
         while not future.done():
@@ -363,27 +426,25 @@ class SimpleClusterHarvester(Node):
                 self.get_logger().info(f'{tag} [MOCK GRIP CLOSE] (sleep {close_dt}s)')
                 time.sleep(close_dt)
 
-                # 3. Teleport boll → TCP
+                # 3. Teleport boll → TCP and START continuous follow
                 if not self._teleport_to_tcp(boll['id']):
                     self.get_logger().warn(f'{tag} teleport-to-TCP failed (continuing)')
+                self._carry_start(boll['id'])
 
-                # 4. Go to reservoir hover
-                rx, ry, rz = self._reservoir_pos_default
-                # If reservoir TF is reachable, prefer that (live, follows Husky)
-                rp = self._world_pose_of_frame(self.get_parameter('reservoir_tf_frame').value)
-                if rp:
-                    rx, ry, rz = rp[0], rp[1], rp[2]
-                rz_hover = rz + float(self.get_parameter('reservoir_hover_m').value)
-                self._publish_status(f'{tag} → reservoir hover @ ({rx:.3f},{ry:.3f},{rz_hover:.3f})')
+                # 4. Heuristic reach to reservoir hover: HOME → joint1 rotate → IK.
+                #    Carry thread keeps boll glued to TCP through all three stages.
+                self._publish_status(f'{tag} → reservoir hover (boll follows)')
                 t_step = time.time()
-                if not self._go_to_xyz(rx, ry, rz_hover, approach_orientation=True,
-                                       use_direct=True):
+                if not self._go_reservoir():
                     self.get_logger().warn(f'{tag} reservoir reach FAILED')
+                    self._carry_stop()
                     failed += 1
                     continue
-                self.get_logger().info(f'{tag} reservoir reached in {time.time()-t_step:.1f}s')
+                self.get_logger().info(
+                    f'{tag} reservoir hover reached in {time.time()-t_step:.1f}s')
 
-                # 5. Mock open + drop
+                # 5. Stop carry, mock open, drop boll into bin (with grid scatter).
+                self._carry_stop()
                 open_dt = float(self.get_parameter('mock_open_delay_s').value)
                 self.get_logger().info(f'{tag} [MOCK GRIP OPEN] (sleep {open_dt}s)')
                 time.sleep(open_dt)
@@ -407,6 +468,8 @@ class SimpleClusterHarvester(Node):
             response.success = False
             response.message = f'Crash: {e}'
         finally:
+            # Always stop the carry thread on exit, even on crash
+            self._carry_stop()
             self._busy = False
 
         return response

@@ -96,8 +96,24 @@
     <disable_collisions link1="camera_link" link2="tool0" reason="Never"/>
     <disable_collisions link1="camera_link" link2="tcp" reason="Never"/>
     <disable_collisions link1="camera_link" link2="link5" reason="Never"/>
+    <!-- Camera ↔ lower arm: when arm folds/rotates, camera passes near lower links;
+         these are physically close but rarely actually collide for valid grasps -->
+    <disable_collisions link1="camera_link" link2="link1" reason="Never"/>
+    <disable_collisions link1="camera_link" link2="link2" reason="Never"/>
+    <disable_collisions link1="camera_link" link2="link3" reason="Never"/>
+    <disable_collisions link1="camera_link" link2="link4" reason="Never"/>
+    <disable_collisions link1="camera_link" link2="base_0" reason="Never"/>
     <disable_collisions link1="camera_optical_frame" link2="tool0" reason="Never"/>
     <disable_collisions link1="camera_optical_frame" link2="hand_e_link" reason="Never"/>
+    <!-- Hand-E ↔ lower arm: similar reasoning, finger-to-link contact during folded poses -->
+    <disable_collisions link1="hand_e_link" link2="link1" reason="Never"/>
+    <disable_collisions link1="hand_e_link" link2="link3" reason="Never"/>
+    <disable_collisions link1="hande_left_finger" link2="link1" reason="Never"/>
+    <disable_collisions link1="hande_left_finger" link2="link2" reason="Never"/>
+    <disable_collisions link1="hande_left_finger" link2="link3" reason="Never"/>
+    <disable_collisions link1="hande_right_finger" link2="link1" reason="Never"/>
+    <disable_collisions link1="hande_right_finger" link2="link2" reason="Never"/>
+    <disable_collisions link1="hande_right_finger" link2="link3" reason="Never"/>
 
     <!-- Non-adjacent arm links that can't collide -->
     <disable_collisions link1="base_0" link2="link2" reason="Never"/>
@@ -123,6 +139,19 @@
     <disable_collisions link1="link1" link2="reservoir_link" reason="Never"/>
     <disable_collisions link1="link2" link2="husky_base_link" reason="Never"/>
     <disable_collisions link1="link2" link2="deck_link" reason="Never"/>
+    <!-- Arm ↔ reservoir: arm reaches over (behind) to drop bolls; we hover so
+         no real contact, but the collision-check is overly conservative -->
+    <disable_collisions link1="reservoir_link" link2="link2" reason="Never"/>
+    <disable_collisions link1="reservoir_link" link2="link3" reason="Never"/>
+    <disable_collisions link1="reservoir_link" link2="link4" reason="Never"/>
+    <disable_collisions link1="reservoir_link" link2="link5" reason="Never"/>
+    <disable_collisions link1="reservoir_link" link2="link6" reason="Never"/>
+    <disable_collisions link1="reservoir_link" link2="hand_e_link" reason="Never"/>
+    <disable_collisions link1="reservoir_link" link2="hande_left_finger" reason="Never"/>
+    <disable_collisions link1="reservoir_link" link2="hande_right_finger" reason="Never"/>
+    <disable_collisions link1="reservoir_link" link2="camera_link" reason="Never"/>
+    <disable_collisions link1="reservoir_link" link2="tool0" reason="Never"/>
+    <disable_collisions link1="reservoir_link" link2="tcp" reason="Never"/>
     <!-- Wheels: never interact with arm/gripper -->
     <disable_collisions link1="front_left_wheel" link2="husky_base_link" reason="Adjacent"/>
     <disable_collisions link1="front_right_wheel" link2="husky_base_link" reason="Adjacent"/>

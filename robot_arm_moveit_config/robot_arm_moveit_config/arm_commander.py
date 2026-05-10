@@ -39,6 +39,19 @@ class ArmCommander(Node):
 
     HOME_JOINTS = [0.0000, -0.922, 2.4494, 0.0, -1.3000, 0.0]
 
+    # M1013 URDF position limits (radians). Critical: joint3 is restricted!
+    # KDL IK plugin sometimes returns solutions wrapped beyond these — we
+    # post-filter and reject any IK candidate that doesn't fit.
+    JOINT_LIMITS = [
+        (-6.2832, 6.2832),   # joint1
+        (-6.2832, 6.2832),   # joint2
+        (-2.7925, 2.7925),   # joint3 — RESTRICTED (~±160°)
+        (-6.2832, 6.2832),   # joint4
+        (-6.2832, 6.2832),   # joint5
+        (-6.2832, 6.2832),   # joint6
+    ]
+    JOINT_LIMIT_TOL = 0.02   # rad slack for floating-point safety
+
     def __init__(self):
         super().__init__('arm_commander')
 
@@ -92,6 +105,8 @@ class ArmCommander(Node):
         self.create_service(SetBool, 'go_home_view', self.go_home_view_callback,
                             callback_group=self.callback_group)
         self.create_service(SetBool, 'rotate_home_view_to_clusters', self.rotate_home_view_to_clusters_callback,
+                            callback_group=self.callback_group)
+        self.create_service(SetBool, 'go_to_reservoir', self.go_to_reservoir_callback,
                             callback_group=self.callback_group)
 
         # Wait for servers
@@ -300,33 +315,46 @@ class ArmCommander(Node):
             idx = list(result.solution.joint_state.name).index(name)
             joint_values.append(result.solution.joint_state.position[idx])
 
-        joint_values = self._normalize_joints(joint_values)
+        joint_values, all_ok = self._normalize_joints(joint_values)
+        if not all_ok:
+            self.get_logger().warn(
+                f"[IK] Seed={seed_label} solution outside URDF limits, rejecting")
+            return None
         self.get_logger().info(
             f"[IK] Seed={seed_label} solution: {[f'{v:.3f}' for v in joint_values]}")
 
         return joint_values
 
     def _normalize_joints(self, joint_values):
-        """Wrap each joint to be within π of current value (shortest path)."""
+        """Wrap each joint into URDF limits, preferring the value closest to current.
+
+        Strategy: for each joint generate candidates {target ± k·2π for k=-2..2},
+        keep only those within URDF limits, then pick the one closest to the
+        current joint angle. This both respects physical limits AND minimizes
+        path length, avoiding the prior bug where shortest-path-from-current
+        could land outside joint3's ±160° range.
+
+        Returns (normalized_joints, all_within_limits).
+        """
         current = self._get_current_joint_values()
         normalized = []
-        for target, curr in zip(joint_values, current):
-            while target - curr > math.pi:
-                target -= 2 * math.pi
-            while target - curr < -math.pi:
-                target += 2 * math.pi
-            normalized.append(target)
-        return normalized
-
-    def validate_joints(self, joint_values):
-        """Sanity check: are joint values reasonable?"""
-        j1 = joint_values[0]
-        # joint1 should be in front hemisphere (-135° to 135°)
-        if abs(j1) > math.pi * 0.75:
-            self.get_logger().warn(
-                f"[VALIDATE] joint1={j1:.2f} rad ({math.degrees(j1):.0f}°) — arm may be reaching backward!")
-            return False
-        return True
+        all_ok = True
+        for i, (target, curr, (lo, hi)) in enumerate(
+                zip(joint_values, current, self.JOINT_LIMITS)):
+            tol = self.JOINT_LIMIT_TOL
+            candidates = [target + k * 2 * math.pi for k in (-2, -1, 0, 1, 2)]
+            in_lim = [c for c in candidates if (lo - tol) <= c <= (hi + tol)]
+            if not in_lim:
+                self.get_logger().warn(
+                    f'[NORMALIZE] joint{i+1} no wrap fits limits '
+                    f'[{lo:.2f},{hi:.2f}] (raw={target:.2f})')
+                all_ok = False
+                normalized.append(max(lo, min(hi, target)))  # clamp as fallback
+            else:
+                # Pick within-limit candidate closest to current pose
+                best = min(in_lim, key=lambda c: abs(c - curr))
+                normalized.append(best)
+        return normalized, all_ok
 
     # ─── TF debug ──────────────────────────────────────────────
 
@@ -448,7 +476,73 @@ class ArmCommander(Node):
             f"{math.degrees(target[j5_idx]):.1f} deg (delta={delta_deg:.1f} deg)")
         return self.send_joint_goal(target)
 
-    # ─── Core: IK → validate → joint goal ─────────────────────
+    def go_to_reservoir_callback(self, request, response):
+        """Heuristic 3-stage motion to reservoir hover position.
+
+        Reservoir sits at -X local from arm base (= behind robot in world frame
+        after Husky's -π/2 spawn yaw). Forcing a single-shot IK from any pose to
+        this 'behind' target produces over-the-shoulder solutions that push joint3
+        toward its ±2.79 rad URDF limit. KDL often returns wrapped solutions just
+        outside that limit and the trajectory either gets clamped or silently
+        fails.
+
+        Decompose the motion instead:
+          Stage 1 — fold to HOME (safe transit pose, arm tucked).
+          Stage 2 — rotate joint1 by π (keeping joints 2–6 at HOME values).
+                    Now the arm physically faces toward reservoir.
+          Stage 3 — IK to reservoir hover. From this rotated pose IK is a normal
+                    'front-of-arm' reach; joint3 lands mid-range, no limit fight.
+        """
+        if not request.data:
+            response.success = False
+            response.message = "Set data=true to trigger"
+            return response
+
+        # Stage 1: HOME for safe transit
+        self.get_logger().info("[RESERVOIR] Stage 1/3: fold to HOME")
+        if not self.send_joint_goal(self.HOME_JOINTS):
+            response.success = False
+            response.message = "FAIL: HOME fold"
+            return response
+
+        # Stage 2: rotate joint1 to ±π (face local -X = reservoir direction).
+        # Pick whichever sign is closer to current joint1 to take the short path.
+        current = self._get_current_joint_values()
+        target_j1 = math.pi if current[0] >= 0.0 else -math.pi
+        rotated = list(current)
+        rotated[0] = target_j1
+        self.get_logger().info(
+            f"[RESERVOIR] Stage 2/3: rotate joint1 {current[0]:.2f} → {target_j1:.2f} rad "
+            f"(other joints unchanged)")
+        if not self.send_joint_goal(rotated):
+            response.success = False
+            response.message = "FAIL: joint1 rotation"
+            return response
+
+        # Stage 3: IK to reservoir hover position. Use TF (works on mobile base).
+        hover_m = 0.30
+        try:
+            t = self._tf_buffer.lookup_transform(
+                self.planning_frame, 'reservoir_link', rclpy.time.Time())
+            rx = t.transform.translation.x
+            ry = t.transform.translation.y
+            rz = t.transform.translation.z + hover_m
+        except Exception as e:
+            self.get_logger().error(f"[RESERVOIR] reservoir_link TF lookup failed: {e}")
+            response.success = False
+            response.message = "FAIL: reservoir TF"
+            return response
+
+        self.get_logger().info(
+            f"[RESERVOIR] Stage 3/3: IK to hover ({rx:.3f}, {ry:.3f}, {rz:.3f})")
+        success = self.move_to_pose(rx, ry, rz, approach_orientation=True)
+        response.success = success
+        response.message = (
+            f"OK: reservoir hover ({rx:.2f},{ry:.2f},{rz:.2f})"
+            if success else "FAIL: IK to reservoir from rotated pose")
+        return response
+
+    # ─── Core: IK → joint goal ─────────────────────────────────
 
     def move_to_pose(self, x, y, z, approach_orientation=False):
         """Compute IK for target pose, validate, send joint goal.
@@ -461,15 +555,12 @@ class ArmCommander(Node):
         if approach_orientation:
             orientation = self.compute_approach_quaternion(x, y, z)
 
-        # Compute IK (multi-seed: HOME + current)
+        # Compute IK (multi-seed: HOME + current). _normalize_joints already
+        # rejects any candidate that doesn't fit URDF limits, so anything we
+        # get back here is safe to send.
         joint_values = self.compute_ik_multi_seed(x, y, z, orientation=orientation)
         if joint_values is None:
             self.get_logger().error("IK failed — cannot reach target")
-            return False
-
-        # Validate
-        if not self.validate_joints(joint_values):
-            self.get_logger().error("Joint validation failed — solution looks wrong, aborting")
             return False
 
         # Send joint goal — direct trajectory or MoveGroup depending on param
@@ -497,7 +588,7 @@ class ArmCommander(Node):
 
             # Re-compute IK from HOME position (HOME seed will dominate)
             joint_values = self.compute_ik_multi_seed(x, y, z, orientation=orientation)
-            if joint_values is None or not self.validate_joints(joint_values):
+            if joint_values is None:
                 self.get_logger().error("[RETRY] IK failed after HOME reset")
                 return False
 
