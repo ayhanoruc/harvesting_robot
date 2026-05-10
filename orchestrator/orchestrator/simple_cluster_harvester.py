@@ -58,7 +58,8 @@ import shutil
 import subprocess
 import threading
 import time
-from typing import List, Optional
+from concurrent.futures import ThreadPoolExecutor
+from typing import List, Optional, Tuple
 
 import rclpy
 import rclpy.time
@@ -101,12 +102,26 @@ class SimpleClusterHarvester(Node):
         self._reservoir_pos_default = [0.0, 0.6, 0.3]
         self._drop_slot = 0  # incremented per successful drop for grid scatter
 
-        # Continuous-carry thread state
+        # Continuous-carry thread state (boll-glued-to-TCP during pick)
         self._carry_lock = threading.Lock()
         self._carry_model_name: Optional[str] = None
         self._carry_thread: Optional[threading.Thread] = None
         self._carry_active = False
         self._carry_rate_hz = 10.0
+
+        # Reservoir-carry thread state (already-dropped bolls stay glued to
+        # reservoir_link as Husky drives between clusters). We store each
+        # boll's *local* offset in reservoir frame, then on each tick re-apply
+        # world_pose = reservoir_world * local_offset.
+        self._dropped_lock = threading.Lock()
+        self._dropped_items: List[Tuple[str, Tuple[float, float, float]]] = []
+        self._dropped_carry_thread: Optional[threading.Thread] = None
+        self._dropped_carry_active = False
+        self._dropped_carry_rate_hz = 2.0
+        self._dropped_motion_threshold_m = 0.05  # only snap if reservoir moved
+        # Parallel subprocess pool — set_pose via `ign service` is ~80ms each;
+        # batching with workers keeps per-tick latency manageable for ~20 bolls
+        self._gz_pool = ThreadPoolExecutor(max_workers=4)
 
         # ── Boll inventory ──────────────────────────────────────
         self._boll_items: List[dict] = self._load_boll_inventory()
@@ -270,25 +285,106 @@ class SimpleClusterHarvester(Node):
         if model:
             self.get_logger().info(f'[CARRY] continuous TCP-snap stopped (was {model})')
 
+    @staticmethod
+    def _yaw_from_quat(qx: float, qy: float, qz: float, qw: float) -> float:
+        siny_cosp = 2.0 * (qw * qz + qx * qy)
+        cosy_cosp = 1.0 - 2.0 * (qy * qy + qz * qz)
+        return math.atan2(siny_cosp, cosy_cosp)
+
+    def _reservoir_local_to_world(
+            self, reservoir_pose, lx: float, ly: float, lz: float):
+        """Apply reservoir's world pose (yaw only — bin stays upright) to a
+        point given in reservoir-local coordinates."""
+        rx, ry, rz, qx, qy, qz, qw = reservoir_pose
+        yaw = self._yaw_from_quat(qx, qy, qz, qw)
+        cy, sy = math.cos(yaw), math.sin(yaw)
+        wx = rx + cy * lx - sy * ly
+        wy = ry + sy * lx + cy * ly
+        wz = rz + lz
+        return (wx, wy, wz)
+
     def _teleport_to_reservoir(self, model_name: str) -> bool:
-        # Anchor to live reservoir TF (Husky moves) → fall back to default
+        """Drop boll into reservoir bin and register it for Husky-follow."""
         rp = self._world_pose_of_frame(self.get_parameter('reservoir_tf_frame').value)
         clearance = float(self.get_parameter('reservoir_drop_clearance_m').value)
-        if rp:
-            x, y, z = rp[0], rp[1], rp[2] + clearance
-        else:
+        if not rp:
+            # Fallback: no reservoir TF (shouldn't happen on Husky URDF) —
+            # use static default and skip Husky-follow registration.
             d = self._reservoir_pos_default
             x, y, z = d[0], d[1], d[2] + clearance
-        # Grid scatter (5×N) to avoid visually overlapping drops
+            return self._gz_set_pose(model_name, x, y, z)
+
+        # Local offset in reservoir frame: 5×N grid scatter, hovering above
+        # bin floor by `clearance`. These coords stay constant — only the
+        # world pose changes as Husky moves.
         slot = self._drop_slot
         col = slot % 5
         row = slot // 5
-        x += -0.08 + 0.04 * col
-        y += -0.08 + 0.04 * row
-        ok = self._gz_set_pose(model_name, x, y, z)
+        lx = -0.08 + 0.04 * col
+        ly = -0.08 + 0.04 * row
+        lz = clearance
+
+        wx, wy, wz = self._reservoir_local_to_world(rp, lx, ly, lz)
+        ok = self._gz_set_pose(model_name, wx, wy, wz)
         if ok:
             self._drop_slot += 1
+            with self._dropped_lock:
+                self._dropped_items.append((model_name, (lx, ly, lz)))
+            self._start_dropped_carry()
         return ok
+
+    # ─── Reservoir-carry: keep dropped bolls glued to reservoir as Husky moves ──
+
+    def _dropped_carry_loop(self):
+        """Background loop: re-snap each registered boll to its reservoir-local
+        position whenever the reservoir has moved more than the threshold.
+        Snaps run in parallel via _gz_pool to keep per-tick latency bounded."""
+        period = 1.0 / max(0.5, self._dropped_carry_rate_hz)
+        last_pose = None
+        rsv_frame = self.get_parameter('reservoir_tf_frame').value
+        while True:
+            with self._dropped_lock:
+                active = self._dropped_carry_active
+                items = list(self._dropped_items)
+            if not active:
+                break
+            if items:
+                rp = self._world_pose_of_frame(rsv_frame)
+                if rp is not None:
+                    moved_enough = (
+                        last_pose is None
+                        or math.hypot(rp[0] - last_pose[0],
+                                      rp[1] - last_pose[1])
+                        > self._dropped_motion_threshold_m)
+                    if moved_enough:
+                        futures = []
+                        for model, local in items:
+                            wx, wy, wz = self._reservoir_local_to_world(
+                                rp, *local)
+                            futures.append(self._gz_pool.submit(
+                                self._gz_set_pose, model, wx, wy, wz))
+                        # Drain batch — don't accumulate backlog if a tick is
+                        # slower than the period
+                        for f in futures:
+                            try:
+                                f.result(timeout=2.0)
+                            except Exception:
+                                pass
+                        last_pose = rp
+            time.sleep(period)
+
+    def _start_dropped_carry(self):
+        with self._dropped_lock:
+            if self._dropped_carry_active:
+                return
+            self._dropped_carry_active = True
+        self._dropped_carry_thread = threading.Thread(
+            target=self._dropped_carry_loop, daemon=True)
+        self._dropped_carry_thread.start()
+        self.get_logger().info(
+            '[RSV-CARRY] reservoir-frame snap thread started '
+            f'({self._dropped_carry_rate_hz:.1f} Hz, '
+            f'motion threshold {self._dropped_motion_threshold_m:.2f}m)')
 
     # ─── Arm helpers (mirror of harvest_executor pattern) ──────
 

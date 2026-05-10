@@ -70,3 +70,15 @@ ros2 service call /detection/clear std_srvs/srv/Trigger "{}"
 
    ros2 run rqt_joint_trajectory_controller rqt_joint_trajectory_controller
 
+
+---
+
+ros2 launch robot_arm husky_autonomous.launch.py
+
+ros2 launch robot_arm_moveit_config moveit.launch.py
+
+ros2 run orchestrator simple_cluster_harvester
+
+ros2 run orchestrator harvest_orchestrator
+
+ros2 service call /harvest/start std_srvs/srv/Trigger '{}'
