@@ -15,15 +15,15 @@ bolls:
     model_static_visual_only: true
   count:
     total: 177
-    ripe: 129
-    unripe: 48
+    ripe: 128
+    unripe: 49
 items:
 - id: boll_tree_000_0
   tree_id: tree_000
   type: ripe
-  x: 15.7187
-  y: 4.0251
-  z: 1.1698
+  x: 15.8818
+  y: 4.0984
+  z: 1.6317
   radius: 0.035
   rgba:
   - 0.95
@@ -32,46 +32,46 @@ items:
   - 1.0
 - id: boll_tree_000_1
   tree_id: tree_000
-  type: unripe
-  x: 15.9108
-  y: 4.0711
-  z: 0.8825
-  radius: 0.025
-  rgba:
-  - 0.45
-  - 0.55
-  - 0.25
-  - 1.0
-- id: boll_tree_000_2
-  tree_id: tree_000
   type: ripe
-  x: 15.9392
-  y: 4.104
-  z: 1.415
+  x: 15.9259
+  y: 4.2155
+  z: 1.3486
   radius: 0.035
   rgba:
   - 0.95
   - 0.95
   - 0.9
   - 1.0
-- id: boll_tree_000_3
+- id: boll_tree_000_2
   tree_id: tree_000
   type: unripe
-  x: 15.7144
-  y: 4.1059
-  z: 1.405
+  x: 15.7051
+  y: 4.0945
+  z: 0.8861
   radius: 0.025
   rgba:
   - 0.45
   - 0.55
   - 0.25
   - 1.0
+- id: boll_tree_000_3
+  tree_id: tree_000
+  type: ripe
+  x: 15.9256
+  y: 4.0526
+  z: 0.8621
+  radius: 0.035
+  rgba:
+  - 0.95
+  - 0.95
+  - 0.9
+  - 1.0
 - id: boll_tree_000_4
   tree_id: tree_000
   type: ripe
-  x: 15.6628
-  y: 4.1955
-  z: 1.0557
+  x: 15.8851
+  y: 4.0349
+  z: 1.5425
   radius: 0.035
   rgba:
   - 0.95
@@ -81,33 +81,21 @@ items:
 - id: boll_tree_000_5
   tree_id: tree_000
   type: unripe
-  x: 15.6868
-  y: 4.1358
-  z: 1.1583
+  x: 15.8451
+  y: 4.1125
+  z: 1.3491
   radius: 0.025
   rgba:
+  - 0.45
   - 0.55
-  - 0.4
-  - 0.2
-  - 1.0
-- id: boll_tree_000_6
-  tree_id: tree_000
-  type: ripe
-  x: 15.796
-  y: 4.2016
-  z: 1.0079
-  radius: 0.035
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
+  - 0.25
   - 1.0
 - id: boll_tree_001_0
   tree_id: tree_001
   type: ripe
-  x: 16.8816
-  y: 4.0883
-  z: 1.533
+  x: 17.1308
+  y: 4.139
+  z: 1.1557
   radius: 0.035
   rgba:
   - 0.95
@@ -117,9 +105,9 @@ items:
 - id: boll_tree_001_1
   tree_id: tree_001
   type: ripe
-  x: 16.8893
-  y: 4.078
-  z: 1.0793
+  x: 16.9274
+  y: 4.147
+  z: 1.1025
   radius: 0.035
   rgba:
   - 0.95
@@ -129,45 +117,33 @@ items:
 - id: boll_tree_001_2
   tree_id: tree_001
   type: unripe
-  x: 16.8632
-  y: 4.02
-  z: 1.6338
+  x: 17.0764
+  y: 4.1276
+  z: 1.0145
   radius: 0.025
   rgba:
-  - 0.45
   - 0.55
-  - 0.25
+  - 0.4
+  - 0.2
   - 1.0
 - id: boll_tree_001_3
   tree_id: tree_001
-  type: ripe
-  x: 16.8839
-  y: 4.1461
-  z: 1.3401
-  radius: 0.035
+  type: unripe
+  x: 16.9015
+  y: 4.073
+  z: 1.6517
+  radius: 0.025
   rgba:
-  - 0.95
-  - 0.95
-  - 0.9
+  - 0.55
+  - 0.4
+  - 0.2
   - 1.0
 - id: boll_tree_001_4
   tree_id: tree_001
   type: ripe
-  x: 17.056
-  y: 4.0673
-  z: 0.8855
-  radius: 0.035
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-- id: boll_tree_001_5
-  tree_id: tree_001
-  type: ripe
-  x: 17.0179
-  y: 4.0633
-  z: 1.8552
+  x: 17.0973
+  y: 4.0235
+  z: 1.5463
   radius: 0.035
   rgba:
   - 0.95
@@ -177,9 +153,9 @@ items:
 - id: boll_tree_002_0
   tree_id: tree_002
   type: ripe
-  x: 17.9334
-  y: 4.0309
-  z: 1.5659
+  x: 18.0312
+  y: 4.1088
+  z: 1.5139
   radius: 0.035
   rgba:
   - 0.95
@@ -189,9 +165,9 @@ items:
 - id: boll_tree_002_1
   tree_id: tree_002
   type: ripe
-  x: 17.8843
-  y: 4.0288
-  z: 0.7101
+  x: 17.9009
+  y: 4.16
+  z: 0.7902
   radius: 0.035
   rgba:
   - 0.95
@@ -201,9 +177,9 @@ items:
 - id: boll_tree_002_2
   tree_id: tree_002
   type: ripe
-  x: 17.9366
-  y: 4.22
-  z: 1.1605
+  x: 17.9232
+  y: 4.059
+  z: 0.7365
   radius: 0.035
   rgba:
   - 0.95
@@ -212,58 +188,34 @@ items:
   - 1.0
 - id: boll_tree_002_3
   tree_id: tree_002
+  type: ripe
+  x: 18.0666
+  y: 4.1694
+  z: 0.7282
+  radius: 0.035
+  rgba:
+  - 0.95
+  - 0.95
+  - 0.9
+  - 1.0
+- id: boll_tree_002_4
+  tree_id: tree_002
   type: unripe
-  x: 17.9485
-  y: 4.0547
-  z: 0.9944
+  x: 18.0935
+  y: 4.1446
+  z: 0.7135
   radius: 0.025
   rgba:
   - 0.55
   - 0.4
   - 0.2
   - 1.0
-- id: boll_tree_002_4
-  tree_id: tree_002
-  type: unripe
-  x: 18.1183
-  y: 4.1371
-  z: 1.4214
-  radius: 0.025
-  rgba:
-  - 0.45
-  - 0.55
-  - 0.25
-  - 1.0
-- id: boll_tree_002_5
-  tree_id: tree_002
-  type: ripe
-  x: 18.0786
-  y: 4.0683
-  z: 0.7114
-  radius: 0.035
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-- id: boll_tree_002_6
-  tree_id: tree_002
-  type: ripe
-  x: 18.0447
-  y: 4.2033
-  z: 0.8796
-  radius: 0.035
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
 - id: boll_tree_003_0
   tree_id: tree_003
   type: ripe
-  x: 19.2976
-  y: 4.1108
-  z: 1.0826
+  x: 19.1974
+  y: 4.0479
+  z: 1.0362
   radius: 0.035
   rgba:
   - 0.95
@@ -273,9 +225,9 @@ items:
 - id: boll_tree_003_1
   tree_id: tree_003
   type: ripe
-  x: 19.2007
-  y: 4.0236
-  z: 1.1426
+  x: 19.3501
+  y: 4.1126
+  z: 0.6043
   radius: 0.035
   rgba:
   - 0.95
@@ -284,22 +236,22 @@ items:
   - 1.0
 - id: boll_tree_003_2
   tree_id: tree_003
-  type: unripe
-  x: 19.1922
-  y: 4.0721
-  z: 0.6521
-  radius: 0.025
+  type: ripe
+  x: 19.2052
+  y: 4.0716
+  z: 1.2253
+  radius: 0.035
   rgba:
-  - 0.55
-  - 0.4
-  - 0.2
+  - 0.95
+  - 0.95
+  - 0.9
   - 1.0
 - id: boll_tree_003_3
   tree_id: tree_003
   type: ripe
-  x: 19.3059
-  y: 4.0661
-  z: 1.4585
+  x: 19.3142
+  y: 4.0094
+  z: 0.7798
   radius: 0.035
   rgba:
   - 0.95
@@ -308,34 +260,58 @@ items:
   - 1.0
 - id: boll_tree_003_4
   tree_id: tree_003
-  type: ripe
-  x: 19.2835
-  y: 4.0685
-  z: 1.3426
-  radius: 0.035
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-- id: boll_tree_004_0
-  tree_id: tree_004
   type: unripe
-  x: 21.9097
-  y: 4.2229
-  z: 1.4712
+  x: 19.4317
+  y: 4.0766
+  z: 0.9527
   radius: 0.025
   rgba:
   - 0.45
   - 0.55
   - 0.25
   - 1.0
+- id: boll_tree_003_5
+  tree_id: tree_003
+  type: unripe
+  x: 19.401
+  y: 4.108
+  z: 1.5596
+  radius: 0.025
+  rgba:
+  - 0.45
+  - 0.55
+  - 0.25
+  - 1.0
+- id: boll_tree_003_6
+  tree_id: tree_003
+  type: unripe
+  x: 19.3275
+  y: 3.9927
+  z: 0.5972
+  radius: 0.025
+  rgba:
+  - 0.45
+  - 0.55
+  - 0.25
+  - 1.0
+- id: boll_tree_004_0
+  tree_id: tree_004
+  type: ripe
+  x: 21.7778
+  y: 4.3726
+  z: 0.8056
+  radius: 0.035
+  rgba:
+  - 0.95
+  - 0.95
+  - 0.9
+  - 1.0
 - id: boll_tree_004_1
   tree_id: tree_004
   type: ripe
-  x: 21.7455
-  y: 4.3779
-  z: 0.7104
+  x: 21.9066
+  y: 4.323
+  z: 1.0144
   radius: 0.035
   rgba:
   - 0.95
@@ -345,9 +321,9 @@ items:
 - id: boll_tree_004_2
   tree_id: tree_004
   type: ripe
-  x: 21.7202
-  y: 4.3581
-  z: 0.8455
+  x: 21.734
+  y: 4.3169
+  z: 1.0065
   radius: 0.035
   rgba:
   - 0.95
@@ -356,22 +332,34 @@ items:
   - 1.0
 - id: boll_tree_004_3
   tree_id: tree_004
+  type: ripe
+  x: 21.9719
+  y: 4.3784
+  z: 1.7702
+  radius: 0.035
+  rgba:
+  - 0.95
+  - 0.95
+  - 0.9
+  - 1.0
+- id: boll_tree_004_4
+  tree_id: tree_004
   type: unripe
-  x: 21.9792
-  y: 4.3281
-  z: 0.946
+  x: 21.738
+  y: 4.3499
+  z: 1.4723
   radius: 0.025
   rgba:
   - 0.55
   - 0.4
   - 0.2
   - 1.0
-- id: boll_tree_004_4
+- id: boll_tree_004_5
   tree_id: tree_004
   type: ripe
-  x: 21.9194
-  y: 4.3628
-  z: 1.4983
+  x: 21.9594
+  y: 4.3456
+  z: 0.8953
   radius: 0.035
   rgba:
   - 0.95
@@ -381,9 +369,9 @@ items:
 - id: boll_tree_005_0
   tree_id: tree_005
   type: ripe
-  x: 23.8131
-  y: 4.1976
-  z: 1.7451
+  x: 23.9313
+  y: 4.185
+  z: 0.8384
   radius: 0.035
   rgba:
   - 0.95
@@ -392,22 +380,22 @@ items:
   - 1.0
 - id: boll_tree_005_1
   tree_id: tree_005
-  type: unripe
-  x: 23.8183
-  y: 4.2178
-  z: 0.8806
-  radius: 0.025
+  type: ripe
+  x: 23.7556
+  y: 4.0421
+  z: 0.8901
+  radius: 0.035
   rgba:
-  - 0.45
-  - 0.55
-  - 0.25
+  - 0.95
+  - 0.95
+  - 0.9
   - 1.0
 - id: boll_tree_005_2
   tree_id: tree_005
   type: ripe
-  x: 23.8468
-  y: 4.1057
-  z: 1.02
+  x: 23.8281
+  y: 4.1851
+  z: 1.0196
   radius: 0.035
   rgba:
   - 0.95
@@ -417,9 +405,9 @@ items:
 - id: boll_tree_005_3
   tree_id: tree_005
   type: ripe
-  x: 23.6645
-  y: 4.0214
-  z: 1.7196
+  x: 23.6799
+  y: 4.1
+  z: 0.7725
   radius: 0.035
   rgba:
   - 0.95
@@ -429,9 +417,9 @@ items:
 - id: boll_tree_005_4
   tree_id: tree_005
   type: ripe
-  x: 23.7344
-  y: 4.1027
-  z: 1.3567
+  x: 23.8299
+  y: 4.2084
+  z: 1.3301
   radius: 0.035
   rgba:
   - 0.95
@@ -440,46 +428,58 @@ items:
   - 1.0
 - id: boll_tree_005_5
   tree_id: tree_005
-  type: unripe
-  x: 23.7653
-  y: 4.0418
-  z: 1.0365
-  radius: 0.025
-  rgba:
-  - 0.45
-  - 0.55
-  - 0.25
-  - 1.0
-- id: boll_tree_006_0
-  tree_id: tree_006
   type: ripe
-  x: 24.7057
-  y: 3.9162
-  z: 1.4052
+  x: 23.924
+  y: 4.1204
+  z: 1.0475
   radius: 0.035
   rgba:
   - 0.95
   - 0.95
   - 0.9
   - 1.0
-- id: boll_tree_006_1
-  tree_id: tree_006
+- id: boll_tree_005_6
+  tree_id: tree_005
   type: unripe
-  x: 24.6443
-  y: 4.0131
-  z: 1.6829
+  x: 23.8931
+  y: 4.0865
+  z: 0.7883
   radius: 0.025
   rgba:
-  - 0.45
   - 0.55
-  - 0.25
+  - 0.4
+  - 0.2
+  - 1.0
+- id: boll_tree_006_0
+  tree_id: tree_006
+  type: unripe
+  x: 24.5195
+  y: 3.8334
+  z: 0.7308
+  radius: 0.025
+  rgba:
+  - 0.55
+  - 0.4
+  - 0.2
+  - 1.0
+- id: boll_tree_006_1
+  tree_id: tree_006
+  type: ripe
+  x: 24.6161
+  y: 3.8344
+  z: 0.7532
+  radius: 0.035
+  rgba:
+  - 0.95
+  - 0.95
+  - 0.9
   - 1.0
 - id: boll_tree_006_2
   tree_id: tree_006
   type: ripe
-  x: 24.6969
-  y: 3.9309
-  z: 0.6824
+  x: 24.5657
+  y: 3.9224
+  z: 1.1274
   radius: 0.035
   rgba:
   - 0.95
@@ -489,9 +489,9 @@ items:
 - id: boll_tree_006_3
   tree_id: tree_006
   type: ripe
-  x: 24.5619
-  y: 3.9588
-  z: 1.3544
+  x: 24.6196
+  y: 3.973
+  z: 0.7424
   radius: 0.035
   rgba:
   - 0.95
@@ -500,34 +500,34 @@ items:
   - 1.0
 - id: boll_tree_006_4
   tree_id: tree_006
-  type: ripe
-  x: 24.4937
-  y: 3.8459
-  z: 0.9216
-  radius: 0.035
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-- id: boll_tree_007_0
-  tree_id: tree_007
   type: unripe
-  x: 26.1674
-  y: 4.2979
-  z: 0.7841
+  x: 24.4821
+  y: 3.9876
+  z: 0.68
   radius: 0.025
   rgba:
   - 0.45
   - 0.55
   - 0.25
   - 1.0
+- id: boll_tree_007_0
+  tree_id: tree_007
+  type: ripe
+  x: 26.1855
+  y: 4.3093
+  z: 1.0285
+  radius: 0.035
+  rgba:
+  - 0.95
+  - 0.95
+  - 0.9
+  - 1.0
 - id: boll_tree_007_1
   tree_id: tree_007
   type: ripe
-  x: 26.2463
-  y: 4.3442
-  z: 1.1534
+  x: 26.0228
+  y: 4.228
+  z: 1.0602
   radius: 0.035
   rgba:
   - 0.95
@@ -537,9 +537,9 @@ items:
 - id: boll_tree_007_2
   tree_id: tree_007
   type: ripe
-  x: 26.0672
-  y: 4.209
-  z: 1.3159
+  x: 26.1398
+  y: 4.3453
+  z: 0.812
   radius: 0.035
   rgba:
   - 0.95
@@ -549,9 +549,9 @@ items:
 - id: boll_tree_007_3
   tree_id: tree_007
   type: ripe
-  x: 26.0355
-  y: 4.2607
-  z: 0.9545
+  x: 26.0025
+  y: 4.3534
+  z: 0.8106
   radius: 0.035
   rgba:
   - 0.95
@@ -561,57 +561,33 @@ items:
 - id: boll_tree_007_4
   tree_id: tree_007
   type: ripe
-  x: 26.1144
-  y: 4.2147
-  z: 1.0439
+  x: 26.113
+  y: 4.2451
+  z: 0.9442
   radius: 0.035
   rgba:
   - 0.95
   - 0.95
   - 0.9
-  - 1.0
-- id: boll_tree_007_5
-  tree_id: tree_007
-  type: ripe
-  x: 25.9828
-  y: 4.3607
-  z: 0.9215
-  radius: 0.035
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-- id: boll_tree_007_6
-  tree_id: tree_007
-  type: unripe
-  x: 26.105
-  y: 4.3554
-  z: 0.7902
-  radius: 0.025
-  rgba:
-  - 0.55
-  - 0.4
-  - 0.2
   - 1.0
 - id: boll_tree_008_0
   tree_id: tree_008
-  type: unripe
-  x: 27.8243
-  y: 4.2807
-  z: 1.4386
-  radius: 0.025
+  type: ripe
+  x: 27.7909
+  y: 4.2769
+  z: 0.8202
+  radius: 0.035
   rgba:
-  - 0.55
-  - 0.4
-  - 0.2
+  - 0.95
+  - 0.95
+  - 0.9
   - 1.0
 - id: boll_tree_008_1
   tree_id: tree_008
   type: unripe
-  x: 27.9242
-  y: 4.3515
-  z: 1.1439
+  x: 27.9123
+  y: 4.283
+  z: 0.8116
   radius: 0.025
   rgba:
   - 0.45
@@ -621,9 +597,9 @@ items:
 - id: boll_tree_008_2
   tree_id: tree_008
   type: ripe
-  x: 27.8567
-  y: 4.2708
-  z: 1.0281
+  x: 27.7403
+  y: 4.1798
+  z: 0.8559
   radius: 0.035
   rgba:
   - 0.95
@@ -632,58 +608,46 @@ items:
   - 1.0
 - id: boll_tree_008_3
   tree_id: tree_008
+  type: ripe
+  x: 27.9121
+  y: 4.2996
+  z: 1.5518
+  radius: 0.035
+  rgba:
+  - 0.95
+  - 0.95
+  - 0.9
+  - 1.0
+- id: boll_tree_008_4
+  tree_id: tree_008
   type: unripe
-  x: 27.9448
-  y: 4.2145
-  z: 1.5765
+  x: 27.978
+  y: 4.2332
+  z: 0.8916
   radius: 0.025
   rgba:
   - 0.45
   - 0.55
   - 0.25
   - 1.0
-- id: boll_tree_008_4
-  tree_id: tree_008
-  type: ripe
-  x: 27.8639
-  y: 4.244
-  z: 1.7344
-  radius: 0.035
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-- id: boll_tree_008_5
-  tree_id: tree_008
-  type: ripe
-  x: 27.9035
-  y: 4.1977
-  z: 1.0181
-  radius: 0.035
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
 - id: boll_tree_009_0
   tree_id: tree_009
-  type: ripe
-  x: 30.4341
-  y: 4.1216
-  z: 0.9469
-  radius: 0.035
+  type: unripe
+  x: 30.5485
+  y: 4.1919
+  z: 0.6547
+  radius: 0.025
   rgba:
-  - 0.95
-  - 0.95
-  - 0.9
+  - 0.45
+  - 0.55
+  - 0.25
   - 1.0
 - id: boll_tree_009_1
   tree_id: tree_009
   type: ripe
-  x: 30.5372
-  y: 4.2617
-  z: 1.4144
+  x: 30.5078
+  y: 4.1568
+  z: 1.0011
   radius: 0.035
   rgba:
   - 0.95
@@ -692,22 +656,22 @@ items:
   - 1.0
 - id: boll_tree_009_2
   tree_id: tree_009
-  type: ripe
-  x: 30.4799
-  y: 4.1432
-  z: 1.6093
-  radius: 0.035
+  type: unripe
+  x: 30.6363
+  y: 4.1558
+  z: 0.6808
+  radius: 0.025
   rgba:
-  - 0.95
-  - 0.95
-  - 0.9
+  - 0.55
+  - 0.4
+  - 0.2
   - 1.0
 - id: boll_tree_009_3
   tree_id: tree_009
   type: ripe
-  x: 30.5918
-  y: 4.2682
-  z: 1.1155
+  x: 30.4992
+  y: 4.2115
+  z: 1.4543
   radius: 0.035
   rgba:
   - 0.95
@@ -717,21 +681,9 @@ items:
 - id: boll_tree_009_4
   tree_id: tree_009
   type: ripe
-  x: 30.4207
-  y: 4.2084
-  z: 0.9192
-  radius: 0.035
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-- id: boll_tree_009_5
-  tree_id: tree_009
-  type: ripe
-  x: 30.3664
-  y: 4.2814
-  z: 1.6594
+  x: 30.4823
+  y: 4.1632
+  z: 1.2675
   radius: 0.035
   rgba:
   - 0.95
@@ -741,9 +693,9 @@ items:
 - id: boll_tree_010_0
   tree_id: tree_010
   type: ripe
-  x: 32.1874
-  y: 4.1273
-  z: 0.6508
+  x: 32.2644
+  y: 4.2892
+  z: 1.3908
   radius: 0.035
   rgba:
   - 0.95
@@ -753,9 +705,9 @@ items:
 - id: boll_tree_010_1
   tree_id: tree_010
   type: ripe
-  x: 32.3596
-  y: 4.293
-  z: 1.449
+  x: 32.4121
+  y: 4.2278
+  z: 1.2124
   radius: 0.035
   rgba:
   - 0.95
@@ -765,9 +717,9 @@ items:
 - id: boll_tree_010_2
   tree_id: tree_010
   type: ripe
-  x: 32.2787
-  y: 4.1544
-  z: 0.607
+  x: 32.3864
+  y: 4.2003
+  z: 0.7356
   radius: 0.035
   rgba:
   - 0.95
@@ -777,9 +729,9 @@ items:
 - id: boll_tree_010_3
   tree_id: tree_010
   type: ripe
-  x: 32.2039
-  y: 4.1808
-  z: 1.3855
+  x: 32.1965
+  y: 4.305
+  z: 0.7219
   radius: 0.035
   rgba:
   - 0.95
@@ -789,9 +741,9 @@ items:
 - id: boll_tree_010_4
   tree_id: tree_010
   type: ripe
-  x: 32.1669
-  y: 4.2807
-  z: 1.8106
+  x: 32.1985
+  y: 4.2732
+  z: 1.506
   radius: 0.035
   rgba:
   - 0.95
@@ -801,9 +753,9 @@ items:
 - id: boll_tree_011_0
   tree_id: tree_011
   type: unripe
-  x: 33.9207
-  y: 4.384
-  z: 1.3029
+  x: 33.7427
+  y: 4.3093
+  z: 1.3264
   radius: 0.025
   rgba:
   - 0.45
@@ -813,9 +765,9 @@ items:
 - id: boll_tree_011_1
   tree_id: tree_011
   type: ripe
-  x: 33.8381
-  y: 4.31
-  z: 1.2975
+  x: 33.751
+  y: 4.3114
+  z: 1.2933
   radius: 0.035
   rgba:
   - 0.95
@@ -825,9 +777,9 @@ items:
 - id: boll_tree_011_2
   tree_id: tree_011
   type: ripe
-  x: 33.8765
-  y: 4.2958
-  z: 0.7863
+  x: 33.8538
+  y: 4.3584
+  z: 1.4279
   radius: 0.035
   rgba:
   - 0.95
@@ -837,9 +789,9 @@ items:
 - id: boll_tree_011_3
   tree_id: tree_011
   type: ripe
-  x: 33.7671
-  y: 4.3111
-  z: 0.6707
+  x: 33.7251
+  y: 4.4183
+  z: 0.714
   radius: 0.035
   rgba:
   - 0.95
@@ -848,10 +800,22 @@ items:
   - 1.0
 - id: boll_tree_011_4
   tree_id: tree_011
+  type: unripe
+  x: 33.718
+  y: 4.2364
+  z: 0.6704
+  radius: 0.025
+  rgba:
+  - 0.55
+  - 0.4
+  - 0.2
+  - 1.0
+- id: boll_tree_011_5
+  tree_id: tree_011
   type: ripe
-  x: 33.8983
-  y: 4.2326
-  z: 0.8392
+  x: 33.7678
+  y: 4.2387
+  z: 1.3156
   radius: 0.035
   rgba:
   - 0.95
@@ -861,9 +825,9 @@ items:
 - id: boll_tree_012_0
   tree_id: tree_012
   type: ripe
-  x: 34.6617
-  y: 4.1283
-  z: 0.9973
+  x: 34.896
+  y: 4.1243
+  z: 0.8607
   radius: 0.035
   rgba:
   - 0.95
@@ -872,22 +836,22 @@ items:
   - 1.0
 - id: boll_tree_012_1
   tree_id: tree_012
-  type: unripe
-  x: 34.8262
-  y: 4.0168
-  z: 1.6114
-  radius: 0.025
+  type: ripe
+  x: 34.8157
+  y: 4.0378
+  z: 1.6068
+  radius: 0.035
   rgba:
-  - 0.55
-  - 0.4
-  - 0.2
+  - 0.95
+  - 0.95
+  - 0.9
   - 1.0
 - id: boll_tree_012_2
   tree_id: tree_012
   type: ripe
-  x: 34.6244
-  y: 4.0563
-  z: 1.0898
+  x: 34.8043
+  y: 4.0602
+  z: 1.2303
   radius: 0.035
   rgba:
   - 0.95
@@ -896,34 +860,22 @@ items:
   - 1.0
 - id: boll_tree_012_3
   tree_id: tree_012
-  type: unripe
-  x: 34.8747
-  y: 4.0323
-  z: 1.0491
-  radius: 0.025
+  type: ripe
+  x: 34.8826
+  y: 4.0543
+  z: 0.8097
+  radius: 0.035
   rgba:
-  - 0.55
-  - 0.4
-  - 0.2
+  - 0.95
+  - 0.95
+  - 0.9
   - 1.0
 - id: boll_tree_012_4
   tree_id: tree_012
-  type: unripe
-  x: 34.8514
-  y: 3.97
-  z: 1.587
-  radius: 0.025
-  rgba:
-  - 0.45
-  - 0.55
-  - 0.25
-  - 1.0
-- id: boll_tree_012_5
-  tree_id: tree_012
   type: ripe
-  x: 34.65
-  y: 3.9909
-  z: 1.1131
+  x: 34.7094
+  y: 4.0707
+  z: 0.7911
   radius: 0.035
   rgba:
   - 0.95
@@ -932,22 +884,22 @@ items:
   - 1.0
 - id: boll_tree_013_0
   tree_id: tree_013
-  type: unripe
-  x: 38.1591
-  y: 4.068
-  z: 1.3143
-  radius: 0.025
+  type: ripe
+  x: 37.9767
+  y: 4.1394
+  z: 0.6144
+  radius: 0.035
   rgba:
-  - 0.45
-  - 0.55
-  - 0.25
+  - 0.95
+  - 0.95
+  - 0.9
   - 1.0
 - id: boll_tree_013_1
   tree_id: tree_013
   type: ripe
-  x: 38.0246
-  y: 4.089
-  z: 1.374
+  x: 37.9602
+  y: 4.1995
+  z: 0.9947
   radius: 0.035
   rgba:
   - 0.95
@@ -957,9 +909,9 @@ items:
 - id: boll_tree_013_2
   tree_id: tree_013
   type: ripe
-  x: 38.0409
-  y: 4.1485
-  z: 0.8969
+  x: 38.1552
+  y: 4.2264
+  z: 1.4984
   radius: 0.035
   rgba:
   - 0.95
@@ -969,9 +921,9 @@ items:
 - id: boll_tree_013_3
   tree_id: tree_013
   type: ripe
-  x: 38.1973
-  y: 4.1385
-  z: 0.6816
+  x: 37.9643
+  y: 4.1546
+  z: 1.2613
   radius: 0.035
   rgba:
   - 0.95
@@ -980,22 +932,22 @@ items:
   - 1.0
 - id: boll_tree_013_4
   tree_id: tree_013
-  type: ripe
-  x: 37.9743
-  y: 4.2201
-  z: 0.6867
-  radius: 0.035
+  type: unripe
+  x: 38.1397
+  y: 4.1738
+  z: 1.3141
+  radius: 0.025
   rgba:
-  - 0.95
-  - 0.95
-  - 0.9
+  - 0.45
+  - 0.55
+  - 0.25
   - 1.0
 - id: boll_tree_013_5
   tree_id: tree_013
   type: ripe
-  x: 37.96
-  y: 4.1113
-  z: 0.7492
+  x: 38.1323
+  y: 4.0901
+  z: 1.0128
   radius: 0.035
   rgba:
   - 0.95
@@ -1004,46 +956,46 @@ items:
   - 1.0
 - id: boll_tree_014_0
   tree_id: tree_014
-  type: ripe
-  x: 39.9065
-  y: 4.1532
-  z: 0.9465
-  radius: 0.035
+  type: unripe
+  x: 39.8812
+  y: 4.0217
+  z: 0.7541
+  radius: 0.025
   rgba:
-  - 0.95
-  - 0.95
-  - 0.9
+  - 0.45
+  - 0.55
+  - 0.25
   - 1.0
 - id: boll_tree_014_1
   tree_id: tree_014
-  type: ripe
-  x: 39.9034
-  y: 4.2126
-  z: 1.3567
-  radius: 0.035
+  type: unripe
+  x: 39.7012
+  y: 4.1884
+  z: 0.8084
+  radius: 0.025
   rgba:
-  - 0.95
-  - 0.95
-  - 0.9
+  - 0.55
+  - 0.4
+  - 0.2
   - 1.0
 - id: boll_tree_014_2
   tree_id: tree_014
-  type: ripe
-  x: 39.6955
-  y: 4.1966
-  z: 0.9568
-  radius: 0.035
+  type: unripe
+  x: 39.6749
+  y: 4.0445
+  z: 1.5347
+  radius: 0.025
   rgba:
-  - 0.95
-  - 0.95
-  - 0.9
+  - 0.55
+  - 0.4
+  - 0.2
   - 1.0
 - id: boll_tree_014_3
   tree_id: tree_014
   type: ripe
-  x: 39.8173
-  y: 4.0447
-  z: 1.5052
+  x: 39.7447
+  y: 4.2158
+  z: 0.7569
   radius: 0.035
   rgba:
   - 0.95
@@ -1052,10 +1004,34 @@ items:
   - 1.0
 - id: boll_tree_014_4
   tree_id: tree_014
+  type: unripe
+  x: 39.7943
+  y: 4.2144
+  z: 1.3814
+  radius: 0.025
+  rgba:
+  - 0.45
+  - 0.55
+  - 0.25
+  - 1.0
+- id: boll_tree_014_5
+  tree_id: tree_014
   type: ripe
-  x: 39.7801
-  y: 4.052
-  z: 1.2841
+  x: 39.8233
+  y: 4.1689
+  z: 1.0111
+  radius: 0.035
+  rgba:
+  - 0.95
+  - 0.95
+  - 0.9
+  - 1.0
+- id: boll_tree_014_6
+  tree_id: tree_014
+  type: ripe
+  x: 39.8251
+  y: 4.1005
+  z: 1.5264
   radius: 0.035
   rgba:
   - 0.95
@@ -1065,9 +1041,9 @@ items:
 - id: boll_tree_015_0
   tree_id: tree_015
   type: ripe
-  x: 40.9854
-  y: 4.0767
-  z: 1.723
+  x: 41.1227
+  y: 4.0214
+  z: 1.104
   radius: 0.035
   rgba:
   - 0.95
@@ -1076,22 +1052,22 @@ items:
   - 1.0
 - id: boll_tree_015_1
   tree_id: tree_015
-  type: unripe
-  x: 40.8707
-  y: 4.1872
-  z: 1.5684
-  radius: 0.025
+  type: ripe
+  x: 41.0315
+  y: 4.1657
+  z: 1.198
+  radius: 0.035
   rgba:
-  - 0.55
-  - 0.4
-  - 0.2
+  - 0.95
+  - 0.95
+  - 0.9
   - 1.0
 - id: boll_tree_015_2
   tree_id: tree_015
   type: ripe
-  x: 41.1024
-  y: 4.0917
-  z: 0.9214
+  x: 40.9179
+  y: 4.102
+  z: 1.1611
   radius: 0.035
   rgba:
   - 0.95
@@ -1100,22 +1076,22 @@ items:
   - 1.0
 - id: boll_tree_015_3
   tree_id: tree_015
-  type: ripe
-  x: 40.8994
-  y: 4.1869
-  z: 1.7125
-  radius: 0.035
+  type: unripe
+  x: 40.8707
+  y: 4.0335
+  z: 1.0922
+  radius: 0.025
   rgba:
-  - 0.95
-  - 0.95
-  - 0.9
+  - 0.45
+  - 0.55
+  - 0.25
   - 1.0
 - id: boll_tree_015_4
   tree_id: tree_015
   type: unripe
-  x: 41.0458
-  y: 4.1976
-  z: 1.3477
+  x: 40.9547
+  y: 4.054
+  z: 1.3567
   radius: 0.025
   rgba:
   - 0.45
@@ -1124,22 +1100,22 @@ items:
   - 1.0
 - id: boll_tree_015_5
   tree_id: tree_015
-  type: unripe
-  x: 41.0478
-  y: 4.0483
-  z: 0.9407
-  radius: 0.025
+  type: ripe
+  x: 40.9001
+  y: 4.2045
+  z: 1.0037
+  radius: 0.035
   rgba:
-  - 0.45
-  - 0.55
-  - 0.25
+  - 0.95
+  - 0.95
+  - 0.9
   - 1.0
 - id: boll_tree_016_0
   tree_id: tree_016
   type: ripe
-  x: 12.5425
-  y: 6.5444
-  z: 1.2566
+  x: 12.5329
+  y: 6.3835
+  z: 0.8868
   radius: 0.035
   rgba:
   - 0.95
@@ -1149,9 +1125,9 @@ items:
 - id: boll_tree_016_1
   tree_id: tree_016
   type: ripe
-  x: 12.6566
-  y: 6.4081
-  z: 1.7684
+  x: 12.6065
+  y: 6.5059
+  z: 1.2692
   radius: 0.035
   rgba:
   - 0.95
@@ -1161,9 +1137,9 @@ items:
 - id: boll_tree_016_2
   tree_id: tree_016
   type: unripe
-  x: 12.4648
-  y: 6.4561
-  z: 1.5449
+  x: 12.5331
+  y: 6.4368
+  z: 1.0546
   radius: 0.025
   rgba:
   - 0.55
@@ -1173,9 +1149,9 @@ items:
 - id: boll_tree_016_3
   tree_id: tree_016
   type: ripe
-  x: 12.6094
-  y: 6.4479
-  z: 1.4145
+  x: 12.5147
+  y: 6.507
+  z: 1.0297
   radius: 0.035
   rgba:
   - 0.95
@@ -1185,9 +1161,9 @@ items:
 - id: boll_tree_016_4
   tree_id: tree_016
   type: ripe
-  x: 12.5236
-  y: 6.4172
-  z: 0.9083
+  x: 12.6892
+  y: 6.4951
+  z: 1.1514
   radius: 0.035
   rgba:
   - 0.95
@@ -1196,34 +1172,34 @@ items:
   - 1.0
 - id: boll_tree_016_5
   tree_id: tree_016
+  type: ripe
+  x: 12.6795
+  y: 6.4745
+  z: 1.2738
+  radius: 0.035
+  rgba:
+  - 0.95
+  - 0.95
+  - 0.9
+  - 1.0
+- id: boll_tree_016_6
+  tree_id: tree_016
   type: unripe
-  x: 12.692
-  y: 6.5005
-  z: 1.4435
+  x: 12.5054
+  y: 6.3827
+  z: 1.0237
   radius: 0.025
   rgba:
   - 0.45
   - 0.55
   - 0.25
   - 1.0
-- id: boll_tree_016_6
-  tree_id: tree_016
-  type: unripe
-  x: 12.6239
-  y: 6.5739
-  z: 1.2341
-  radius: 0.025
-  rgba:
-  - 0.55
-  - 0.4
-  - 0.2
-  - 1.0
 - id: boll_tree_017_0
   tree_id: tree_017
   type: ripe
-  x: 13.8131
-  y: 6.9594
-  z: 0.9665
+  x: 13.7055
+  y: 6.9483
+  z: 1.5489
   radius: 0.035
   rgba:
   - 0.95
@@ -1233,9 +1209,9 @@ items:
 - id: boll_tree_017_1
   tree_id: tree_017
   type: ripe
-  x: 13.8199
-  y: 6.8235
-  z: 1.3601
+  x: 13.9373
+  y: 6.8165
+  z: 0.9428
   radius: 0.035
   rgba:
   - 0.95
@@ -1245,9 +1221,9 @@ items:
 - id: boll_tree_017_2
   tree_id: tree_017
   type: ripe
-  x: 13.8687
-  y: 6.8235
-  z: 0.9297
+  x: 13.7467
+  y: 6.7946
+  z: 1.7274
   radius: 0.035
   rgba:
   - 0.95
@@ -1257,9 +1233,9 @@ items:
 - id: boll_tree_017_3
   tree_id: tree_017
   type: ripe
-  x: 13.8221
-  y: 6.8651
-  z: 1.6386
+  x: 13.7147
+  y: 6.8413
+  z: 1.1844
   radius: 0.035
   rgba:
   - 0.95
@@ -1269,21 +1245,9 @@ items:
 - id: boll_tree_017_4
   tree_id: tree_017
   type: unripe
-  x: 13.7741
-  y: 6.8669
-  z: 1.7458
-  radius: 0.025
-  rgba:
-  - 0.55
-  - 0.4
-  - 0.2
-  - 1.0
-- id: boll_tree_017_5
-  tree_id: tree_017
-  type: unripe
-  x: 13.8698
-  y: 6.9442
-  z: 1.6272
+  x: 13.8112
+  y: 6.8522
+  z: 1.0996
   radius: 0.025
   rgba:
   - 0.45
@@ -1293,9 +1257,9 @@ items:
 - id: boll_tree_018_0
   tree_id: tree_018
   type: ripe
-  x: 14.771
-  y: 6.7918
-  z: 1.3142
+  x: 14.9152
+  y: 6.7364
+  z: 1.0983
   radius: 0.035
   rgba:
   - 0.95
@@ -1305,9 +1269,9 @@ items:
 - id: boll_tree_018_1
   tree_id: tree_018
   type: ripe
-  x: 14.7833
-  y: 6.7807
-  z: 1.0373
+  x: 14.7482
+  y: 6.8793
+  z: 1.4188
   radius: 0.035
   rgba:
   - 0.95
@@ -1317,9 +1281,9 @@ items:
 - id: boll_tree_018_2
   tree_id: tree_018
   type: ripe
-  x: 14.7645
-  y: 6.8037
-  z: 1.7933
+  x: 14.9853
+  y: 6.9104
+  z: 1.5206
   radius: 0.035
   rgba:
   - 0.95
@@ -1329,9 +1293,9 @@ items:
 - id: boll_tree_018_3
   tree_id: tree_018
   type: ripe
-  x: 14.9895
-  y: 6.8996
-  z: 0.7504
+  x: 14.8539
+  y: 6.7666
+  z: 1.2187
   radius: 0.035
   rgba:
   - 0.95
@@ -1340,34 +1304,46 @@ items:
   - 1.0
 - id: boll_tree_018_4
   tree_id: tree_018
-  type: unripe
-  x: 14.917
-  y: 6.8632
-  z: 1.1107
-  radius: 0.025
-  rgba:
-  - 0.45
-  - 0.55
-  - 0.25
-  - 1.0
-- id: boll_tree_018_5
-  tree_id: tree_018
   type: ripe
-  x: 14.8733
-  y: 6.8543
-  z: 1.4834
+  x: 14.9038
+  y: 6.849
+  z: 1.7449
   radius: 0.035
   rgba:
   - 0.95
   - 0.95
   - 0.9
   - 1.0
+- id: boll_tree_018_5
+  tree_id: tree_018
+  type: ripe
+  x: 14.9107
+  y: 6.8528
+  z: 1.7741
+  radius: 0.035
+  rgba:
+  - 0.95
+  - 0.95
+  - 0.9
+  - 1.0
+- id: boll_tree_018_6
+  tree_id: tree_018
+  type: unripe
+  x: 14.8119
+  y: 6.7958
+  z: 0.9193
+  radius: 0.025
+  rgba:
+  - 0.45
+  - 0.55
+  - 0.25
+  - 1.0
 - id: boll_tree_019_0
   tree_id: tree_019
   type: ripe
-  x: 15.9119
-  y: 6.3651
-  z: 1.1268
+  x: 15.663
+  y: 6.2916
+  z: 1.0276
   radius: 0.035
   rgba:
   - 0.95
@@ -1377,9 +1353,9 @@ items:
 - id: boll_tree_019_1
   tree_id: tree_019
   type: ripe
-  x: 15.7439
-  y: 6.1849
-  z: 1.3242
+  x: 15.9239
+  y: 6.2799
+  z: 1.0622
   radius: 0.035
   rgba:
   - 0.95
@@ -1388,22 +1364,22 @@ items:
   - 1.0
 - id: boll_tree_019_2
   tree_id: tree_019
-  type: unripe
-  x: 15.8471
-  y: 6.2744
-  z: 1.2179
-  radius: 0.025
+  type: ripe
+  x: 15.9316
+  y: 6.3186
+  z: 0.9284
+  radius: 0.035
   rgba:
-  - 0.55
-  - 0.4
-  - 0.2
+  - 0.95
+  - 0.95
+  - 0.9
   - 1.0
 - id: boll_tree_019_3
   tree_id: tree_019
   type: ripe
-  x: 15.7393
-  y: 6.3545
-  z: 1.507
+  x: 15.9357
+  y: 6.2928
+  z: 1.7472
   radius: 0.035
   rgba:
   - 0.95
@@ -1413,9 +1389,33 @@ items:
 - id: boll_tree_019_4
   tree_id: tree_019
   type: ripe
-  x: 15.9139
-  y: 6.202
-  z: 0.8856
+  x: 15.679
+  y: 6.2015
+  z: 1.2928
+  radius: 0.035
+  rgba:
+  - 0.95
+  - 0.95
+  - 0.9
+  - 1.0
+- id: boll_tree_019_5
+  tree_id: tree_019
+  type: unripe
+  x: 15.9068
+  y: 6.3179
+  z: 1.4687
+  radius: 0.025
+  rgba:
+  - 0.45
+  - 0.55
+  - 0.25
+  - 1.0
+- id: boll_tree_019_6
+  tree_id: tree_019
+  type: ripe
+  x: 15.7353
+  y: 6.2056
+  z: 0.891
   radius: 0.035
   rgba:
   - 0.95
@@ -1425,9 +1425,9 @@ items:
 - id: boll_tree_020_0
   tree_id: tree_020
   type: ripe
-  x: 16.8329
-  y: 6.9918
-  z: 1.5035
+  x: 16.9095
+  y: 7.1473
+  z: 1.3811
   radius: 0.035
   rgba:
   - 0.95
@@ -1437,9 +1437,9 @@ items:
 - id: boll_tree_020_1
   tree_id: tree_020
   type: ripe
-  x: 16.8209
-  y: 7.0293
-  z: 1.4676
+  x: 16.8527
+  y: 7.1451
+  z: 0.9656
   radius: 0.035
   rgba:
   - 0.95
@@ -1448,22 +1448,22 @@ items:
   - 1.0
 - id: boll_tree_020_2
   tree_id: tree_020
-  type: ripe
-  x: 16.7373
-  y: 7.0233
-  z: 1.6397
-  radius: 0.035
+  type: unripe
+  x: 16.7973
+  y: 7.1777
+  z: 1.7552
+  radius: 0.025
   rgba:
-  - 0.95
-  - 0.95
-  - 0.9
+  - 0.45
+  - 0.55
+  - 0.25
   - 1.0
 - id: boll_tree_020_3
   tree_id: tree_020
   type: ripe
-  x: 16.732
-  y: 7.1483
-  z: 1.7598
+  x: 16.7864
+  y: 7.1709
+  z: 1.1375
   radius: 0.035
   rgba:
   - 0.95
@@ -1472,34 +1472,10 @@ items:
   - 1.0
 - id: boll_tree_020_4
   tree_id: tree_020
-  type: unripe
-  x: 16.7907
-  y: 7.0831
-  z: 0.8161
-  radius: 0.025
-  rgba:
-  - 0.55
-  - 0.4
-  - 0.2
-  - 1.0
-- id: boll_tree_020_5
-  tree_id: tree_020
   type: ripe
-  x: 16.9127
-  y: 7.096
-  z: 0.774
-  radius: 0.035
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-- id: boll_tree_020_6
-  tree_id: tree_020
-  type: ripe
-  x: 16.8058
-  y: 7.1618
-  z: 0.9338
+  x: 16.6626
+  y: 6.9859
+  z: 0.8292
   radius: 0.035
   rgba:
   - 0.95
@@ -1509,9 +1485,9 @@ items:
 - id: boll_tree_021_0
   tree_id: tree_021
   type: unripe
-  x: 17.7211
-  y: 6.7863
-  z: 1.1908
+  x: 17.6686
+  y: 6.7826
+  z: 0.755
   radius: 0.025
   rgba:
   - 0.45
@@ -1521,9 +1497,9 @@ items:
 - id: boll_tree_021_1
   tree_id: tree_021
   type: ripe
-  x: 17.8941
-  y: 6.9446
-  z: 1.2526
+  x: 17.9114
+  y: 6.8079
+  z: 0.932
   radius: 0.035
   rgba:
   - 0.95
@@ -1533,9 +1509,9 @@ items:
 - id: boll_tree_021_2
   tree_id: tree_021
   type: unripe
-  x: 17.7515
-  y: 6.7966
-  z: 1.5664
+  x: 17.7918
+  y: 6.8422
+  z: 1.6312
   radius: 0.025
   rgba:
   - 0.55
@@ -1545,9 +1521,9 @@ items:
 - id: boll_tree_021_3
   tree_id: tree_021
   type: ripe
-  x: 17.8296
-  y: 6.8588
-  z: 1.2255
+  x: 17.9164
+  y: 6.9597
+  z: 1.5488
   radius: 0.035
   rgba:
   - 0.95
@@ -1556,94 +1532,82 @@ items:
   - 1.0
 - id: boll_tree_021_4
   tree_id: tree_021
-  type: ripe
-  x: 17.9299
-  y: 6.8414
-  z: 0.7681
-  radius: 0.035
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-- id: boll_tree_021_5
-  tree_id: tree_021
-  type: ripe
-  x: 17.7128
-  y: 6.9128
-  z: 1.0776
-  radius: 0.035
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-- id: boll_tree_022_0
-  tree_id: tree_022
-  type: ripe
-  x: 20.9147
-  y: 6.5205
-  z: 0.5647
-  radius: 0.035
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-- id: boll_tree_022_1
-  tree_id: tree_022
   type: unripe
-  x: 20.8603
-  y: 6.5883
-  z: 0.8927
-  radius: 0.025
-  rgba:
-  - 0.45
-  - 0.55
-  - 0.25
-  - 1.0
-- id: boll_tree_022_2
-  tree_id: tree_022
-  type: ripe
-  x: 20.9207
-  y: 6.603
-  z: 0.6069
-  radius: 0.035
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-- id: boll_tree_022_3
-  tree_id: tree_022
-  type: unripe
-  x: 21.0339
-  y: 6.6138
-  z: 0.9806
+  x: 17.9156
+  y: 6.7843
+  z: 0.9938
   radius: 0.025
   rgba:
   - 0.55
   - 0.4
   - 0.2
   - 1.0
-- id: boll_tree_022_4
+- id: boll_tree_022_0
+  tree_id: tree_022
+  type: unripe
+  x: 20.8963
+  y: 6.504
+  z: 0.8731
+  radius: 0.025
+  rgba:
+  - 0.55
+  - 0.4
+  - 0.2
+  - 1.0
+- id: boll_tree_022_1
   tree_id: tree_022
   type: ripe
-  x: 20.9442
-  y: 6.635
-  z: 1.6946
+  x: 21.0111
+  y: 6.553
+  z: 1.1167
   radius: 0.035
   rgba:
   - 0.95
   - 0.95
   - 0.9
   - 1.0
+- id: boll_tree_022_2
+  tree_id: tree_022
+  type: unripe
+  x: 21.0825
+  y: 6.5265
+  z: 1.5334
+  radius: 0.025
+  rgba:
+  - 0.45
+  - 0.55
+  - 0.25
+  - 1.0
+- id: boll_tree_022_3
+  tree_id: tree_022
+  type: ripe
+  x: 21.0533
+  y: 6.5243
+  z: 1.5954
+  radius: 0.035
+  rgba:
+  - 0.95
+  - 0.95
+  - 0.9
+  - 1.0
+- id: boll_tree_022_4
+  tree_id: tree_022
+  type: unripe
+  x: 20.9293
+  y: 6.6274
+  z: 1.0128
+  radius: 0.025
+  rgba:
+  - 0.55
+  - 0.4
+  - 0.2
+  - 1.0
 - id: boll_tree_023_0
   tree_id: tree_023
   type: ripe
-  x: 22.6136
-  y: 6.1974
-  z: 1.2052
+  x: 22.5607
+  y: 6.2275
+  z: 1.0622
   radius: 0.035
   rgba:
   - 0.95
@@ -1653,9 +1617,9 @@ items:
 - id: boll_tree_023_1
   tree_id: tree_023
   type: ripe
-  x: 22.555
-  y: 6.2449
-  z: 0.9349
+  x: 22.4756
+  y: 6.3605
+  z: 1.177
   radius: 0.035
   rgba:
   - 0.95
@@ -1665,9 +1629,9 @@ items:
 - id: boll_tree_023_2
   tree_id: tree_023
   type: ripe
-  x: 22.4803
-  y: 6.2846
-  z: 1.5038
+  x: 22.5845
+  y: 6.3366
+  z: 0.8005
   radius: 0.035
   rgba:
   - 0.95
@@ -1676,70 +1640,58 @@ items:
   - 1.0
 - id: boll_tree_023_3
   tree_id: tree_023
-  type: unripe
-  x: 22.5298
-  y: 6.2983
-  z: 1.4413
-  radius: 0.025
+  type: ripe
+  x: 22.5805
+  y: 6.3
+  z: 0.8028
+  radius: 0.035
   rgba:
-  - 0.45
-  - 0.55
-  - 0.25
+  - 0.95
+  - 0.95
+  - 0.9
   - 1.0
 - id: boll_tree_023_4
   tree_id: tree_023
-  type: unripe
-  x: 22.5329
-  y: 6.2155
-  z: 1.1983
-  radius: 0.025
+  type: ripe
+  x: 22.4602
+  y: 6.1856
+  z: 0.83
+  radius: 0.035
   rgba:
-  - 0.45
-  - 0.55
-  - 0.25
+  - 0.95
+  - 0.95
+  - 0.9
   - 1.0
 - id: boll_tree_023_5
   tree_id: tree_023
   type: unripe
-  x: 22.7152
-  y: 6.2466
-  z: 0.8394
+  x: 22.6691
+  y: 6.2445
+  z: 0.8238
   radius: 0.025
   rgba:
   - 0.45
   - 0.55
   - 0.25
   - 1.0
-- id: boll_tree_023_6
-  tree_id: tree_023
-  type: ripe
-  x: 22.63
-  y: 6.2037
-  z: 0.8119
-  radius: 0.035
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
 - id: boll_tree_024_0
   tree_id: tree_024
-  type: ripe
-  x: 24.1045
-  y: 6.6073
-  z: 1.0378
-  radius: 0.035
+  type: unripe
+  x: 23.9738
+  y: 6.4857
+  z: 0.9825
+  radius: 0.025
   rgba:
-  - 0.95
-  - 0.95
-  - 0.9
+  - 0.45
+  - 0.55
+  - 0.25
   - 1.0
 - id: boll_tree_024_1
   tree_id: tree_024
   type: ripe
-  x: 23.9684
-  y: 6.4908
-  z: 1.0716
+  x: 24.1801
+  y: 6.4811
+  z: 1.1669
   radius: 0.035
   rgba:
   - 0.95
@@ -1749,9 +1701,9 @@ items:
 - id: boll_tree_024_2
   tree_id: tree_024
   type: ripe
-  x: 24.045
-  y: 6.6312
-  z: 0.8065
+  x: 24.0474
+  y: 6.5899
+  z: 1.2059
   radius: 0.035
   rgba:
   - 0.95
@@ -1761,9 +1713,9 @@ items:
 - id: boll_tree_024_3
   tree_id: tree_024
   type: ripe
-  x: 24.2026
-  y: 6.6009
-  z: 0.8839
+  x: 24.1685
+  y: 6.4739
+  z: 1.3606
   radius: 0.035
   rgba:
   - 0.95
@@ -1773,9 +1725,9 @@ items:
 - id: boll_tree_024_4
   tree_id: tree_024
   type: ripe
-  x: 24.1778
-  y: 6.4569
-  z: 0.7703
+  x: 23.9884
+  y: 6.6312
+  z: 0.7705
   radius: 0.035
   rgba:
   - 0.95
@@ -1784,22 +1736,22 @@ items:
   - 1.0
 - id: boll_tree_024_5
   tree_id: tree_024
-  type: unripe
-  x: 24.1856
-  y: 6.4785
-  z: 0.8421
-  radius: 0.025
+  type: ripe
+  x: 23.9701
+  y: 6.642
+  z: 0.9074
+  radius: 0.035
   rgba:
-  - 0.45
-  - 0.55
-  - 0.25
+  - 0.95
+  - 0.95
+  - 0.9
   - 1.0
 - id: boll_tree_024_6
   tree_id: tree_024
   type: ripe
-  x: 23.9853
-  y: 6.5208
-  z: 0.8055
+  x: 24.0681
+  y: 6.5755
+  z: 1.4714
   radius: 0.035
   rgba:
   - 0.95
@@ -1808,34 +1760,34 @@ items:
   - 1.0
 - id: boll_tree_025_0
   tree_id: tree_025
-  type: unripe
-  x: 24.8624
-  y: 6.4317
-  z: 1.3334
-  radius: 0.025
-  rgba:
-  - 0.55
-  - 0.4
-  - 0.2
-  - 1.0
-- id: boll_tree_025_1
-  tree_id: tree_025
   type: ripe
-  x: 25.105
-  y: 6.4225
-  z: 1.3707
+  x: 25.0668
+  y: 6.4004
+  z: 1.1081
   radius: 0.035
   rgba:
   - 0.95
   - 0.95
   - 0.9
   - 1.0
+- id: boll_tree_025_1
+  tree_id: tree_025
+  type: unripe
+  x: 25.1169
+  y: 6.4652
+  z: 1.0241
+  radius: 0.025
+  rgba:
+  - 0.55
+  - 0.4
+  - 0.2
+  - 1.0
 - id: boll_tree_025_2
   tree_id: tree_025
   type: ripe
-  x: 25.1288
-  y: 6.5126
-  z: 1.3005
+  x: 25.0838
+  y: 6.3819
+  z: 1.1957
   radius: 0.035
   rgba:
   - 0.95
@@ -1845,9 +1797,9 @@ items:
 - id: boll_tree_025_3
   tree_id: tree_025
   type: ripe
-  x: 24.8856
-  y: 6.3915
-  z: 0.9035
+  x: 25.1162
+  y: 6.4107
+  z: 0.9559
   radius: 0.035
   rgba:
   - 0.95
@@ -1857,9 +1809,33 @@ items:
 - id: boll_tree_025_4
   tree_id: tree_025
   type: ripe
-  x: 25.1038
-  y: 6.4809
-  z: 1.321
+  x: 25.0538
+  y: 6.578
+  z: 1.1831
+  radius: 0.035
+  rgba:
+  - 0.95
+  - 0.95
+  - 0.9
+  - 1.0
+- id: boll_tree_025_5
+  tree_id: tree_025
+  type: unripe
+  x: 24.9039
+  y: 6.5429
+  z: 1.0178
+  radius: 0.025
+  rgba:
+  - 0.45
+  - 0.55
+  - 0.25
+  - 1.0
+- id: boll_tree_025_6
+  tree_id: tree_025
+  type: ripe
+  x: 24.9327
+  y: 6.5046
+  z: 0.8556
   radius: 0.035
   rgba:
   - 0.95
@@ -1869,9 +1845,9 @@ items:
 - id: boll_tree_026_0
   tree_id: tree_026
   type: ripe
-  x: 25.7812
-  y: 6.8628
-  z: 0.8295
+  x: 25.7404
+  y: 6.9676
+  z: 0.8272
   radius: 0.035
   rgba:
   - 0.95
@@ -1881,9 +1857,9 @@ items:
 - id: boll_tree_026_1
   tree_id: tree_026
   type: ripe
-  x: 25.8593
-  y: 6.8262
-  z: 0.8549
+  x: 25.8173
+  y: 6.7981
+  z: 0.9447
   radius: 0.035
   rgba:
   - 0.95
@@ -1892,34 +1868,34 @@ items:
   - 1.0
 - id: boll_tree_026_2
   tree_id: tree_026
-  type: unripe
-  x: 25.8171
-  y: 6.9607
-  z: 0.846
-  radius: 0.025
+  type: ripe
+  x: 25.6687
+  y: 6.8047
+  z: 1.2218
+  radius: 0.035
   rgba:
-  - 0.55
-  - 0.4
-  - 0.2
+  - 0.95
+  - 0.95
+  - 0.9
   - 1.0
 - id: boll_tree_026_3
   tree_id: tree_026
   type: unripe
-  x: 25.7077
-  y: 6.9351
-  z: 0.8995
+  x: 25.7289
+  y: 6.9651
+  z: 0.8214
   radius: 0.025
   rgba:
+  - 0.45
   - 0.55
-  - 0.4
-  - 0.2
+  - 0.25
   - 1.0
 - id: boll_tree_026_4
   tree_id: tree_026
   type: ripe
-  x: 25.7615
-  y: 6.7903
-  z: 1.3912
+  x: 25.8444
+  y: 6.9513
+  z: 1.6302
   radius: 0.035
   rgba:
   - 0.95
@@ -1929,21 +1905,9 @@ items:
 - id: boll_tree_026_5
   tree_id: tree_026
   type: ripe
-  x: 25.8248
-  y: 6.8661
-  z: 1.2056
-  radius: 0.035
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-- id: boll_tree_026_6
-  tree_id: tree_026
-  type: ripe
-  x: 25.7493
-  y: 6.8762
-  z: 1.5409
+  x: 25.8518
+  y: 6.9726
+  z: 1.5669
   radius: 0.035
   rgba:
   - 0.95
@@ -1953,9 +1917,9 @@ items:
 - id: boll_tree_027_0
   tree_id: tree_027
   type: ripe
-  x: 26.4604
-  y: 6.522
-  z: 0.9611
+  x: 26.4741
+  y: 6.4773
+  z: 1.3134
   radius: 0.035
   rgba:
   - 0.95
@@ -1965,57 +1929,81 @@ items:
 - id: boll_tree_027_1
   tree_id: tree_027
   type: unripe
-  x: 26.4711
-  y: 6.5081
-  z: 1.6167
-  radius: 0.025
-  rgba:
-  - 0.45
-  - 0.55
-  - 0.25
-  - 1.0
-- id: boll_tree_027_2
-  tree_id: tree_027
-  type: ripe
-  x: 26.4801
-  y: 6.4964
-  z: 1.4415
-  radius: 0.035
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-- id: boll_tree_027_3
-  tree_id: tree_027
-  type: unripe
-  x: 26.5694
-  y: 6.414
-  z: 1.2625
+  x: 26.5912
+  y: 6.4902
+  z: 0.7541
   radius: 0.025
   rgba:
   - 0.55
   - 0.4
   - 0.2
   - 1.0
-- id: boll_tree_027_4
+- id: boll_tree_027_2
+  tree_id: tree_027
+  type: unripe
+  x: 26.6231
+  y: 6.5376
+  z: 0.9083
+  radius: 0.025
+  rgba:
+  - 0.45
+  - 0.55
+  - 0.25
+  - 1.0
+- id: boll_tree_027_3
   tree_id: tree_027
   type: ripe
-  x: 26.6627
-  y: 6.4612
-  z: 1.3552
+  x: 26.5525
+  y: 6.5581
+  z: 0.672
   radius: 0.035
   rgba:
   - 0.95
   - 0.95
   - 0.9
   - 1.0
+- id: boll_tree_027_4
+  tree_id: tree_027
+  type: unripe
+  x: 26.7318
+  y: 6.4378
+  z: 1.1179
+  radius: 0.025
+  rgba:
+  - 0.55
+  - 0.4
+  - 0.2
+  - 1.0
+- id: boll_tree_027_5
+  tree_id: tree_027
+  type: ripe
+  x: 26.6967
+  y: 6.5738
+  z: 1.4597
+  radius: 0.035
+  rgba:
+  - 0.95
+  - 0.95
+  - 0.9
+  - 1.0
+- id: boll_tree_027_6
+  tree_id: tree_027
+  type: unripe
+  x: 26.5141
+  y: 6.5507
+  z: 1.4575
+  radius: 0.025
+  rgba:
+  - 0.55
+  - 0.4
+  - 0.2
+  - 1.0
 - id: boll_tree_028_0
   tree_id: tree_028
   type: ripe
-  x: 27.6769
-  y: 6.3293
-  z: 1.5977
+  x: 27.8342
+  y: 6.2537
+  z: 1.4938
   radius: 0.035
   rgba:
   - 0.95
@@ -2025,9 +2013,9 @@ items:
 - id: boll_tree_028_1
   tree_id: tree_028
   type: ripe
-  x: 27.7702
-  y: 6.2102
-  z: 0.7919
+  x: 27.693
+  y: 6.2875
+  z: 1.6767
   radius: 0.035
   rgba:
   - 0.95
@@ -2036,22 +2024,22 @@ items:
   - 1.0
 - id: boll_tree_028_2
   tree_id: tree_028
-  type: unripe
-  x: 27.7741
-  y: 6.3738
-  z: 0.9431
-  radius: 0.025
+  type: ripe
+  x: 27.8921
+  y: 6.3466
+  z: 1.3125
+  radius: 0.035
   rgba:
-  - 0.45
-  - 0.55
-  - 0.25
+  - 0.95
+  - 0.95
+  - 0.9
   - 1.0
 - id: boll_tree_028_3
   tree_id: tree_028
   type: ripe
-  x: 27.911
-  y: 6.2481
-  z: 1.0231
+  x: 27.835
+  y: 6.37
+  z: 0.8101
   radius: 0.035
   rgba:
   - 0.95
@@ -2060,34 +2048,22 @@ items:
   - 1.0
 - id: boll_tree_028_4
   tree_id: tree_028
-  type: ripe
-  x: 27.8063
-  y: 6.3799
-  z: 0.7928
-  radius: 0.035
+  type: unripe
+  x: 27.9195
+  y: 6.3603
+  z: 1.4565
+  radius: 0.025
   rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-- id: boll_tree_028_5
-  tree_id: tree_028
-  type: ripe
-  x: 27.7871
-  y: 6.2047
-  z: 1.2711
-  radius: 0.035
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
+  - 0.45
+  - 0.55
+  - 0.25
   - 1.0
 - id: boll_tree_029_0
   tree_id: tree_029
   type: unripe
-  x: 28.547
-  y: 6.5149
-  z: 1.5073
+  x: 28.69
+  y: 6.5069
+  z: 0.9519
   radius: 0.025
   rgba:
   - 0.45
@@ -2097,9 +2073,9 @@ items:
 - id: boll_tree_029_1
   tree_id: tree_029
   type: ripe
-  x: 28.63
-  y: 6.5129
-  z: 0.7645
+  x: 28.5742
+  y: 6.4137
+  z: 1.2952
   radius: 0.035
   rgba:
   - 0.95
@@ -2108,22 +2084,22 @@ items:
   - 1.0
 - id: boll_tree_029_2
   tree_id: tree_029
-  type: ripe
-  x: 28.6623
-  y: 6.5766
-  z: 1.189
-  radius: 0.035
+  type: unripe
+  x: 28.648
+  y: 6.3805
+  z: 0.9815
+  radius: 0.025
   rgba:
-  - 0.95
-  - 0.95
-  - 0.9
+  - 0.45
+  - 0.55
+  - 0.25
   - 1.0
 - id: boll_tree_029_3
   tree_id: tree_029
   type: ripe
-  x: 28.5947
-  y: 6.4351
-  z: 0.7761
+  x: 28.6488
+  y: 6.4766
+  z: 0.9584
   radius: 0.035
   rgba:
   - 0.95
@@ -2133,9 +2109,33 @@ items:
 - id: boll_tree_029_4
   tree_id: tree_029
   type: ripe
-  x: 28.5462
-  y: 6.4742
-  z: 0.8019
+  x: 28.7354
+  y: 6.4678
+  z: 1.1005
+  radius: 0.035
+  rgba:
+  - 0.95
+  - 0.95
+  - 0.9
+  - 1.0
+- id: boll_tree_029_5
+  tree_id: tree_029
+  type: ripe
+  x: 28.6163
+  y: 6.4818
+  z: 0.6751
+  radius: 0.035
+  rgba:
+  - 0.95
+  - 0.95
+  - 0.9
+  - 1.0
+- id: boll_tree_029_6
+  tree_id: tree_029
+  type: ripe
+  x: 28.4766
+  y: 6.5374
+  z: 1.417
   radius: 0.035
   rgba:
   - 0.95

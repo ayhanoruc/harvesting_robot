@@ -1,0 +1,430 @@
+#!/usr/bin/env python3
+"""
+Simple Cluster Harvester (F1.7 demo)
+
+Standalone, simplified pick cycle for a single cluster (tree). NO pre-grasp,
+NO approach standoff, NO real gripper — just direct go-to-boll, mock close,
+teleport to reservoir.
+
+Different from harvest_executor (which is the full 8-step pipeline used by the
+state-machine orchestrator); this module is a quick demo for F1.7.
+
+Inputs
+------
+  - orchard_bolls.yaml — ground-truth boll positions (from generate_bolls.py)
+
+Behavior
+--------
+  Service /simple_harvest/start (std_srvs/Trigger):
+    1. Move arm to HOME (via /go_to_named).
+    2. For each boll belonging to `tree_id` parameter:
+         a. arm_commander.go_to_xyz(boll.x, boll.y, boll.z, approach_orientation=True)
+         b. log "[MOCK GRIP CLOSE]"
+         c. teleport boll model to TCP via Gazebo /world/.../set_pose
+         d. arm_commander.go_to_xyz(reservoir x, y, z+hover, approach_orientation=True)
+         e. log "[MOCK GRIP OPEN]"
+         f. teleport boll model to reservoir drop (with grid scatter)
+    3. Move arm back to HOME.
+
+Parameters
+----------
+  tree_id              : 'tree_000'   — which cluster's bolls to harvest
+  boll_inventory_yaml  : ''           — path; defaults to robot_arm/share orchard_bolls.yaml
+  gz_world_name        : 'orchard'
+  tcp_frame            : 'tcp'
+  world_frame          : 'world'
+  reservoir_tf_frame   : 'reservoir_link'
+  reservoir_drop_clearance_m : 0.12
+  reservoir_hover_m    : 0.15        — Z above reservoir top during release pose
+  mock_close_delay_s   : 0.5
+  mock_open_delay_s    : 0.3
+
+Usage
+-----
+  Terminal A: ros2 launch robot_arm husky_test.launch.py
+  Terminal B: ros2 launch robot_arm_moveit_config moveit.launch.py
+  Terminal C: ros2 run orchestrator simple_cluster_harvester
+              ros2 service call /simple_harvest/start std_srvs/srv/Trigger '{}'
+
+  Override target tree:
+    ros2 param set /simple_cluster_harvester tree_id tree_005
+"""
+
+from __future__ import annotations
+
+import math
+import os
+import shutil
+import subprocess
+import time
+from typing import List, Optional
+
+import rclpy
+import rclpy.time
+from rclpy.duration import Duration
+from rclpy.node import Node
+from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.executors import MultiThreadedExecutor
+
+import yaml
+from std_srvs.srv import Trigger, SetBool
+from std_msgs.msg import String
+from rcl_interfaces.srv import SetParameters
+from rcl_interfaces.msg import Parameter, ParameterValue, ParameterType
+
+from tf2_ros import Buffer, TransformListener
+
+from ament_index_python.packages import get_package_share_directory
+
+
+class SimpleClusterHarvester(Node):
+
+    def __init__(self):
+        super().__init__('simple_cluster_harvester')
+        self.cb = ReentrantCallbackGroup()
+
+        # ── Parameters ──────────────────────────────────────────
+        self.declare_parameter('tree_id', 'tree_000')
+        self.declare_parameter('boll_inventory_yaml', '')
+        self.declare_parameter('gz_world_name', 'orchard')
+        self.declare_parameter('tcp_frame', 'tcp')
+        self.declare_parameter('world_frame', 'world')
+        self.declare_parameter('reservoir_tf_frame', 'reservoir_link')
+        self.declare_parameter('reservoir_drop_clearance_m', 0.12)
+        self.declare_parameter('reservoir_hover_m', 0.15)
+        self.declare_parameter('mock_close_delay_s', 0.5)
+        self.declare_parameter('mock_open_delay_s', 0.3)
+
+        # ── State ───────────────────────────────────────────────
+        self._busy = False
+        self._reservoir_pos_default = [0.0, 0.6, 0.3]
+        self._drop_slot = 0  # incremented per successful drop for grid scatter
+
+        # ── Boll inventory ──────────────────────────────────────
+        self._boll_items: List[dict] = self._load_boll_inventory()
+        if not self._boll_items:
+            self.get_logger().warn(
+                'No boll inventory loaded. Service will fail until generate_bolls.py runs.')
+
+        # ── TF ──────────────────────────────────────────────────
+        self.tf_buffer = Buffer(cache_time=Duration(seconds=30.0))
+        self.tf_listener = TransformListener(self.tf_buffer, self, spin_thread=True)
+
+        # ── Service clients (arm_commander) ─────────────────────
+        self.go_to_pose_cli = self.create_client(
+            SetBool, '/go_to_pose', callback_group=self.cb)
+        self.go_to_named_cli = self.create_client(
+            SetBool, '/go_to_named', callback_group=self.cb)
+        self.arm_set_params_cli = self.create_client(
+            SetParameters, '/arm_commander/set_parameters', callback_group=self.cb)
+
+        # ── Status publisher ────────────────────────────────────
+        self.status_pub = self.create_publisher(String, '/simple_harvest/status', 10)
+
+        # ── Service ─────────────────────────────────────────────
+        self.create_service(
+            Trigger, '/simple_harvest/start', self._on_start,
+            callback_group=self.cb)
+
+        self.get_logger().info('=' * 60)
+        self.get_logger().info('SIMPLE CLUSTER HARVESTER ready')
+        self.get_logger().info(f'  bolls loaded: {len(self._boll_items)}')
+        self.get_logger().info(f'  default tree_id: {self.get_parameter("tree_id").value}')
+        self.get_logger().info(f'  service: /simple_harvest/start')
+        self.get_logger().info('=' * 60)
+
+    # ─── Inventory ──────────────────────────────────────────────
+
+    def _load_boll_inventory(self) -> List[dict]:
+        path = self.get_parameter('boll_inventory_yaml').value
+        if not path:
+            try:
+                share = get_package_share_directory('robot_arm')
+                path = os.path.join(share, 'config', 'orchard_bolls.yaml')
+            except Exception:
+                path = ''
+        if not path or not os.path.isfile(path):
+            self.get_logger().warn(f'boll inventory yaml not found: {path}')
+            return []
+        try:
+            with open(path, 'r') as f:
+                data = yaml.safe_load(f)
+            items = data.get('items', []) or []
+            self.get_logger().info(f'Loaded {len(items)} bolls from {path}')
+            return items
+        except Exception as e:
+            self.get_logger().error(f'Failed to read {path}: {e}')
+            return []
+
+    def _bolls_for_tree(self, tree_id: str) -> List[dict]:
+        return [b for b in self._boll_items if b.get('tree_id') == tree_id]
+
+    # ─── TF helper ──────────────────────────────────────────────
+
+    def _world_pose_of_frame(self, frame_id: str):
+        try:
+            t = self.tf_buffer.lookup_transform(
+                self.get_parameter('world_frame').value, frame_id,
+                rclpy.time.Time(), timeout=Duration(seconds=2.0))
+            tr = t.transform.translation
+            q = t.transform.rotation
+            return (tr.x, tr.y, tr.z, q.x, q.y, q.z, q.w)
+        except Exception as ex:
+            self.get_logger().warn(f'TF world<-{frame_id}: {ex}')
+            return None
+
+    # ─── Gazebo set_pose teleport ───────────────────────────────
+
+    def _gz_set_pose(self, model_name: str, x: float, y: float, z: float,
+                    qx: float = 0.0, qy: float = 0.0,
+                    qz: float = 0.0, qw: float = 1.0) -> bool:
+        world = self.get_parameter('gz_world_name').value
+        srv = f'/world/{world}/set_pose'
+        req_txt = (
+            f'name: "{model_name}"\n'
+            f'position {{ x: {x} y: {y} z: {z} }}\n'
+            f'orientation {{ x: {qx} y: {qy} z: {qz} w: {qw} }}\n'
+        )
+        cli_args = ['service',
+                    '-s', srv,
+                    '--reqtype', 'ignition.msgs.Pose',
+                    '--reptype', 'ignition.msgs.Boolean',
+                    '--timeout', '2500',
+                    '--req', req_txt]
+        for exe in ('ign', 'gz'):
+            exe_path = shutil.which(exe)
+            if not exe_path:
+                continue
+            try:
+                ret = subprocess.run(
+                    [exe_path] + cli_args,
+                    capture_output=True, text=True,
+                    timeout=6.0, check=False)
+                out = (ret.stdout or '') + (ret.stderr or '')
+                if ret.returncode == 0 and 'true' in out.lower():
+                    self.get_logger().info(
+                        f'[GZ] set_pose {model_name} → '
+                        f'({x:.3f}, {y:.3f}, {z:.3f}) via {exe}')
+                    return True
+                self.get_logger().warn(
+                    f'[GZ] {exe} set_pose rc={ret.returncode}: {out[:200]}')
+            except Exception as e:
+                self.get_logger().warn(f'[GZ] {exe} subprocess: {e}')
+        self.get_logger().error('[GZ] No ign/gz on PATH; teleport disabled.')
+        return False
+
+    def _teleport_to_tcp(self, model_name: str) -> bool:
+        p = self._world_pose_of_frame(self.get_parameter('tcp_frame').value)
+        if not p:
+            return False
+        return self._gz_set_pose(
+            model_name, p[0], p[1], p[2],
+            qx=p[3], qy=p[4], qz=p[5], qw=p[6])
+
+    def _teleport_to_reservoir(self, model_name: str) -> bool:
+        # Anchor to live reservoir TF (Husky moves) → fall back to default
+        rp = self._world_pose_of_frame(self.get_parameter('reservoir_tf_frame').value)
+        clearance = float(self.get_parameter('reservoir_drop_clearance_m').value)
+        if rp:
+            x, y, z = rp[0], rp[1], rp[2] + clearance
+        else:
+            d = self._reservoir_pos_default
+            x, y, z = d[0], d[1], d[2] + clearance
+        # Grid scatter (5×N) to avoid visually overlapping drops
+        slot = self._drop_slot
+        col = slot % 5
+        row = slot // 5
+        x += -0.08 + 0.04 * col
+        y += -0.08 + 0.04 * row
+        ok = self._gz_set_pose(model_name, x, y, z)
+        if ok:
+            self._drop_slot += 1
+        return ok
+
+    # ─── Arm helpers (mirror of harvest_executor pattern) ──────
+
+    def _set_arm_params(self, params) -> bool:
+        if not self.arm_set_params_cli.wait_for_service(timeout_sec=5.0):
+            self.get_logger().error('[ARM] set_parameters service unavailable')
+            return False
+        req = SetParameters.Request(parameters=params)
+        future = self.arm_set_params_cli.call_async(req)
+        self._wait_future(future, 5.0)
+        if future.result() is None:
+            return False
+        return all(r.successful for r in future.result().results)
+
+    def _go_to_xyz(self, x: float, y: float, z: float,
+                   approach_orientation: bool = True,
+                   use_direct: bool = False) -> bool:
+        params = [
+            Parameter(name='target_x',
+                      value=ParameterValue(
+                          type=ParameterType.PARAMETER_DOUBLE, double_value=x)),
+            Parameter(name='target_y',
+                      value=ParameterValue(
+                          type=ParameterType.PARAMETER_DOUBLE, double_value=y)),
+            Parameter(name='target_z',
+                      value=ParameterValue(
+                          type=ParameterType.PARAMETER_DOUBLE, double_value=z)),
+            Parameter(name='use_approach_orientation',
+                      value=ParameterValue(
+                          type=ParameterType.PARAMETER_BOOL,
+                          bool_value=approach_orientation)),
+            Parameter(name='use_direct_trajectory',
+                      value=ParameterValue(
+                          type=ParameterType.PARAMETER_BOOL,
+                          bool_value=use_direct)),
+        ]
+        if not self._set_arm_params(params):
+            return False
+        if not self.go_to_pose_cli.wait_for_service(timeout_sec=5.0):
+            self.get_logger().error('[ARM] /go_to_pose unavailable')
+            return False
+        future = self.go_to_pose_cli.call_async(SetBool.Request(data=True))
+        self._wait_future(future, 120.0)
+        if future.result() is None:
+            return False
+        return future.result().success
+
+    def _go_home(self) -> bool:
+        params = [
+            Parameter(name='target_name',
+                      value=ParameterValue(
+                          type=ParameterType.PARAMETER_STRING, string_value='home')),
+        ]
+        if not self._set_arm_params(params):
+            return False
+        if not self.go_to_named_cli.wait_for_service(timeout_sec=5.0):
+            return False
+        future = self.go_to_named_cli.call_async(SetBool.Request(data=True))
+        self._wait_future(future, 120.0)
+        return (future.result() is not None and future.result().success)
+
+    def _wait_future(self, future, timeout_sec: float) -> Optional[object]:
+        t0 = time.time()
+        while not future.done():
+            if time.time() - t0 > timeout_sec:
+                return None
+            time.sleep(0.05)
+        return future.result()
+
+    # ─── Status ─────────────────────────────────────────────────
+
+    def _publish_status(self, msg: str):
+        self.status_pub.publish(String(data=msg))
+        self.get_logger().info(f'[STATUS] {msg}')
+
+    # ─── Main entry: harvest one cluster ────────────────────────
+
+    def _on_start(self, request, response):
+        if self._busy:
+            response.success = False
+            response.message = 'Already harvesting'
+            return response
+
+        tree_id = self.get_parameter('tree_id').value
+        bolls = self._bolls_for_tree(tree_id)
+        if not bolls:
+            response.success = False
+            response.message = (
+                f'No bolls found for tree_id="{tree_id}". '
+                f'Check orchard_bolls.yaml.')
+            self.get_logger().error(response.message)
+            return response
+
+        self._busy = True
+        t_total = time.time()
+        picked = 0
+        failed = 0
+
+        try:
+            self._publish_status(f'Cluster {tree_id}: {len(bolls)} bolls — going HOME')
+            if not self._go_home():
+                response.success = False
+                response.message = 'Failed to reach HOME at start'
+                return response
+
+            for i, boll in enumerate(bolls, 1):
+                tag = f'[{i}/{len(bolls)}] {boll["id"]} ({boll["type"]})'
+                bx, by, bz = float(boll['x']), float(boll['y']), float(boll['z'])
+
+                # 1. Go to boll
+                self._publish_status(f'{tag} → boll @ ({bx:.3f},{by:.3f},{bz:.3f})')
+                t_step = time.time()
+                if not self._go_to_xyz(bx, by, bz, approach_orientation=True):
+                    self.get_logger().warn(f'{tag} reach FAILED — skipping')
+                    failed += 1
+                    continue
+                self.get_logger().info(f'{tag} reached in {time.time()-t_step:.1f}s')
+
+                # 2. Mock close
+                close_dt = float(self.get_parameter('mock_close_delay_s').value)
+                self.get_logger().info(f'{tag} [MOCK GRIP CLOSE] (sleep {close_dt}s)')
+                time.sleep(close_dt)
+
+                # 3. Teleport boll → TCP
+                if not self._teleport_to_tcp(boll['id']):
+                    self.get_logger().warn(f'{tag} teleport-to-TCP failed (continuing)')
+
+                # 4. Go to reservoir hover
+                rx, ry, rz = self._reservoir_pos_default
+                # If reservoir TF is reachable, prefer that (live, follows Husky)
+                rp = self._world_pose_of_frame(self.get_parameter('reservoir_tf_frame').value)
+                if rp:
+                    rx, ry, rz = rp[0], rp[1], rp[2]
+                rz_hover = rz + float(self.get_parameter('reservoir_hover_m').value)
+                self._publish_status(f'{tag} → reservoir hover @ ({rx:.3f},{ry:.3f},{rz_hover:.3f})')
+                t_step = time.time()
+                if not self._go_to_xyz(rx, ry, rz_hover, approach_orientation=True,
+                                       use_direct=True):
+                    self.get_logger().warn(f'{tag} reservoir reach FAILED')
+                    failed += 1
+                    continue
+                self.get_logger().info(f'{tag} reservoir reached in {time.time()-t_step:.1f}s')
+
+                # 5. Mock open + drop
+                open_dt = float(self.get_parameter('mock_open_delay_s').value)
+                self.get_logger().info(f'{tag} [MOCK GRIP OPEN] (sleep {open_dt}s)')
+                time.sleep(open_dt)
+                if not self._teleport_to_reservoir(boll['id']):
+                    self.get_logger().warn(f'{tag} teleport-to-reservoir failed')
+                picked += 1
+
+            # Return home
+            self._publish_status(f'Cluster {tree_id} done — going HOME')
+            self._go_home()
+
+            elapsed = time.time() - t_total
+            summary = (f'Cluster {tree_id}: picked {picked}/{len(bolls)} '
+                       f'(failed {failed}) in {elapsed:.1f}s')
+            self._publish_status(summary)
+            response.success = (picked > 0)
+            response.message = summary
+
+        except Exception as e:
+            self.get_logger().error(f'Harvest crashed: {e}')
+            response.success = False
+            response.message = f'Crash: {e}'
+        finally:
+            self._busy = False
+
+        return response
+
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = SimpleClusterHarvester()
+    executor = MultiThreadedExecutor(num_threads=4)
+    executor.add_node(node)
+    try:
+        executor.spin()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()

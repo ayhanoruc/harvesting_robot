@@ -188,9 +188,23 @@ class ArmCommander(Node):
     # ─── Orientation computation ───────────────────────────────
 
     def compute_approach_quaternion(self, x, y, z):
-        """Quaternion that points tcp Z-axis horizontally from base toward target."""
-        dx = x - 0.0  # base X
-        dy = y - 0.0  # base Y
+        """Quaternion that points tcp Z-axis horizontally from arm base toward target.
+
+        Looks up base_0 → world via TF so it works on a mobile platform (Husky).
+        Falls back to origin (legacy fixed-base behavior) if TF unavailable.
+        """
+        base_x, base_y = 0.0, 0.0
+        try:
+            t = self._tf_buffer.lookup_transform(
+                self.planning_frame, 'base_0', rclpy.time.Time())
+            base_x = t.transform.translation.x
+            base_y = t.transform.translation.y
+        except Exception as e:
+            self.get_logger().warn(
+                f'[approach_quat] TF base_0 lookup failed ({e}); using origin')
+
+        dx = x - base_x
+        dy = y - base_y
         # Horizontal approach (dz=0)
         length = math.sqrt(dx * dx + dy * dy)
         if length < 0.01:

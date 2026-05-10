@@ -102,4 +102,34 @@
     <!-- Non-adjacent arm links that can't collide -->
     <disable_collisions link1="base_0" link2="link2" reason="Never"/>
     <disable_collisions link1="link1" link2="link3" reason="Never"/>
+
+    <!-- ==================== Husky platform (when husky_robocot URDF) ==================== -->
+    <!-- These pairs are only present with husky URDF; harmless if links don't exist. -->
+    <!-- Arm base ↔ mount/deck/Husky body -->
+    <disable_collisions link1="base_0" link2="arm_mount_link" reason="Adjacent"/>
+    <disable_collisions link1="base_0" link2="deck_link" reason="Never"/>
+    <disable_collisions link1="base_0" link2="husky_base_link" reason="Never"/>
+    <disable_collisions link1="base_0" link2="reservoir_link" reason="Never"/>
+    <disable_collisions link1="arm_mount_link" link2="deck_link" reason="Adjacent"/>
+    <disable_collisions link1="arm_mount_link" link2="husky_base_link" reason="Never"/>
+    <disable_collisions link1="arm_mount_link" link2="reservoir_link" reason="Never"/>
+    <disable_collisions link1="deck_link" link2="husky_base_link" reason="Adjacent"/>
+    <disable_collisions link1="deck_link" link2="reservoir_link" reason="Adjacent"/>
+    <disable_collisions link1="husky_base_link" link2="reservoir_link" reason="Never"/>
+    <!-- Lower arm links don't reach platform under normal poses -->
+    <disable_collisions link1="link1" link2="arm_mount_link" reason="Never"/>
+    <disable_collisions link1="link1" link2="deck_link" reason="Never"/>
+    <disable_collisions link1="link1" link2="husky_base_link" reason="Never"/>
+    <disable_collisions link1="link1" link2="reservoir_link" reason="Never"/>
+    <disable_collisions link1="link2" link2="husky_base_link" reason="Never"/>
+    <disable_collisions link1="link2" link2="deck_link" reason="Never"/>
+    <!-- Wheels: never interact with arm/gripper -->
+    <disable_collisions link1="front_left_wheel" link2="husky_base_link" reason="Adjacent"/>
+    <disable_collisions link1="front_right_wheel" link2="husky_base_link" reason="Adjacent"/>
+    <disable_collisions link1="rear_left_wheel" link2="husky_base_link" reason="Adjacent"/>
+    <disable_collisions link1="rear_right_wheel" link2="husky_base_link" reason="Adjacent"/>
+    <disable_collisions link1="front_left_wheel" link2="front_right_wheel" reason="Never"/>
+    <disable_collisions link1="rear_left_wheel" link2="rear_right_wheel" reason="Never"/>
+    <disable_collisions link1="front_left_wheel" link2="rear_left_wheel" reason="Never"/>
+    <disable_collisions link1="front_right_wheel" link2="rear_right_wheel" reason="Never"/>
 </robot>

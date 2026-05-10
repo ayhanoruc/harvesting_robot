@@ -40,6 +40,7 @@ setup(
             'gripper_controller = orchestrator.gripper_controller:main',
             'harvest_executor = orchestrator.harvest_executor:main',
             'wasd_teleop = orchestrator.wasd_teleop:main',
+            'simple_cluster_harvester = orchestrator.simple_cluster_harvester:main',
         ],
     },
 )

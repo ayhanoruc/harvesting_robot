@@ -32,9 +32,14 @@ def generate_launch_description():
     robot_arm_pkg = get_package_share_directory('robot_arm')
     moveit_config_pkg = get_package_share_directory('robot_arm_moveit_config')
 
-    # Process URDF via xacro
-    xacro_file = os.path.join(robot_arm_pkg, 'urdf', 'm1013_robocot.urdf.xacro')
-    robot_description_content = xacro.process_file(xacro_file).toxml()
+    # Phase 2: always use husky_robocot URDF (Husky + mount + arm + reservoir).
+    # MUST match whichever URDF Gazebo loaded so MoveIt's IK frame agrees with
+    # the actual robot pose.
+    xacro_file = os.path.join(robot_arm_pkg, 'urdf', 'husky_robocot.urdf.xacro')
+    robot_description_content = xacro.process_file(
+        xacro_file,
+        mappings={'standalone': 'false', 'mobile': 'true'},
+    ).toxml()
     robot_description = {'robot_description': robot_description_content}
 
     # Load SRDF
