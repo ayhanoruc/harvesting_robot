@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<robot name="m1013_robocot">
+<robot name="husky_robocot">
     <!-- Arm planning group: 6-DOF chain from base_0 to tool0 -->
     <group name="arm">
         <chain base_link="base_0" tip_link="tool0"/>

@@ -42,6 +42,9 @@ setup(
             'wasd_teleop = orchestrator.wasd_teleop:main',
             'simple_cluster_harvester = orchestrator.simple_cluster_harvester:main',
             'harvest_orchestrator = orchestrator.harvest_orchestrator:main',
+            'sim_helpers = orchestrator.sim_helpers:main',
+            'arm_teleop = orchestrator.arm_teleop:main',
+            'cv_boll_detector = orchestrator.cv_boll_detector:main',
         ],
     },
 )
