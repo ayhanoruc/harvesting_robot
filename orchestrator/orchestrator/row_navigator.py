@@ -89,7 +89,10 @@ class RowNavigator(Node):
         self.declare_parameter('route',
                                ['tree_000', 'tree_001', 'tree_002'])
         self.declare_parameter('scout_y',           4.85)
-        self.declare_parameter('scout_yaw',         -math.pi / 2.0)
+        # Default yaw=0 → Husky front along world +X (row line).
+        # Drive forward = advance along the row to the next cluster.
+        # Arm rotates separately (joint1=-π/2 at scout) to look at trees.
+        self.declare_parameter('scout_yaw',         0.0)
         self.declare_parameter('pos_tol',           0.20)
         self.declare_parameter('yaw_tol',           0.10)
         self.declare_parameter('max_lin',           0.50)

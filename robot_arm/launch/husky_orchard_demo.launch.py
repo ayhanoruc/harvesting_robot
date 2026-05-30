@@ -70,7 +70,10 @@ def generate_launch_description():
     spawn_x = LaunchConfiguration('spawn_x', default='15.8')
     spawn_y = LaunchConfiguration('spawn_y', default='4.85')
     spawn_z = LaunchConfiguration('spawn_z', default='0.0')
-    spawn_yaw = LaunchConfiguration('spawn_yaw', default=str(-math.pi / 2))
+    # Default: yaw=0 → Husky front along world +X (row line direction).
+    # Camera/arm then look sideways (toward trees) via arm_commander's
+    # joint1=-π/2 startup rotation. Driving forward = advancing along the row.
+    spawn_yaw = LaunchConfiguration('spawn_yaw', default='0.0')
 
     # Resource paths
     set_gz_resource_path = AppendEnvironmentVariable(
@@ -215,8 +218,9 @@ def generate_launch_description():
                               description='Husky spawn Y (default: aisle, base_0 lands ~0.55m from boll Y; '
                                           'all canopy heights reachable for tree_000)'),
         DeclareLaunchArgument('spawn_z', default_value='0.0'),
-        DeclareLaunchArgument('spawn_yaw', default_value=str(-math.pi / 2),
-                              description='Husky yaw (default: -pi/2 → faces -Y/tree)'),
+        DeclareLaunchArgument('spawn_yaw', default_value='0.0',
+                              description='Husky yaw (default: 0 → front along +X = row line; '
+                                          'arm rotates right via joint1=-π/2 to look at trees)'),
         set_gz_resource_path,
         set_ign_resource_path,
         set_gz_picks_path,

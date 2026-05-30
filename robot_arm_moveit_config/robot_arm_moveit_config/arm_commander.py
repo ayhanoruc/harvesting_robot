@@ -66,6 +66,11 @@ class ArmCommander(Node):
         self.declare_parameter('pre_grasp_offset', 0.15)  # meters back from boll along approach
         self.declare_parameter('use_approach_orientation', False)  # set by orchestrator before go_to_pose
         self.declare_parameter('cluster_rotate_deg', 90.0)  # step-2: rotate wrist joint before gripper (joint5)
+        # Startup base rotation: with Husky yaw=0 (front along row line),
+        # we need the arm to face sideways (Husky local -Y = trees on the
+        # right) instead of forward along the row. Default -π/2 ≈ -90°.
+        # Set to 0 if you want backward-compatible "arm forward" behavior.
+        self.declare_parameter('startup_joint1_rotate_deg', -90.0)
         self.declare_parameter('use_direct_trajectory', False)  # bypass MoveGroup, direct joint traj
 
         # Config
@@ -137,7 +142,13 @@ class ArmCommander(Node):
         self.get_logger().info("Moving to HOME position...")
         if self.send_joint_goal(self.HOME_JOINTS):
             self.get_logger().info("HOME position reached!")
-            # Immediately run step-2 on startup as requested.
+            # Step-1: rotate joint1 so the arm points sideways at the row
+            # (default -90° = Husky's right side, where trees are when
+            # Husky yaw=0 along the row line). Skip if param is 0.
+            j1_deg = float(self.get_parameter('startup_joint1_rotate_deg').value)
+            if abs(j1_deg) > 0.5:
+                self._rotate_joint_by_delta_deg('joint1', j1_deg)
+            # Step-2: tilt wrist (joint5) toward the canopy.
             delta_deg = float(self.get_parameter('cluster_rotate_deg').value)
             self._rotate_joint5_by_delta_deg(delta_deg)
         else:
@@ -481,6 +492,18 @@ class ArmCommander(Node):
         response.success = success
         response.message = f"{'OK' if success else 'FAIL'}: rotate_joint5_{delta_deg:.1f}deg"
         return response
+
+    def _rotate_joint_by_delta_deg(self, joint_name: str, delta_deg: float) -> bool:
+        """Rotate a single named joint by `delta_deg` from its current value."""
+        current = self._get_current_joint_values()
+        target = list(current)
+        j_idx = self.arm_joint_names.index(joint_name)
+        target[j_idx] = current[j_idx] + math.radians(delta_deg)
+        self.get_logger().info(
+            f"[STEP-1] Rotating {joint_name} only: "
+            f"{math.degrees(current[j_idx]):.1f} deg -> "
+            f"{math.degrees(target[j_idx]):.1f} deg (delta={delta_deg:.1f} deg)")
+        return self.send_joint_goal(target)
 
     def _rotate_joint5_by_delta_deg(self, delta_deg: float) -> bool:
         """Rotate only joint5 (wrist before gripper) by given delta degrees."""

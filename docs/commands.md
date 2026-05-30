@@ -93,7 +93,7 @@ ros2 service call /harvest/start std_srvs/srv/Trigger '{}'
 colcon build --packages-select orchestrator
 source install/setup.bash
 
-ros2 launch robot_arm husky_orchard_demo.launch.py spawn_x:=15.8 spawn_y:=4.85 spawn_yaw:=-1.5708
+ros2 launch robot_arm husky_orchard_demo.launch.py spawn_x:=15.8 spawn_y:=4.85 spawn_yaw:=0.0
 ros2 launch robot_arm_moveit_config moveit.launch.py
 ros2 run orchestrator real_yolo_detector
 ros2 run orchestrator sim_helpers
@@ -136,7 +136,7 @@ colcon build --packages-select orchestrator
 source install/setup.bash
 
 # Spawn at cluster_1 (tree_000) scout
-ros2 launch robot_arm husky_orchard_demo.launch.py spawn_x:=15.8 spawn_y:=4.85 spawn_yaw:=-1.5708
+ros2 launch robot_arm husky_orchard_demo.launch.py spawn_x:=15.8 spawn_y:=4.85 spawn_yaw:=0.0
 ros2 launch robot_arm_moveit_config moveit.launch.py
 ros2 run orchestrator cv_boll_detector
 ros2 run orchestrator depth_processor      # ← needed for 3D back-projection (world frame)
@@ -165,7 +165,7 @@ colcon build --packages-select orchestrator
 source install/setup.bash
 
 # Same 4 prerequisite terminals as cluster_scanner section above
-ros2 launch robot_arm husky_orchard_demo.launch.py spawn_x:=15.8 spawn_y:=4.85 spawn_yaw:=-1.5708
+ros2 launch robot_arm husky_orchard_demo.launch.py spawn_x:=15.8 spawn_y:=4.85 spawn_yaw:=0.0
 ros2 launch robot_arm_moveit_config moveit.launch.py
 ros2 run orchestrator cv_boll_detector
 ros2 run orchestrator depth_processor
@@ -183,7 +183,7 @@ ros2 param set /cluster_harvester match_radius_m 0.08  # looser detection→YAML
 ---
 ---
 # 8 terminal sırayla
-ros2 launch robot_arm husky_orchard_demo.launch.py spawn_x:=15.8 spawn_y:=4.85 spawn_yaw:=-1.5708
+ros2 launch robot_arm husky_orchard_demo.launch.py spawn_x:=15.8 spawn_y:=4.85 spawn_yaw:=0.0
 ros2 launch robot_arm_moveit_config moveit.launch.py
 ros2 run orchestrator cv_boll_detector
 ros2 run orchestrator depth_processor
@@ -205,7 +205,7 @@ colcon build --packages-select orchestrator
 source install/setup.bash
 
 # Same prereqs + row_navigator on top
-ros2 launch robot_arm husky_orchard_demo.launch.py spawn_x:=15.8 spawn_y:=4.85 spawn_yaw:=-1.5708
+ros2 launch robot_arm husky_orchard_demo.launch.py spawn_x:=15.8 spawn_y:=4.85 spawn_yaw:=0.0
 ros2 launch robot_arm_moveit_config moveit.launch.py
 ros2 run orchestrator cv_boll_detector
 ros2 run orchestrator depth_processor
@@ -225,7 +225,7 @@ ros2 param set /row_navigator route "['tree_000', 'tree_001', 'tree_002', 'tree_
 # === Compact launch — bundle the 5 harvester nodes into one terminal ===
 # Saves you from juggling 5 individual `ros2 run` terminals.
 
-ros2 launch robot_arm husky_orchard_demo.launch.py spawn_x:=15.8 spawn_y:=4.85 spawn_yaw:=-1.5708
+ros2 launch robot_arm husky_orchard_demo.launch.py spawn_x:=15.8 spawn_y:=4.85 spawn_yaw:=0.0
 ros2 launch robot_arm_moveit_config moveit.launch.py
 ros2 launch orchestrator harvester_modules.launch.py   # ← cv + depth + cluster_scanner + simple_harvester + cluster_harvester
 ros2 run orchestrator row_navigator                    # ← top-level (separate so you can restart it alone)

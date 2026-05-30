@@ -87,13 +87,15 @@ JOINT_NAMES = ['joint1', 'joint2', 'joint3', 'joint4', 'joint5', 'joint6']
 # HOME pose (same as arm_commander)
 HOME_JOINTS = [0.0, -0.922, 2.4494, 0.0, -1.3, 0.0]
 
-# SCOUT pose = HOME + joint5 rotated by +90°.
-# This matches arm_commander startup, which after reaching HOME immediately
-# rotates joint5 by `cluster_rotate_deg` (default 90°) so the wrist camera
-# tilts forward toward the canopy instead of pointing skyward. Our scan
-# pivots around this pose so we sweep across the cluster, not the sky.
+# SCOUT pose = HOME with joint1 rotated -90° (arm to Husky's right side =
+# trees, since spawn yaw=0) and joint5 rotated +90° (wrist tilted toward
+# the canopy). This matches arm_commander startup:
+#   step-1: rotate joint1 by `startup_joint1_rotate_deg` (default -90°)
+#   step-2: rotate joint5 by `cluster_rotate_deg` (default +90°)
+# Our scan pivots around this pose so we sweep the cluster, not sky/ground.
 SCOUT_JOINTS = list(HOME_JOINTS)
-SCOUT_JOINTS[4] = HOME_JOINTS[4] + math.pi / 2.0   # -1.3 + π/2 ≈ +0.27 rad
+SCOUT_JOINTS[0] = HOME_JOINTS[0] - math.pi / 2.0   # joint1: 0 - π/2 ≈ -1.57
+SCOUT_JOINTS[4] = HOME_JOINTS[4] + math.pi / 2.0   # joint5: -1.3 + π/2 ≈ +0.27
 
 
 class ClusterScanner(Node):

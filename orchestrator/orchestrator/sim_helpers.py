@@ -22,7 +22,7 @@ Currently exposes:
 Parameters:
   cluster_id              : 'tree_000'        — which cluster to teleport in front of
   scout_y                 : 4.85              — aisle Y for scout pose
-  scout_yaw               : -pi/2             — Husky yaw (faces -Y → toward tree row)
+  scout_yaw               : 0.0               — Husky yaw (default 0 → front along row line)
   spawn_z                 : 0.0               — ground level Z
   gz_world_name           : 'orchard'
   husky_model_name        : 'husky_robocot'
@@ -64,7 +64,7 @@ class SimHelpers(Node):
         # ── Parameters ──────────────────────────────────────────
         self.declare_parameter('cluster_id', 'tree_000')
         self.declare_parameter('scout_y', 4.85)
-        self.declare_parameter('scout_yaw', -math.pi / 2)
+        self.declare_parameter('scout_yaw', 0.0)
         self.declare_parameter('spawn_z', 0.0)
         self.declare_parameter('gz_world_name', 'orchard')
         self.declare_parameter('husky_model_name', 'husky_robocot')
