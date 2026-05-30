@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <model name="cotton_pick_B_12">
+    <static>false</static>
+    <allow_auto_disable>false</allow_auto_disable>
+    <link name="cotton_pick_B_12_link">
+      <gravity>false</gravity>
+      <self_collide>false</self_collide>
+      <inertial>
+        <mass>0.01200</mass>
+        <inertia>
+          <ixx>0.00000197</ixx>
+          <iyy>0.00000197</iyy>
+          <izz>0.00000197</izz>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="cotton_pick_B_12_visual">
+        <geometry>
+          <mesh>
+            <uri>model://cotton_pick_B_12/meshes/cotton_pick_B_12.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <collision name="cotton_pick_B_12_sphere_collision">
+        <geometry>
+          <sphere>
+            <radius>0.02026</radius>
+          </sphere>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.6</mu>
+              <mu2>1.6</mu2>
+            </ode>
+          </friction>
+          <contact>
+            <ode>
+              <kp>8000</kp>
+              <kd>80</kd>
+            </ode>
+          </contact>
+        </surface>
+      </collision>
+    </link>
+  </model>
+</sdf>

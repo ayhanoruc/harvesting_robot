@@ -1,0 +1,634 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="orchard">
+
+    <!-- Physics: 5x speed (matches our previous orchard.world). -->
+    <physics name="fast_physics" type="dart">
+      <max_step_size>0.005</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+    <plugin filename="ignition-gazebo-physics-system"
+            name="ignition::gazebo::systems::Physics"/>
+    <plugin filename="ignition-gazebo-user-commands-system"
+            name="ignition::gazebo::systems::UserCommands"/>
+    <plugin filename="ignition-gazebo-scene-broadcaster-system"
+            name="ignition::gazebo::systems::SceneBroadcaster"/>
+    <plugin filename="ignition-gazebo-sensors-system"
+            name="ignition::gazebo::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="ignition-gazebo-imu-system"
+            name="ignition::gazebo::systems::Imu"/>
+
+    <scene>
+      <ambient>0.4 0.4 0.4 1</ambient>
+      <background>0.7 0.85 1.0 1</background>
+      <shadows>true</shadows>
+    </scene>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.9 0.9 0.85 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.4 -0.3 -0.85</direction>
+    </light>
+
+    <!-- Infinite ground plane: Husky physics (cotton mesh provides visual ground). -->
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane><normal>0 0 1</normal><size>500 500</size></plane>
+          </geometry>
+          <surface><friction><ode><mu>100</mu><mu2>50</mu2></ode></friction></surface>
+        </collision>
+      </link>
+    </model>
+
+    <!-- ===== Cotton orchard plant mesh ===== -->
+    <include>
+      <name>cotton_orchard_plants</name>
+      <uri>model://cotton_orchard_static</uri>
+      <pose>0 0 0 0 0 0</pose>
+    </include>
+
+    <!-- ===== Pickable bolls (inlined from cotton_targets.yaml) ===== -->
+    <model name="cotton_pick_A_01">
+      <static>true</static>
+      <pose>61.8682 31.0094 0.9468 0 0 0</pose>
+      <link name="cotton_pick_A_01_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_A_01/meshes/cotton_pick_A_01.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_A_02">
+      <static>true</static>
+      <pose>61.5010 31.0447 1.0983 0 0 0</pose>
+      <link name="cotton_pick_A_02_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_A_02/meshes/cotton_pick_A_02.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_A_03">
+      <static>true</static>
+      <pose>61.8671 31.1012 1.3447 0 0 0</pose>
+      <link name="cotton_pick_A_03_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_A_03/meshes/cotton_pick_A_03.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_A_04">
+      <static>true</static>
+      <pose>61.5315 31.2864 1.6349 0 0 0</pose>
+      <link name="cotton_pick_A_04_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_A_04/meshes/cotton_pick_A_04.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_A_05">
+      <static>true</static>
+      <pose>94.0297 30.8042 0.8508 0 0 0</pose>
+      <link name="cotton_pick_A_05_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_A_05/meshes/cotton_pick_A_05.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_A_06">
+      <static>true</static>
+      <pose>93.7610 30.9137 1.1155 0 0 0</pose>
+      <link name="cotton_pick_A_06_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_A_06/meshes/cotton_pick_A_06.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_A_07">
+      <static>true</static>
+      <pose>94.1139 31.0972 1.4138 0 0 0</pose>
+      <link name="cotton_pick_A_07_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_A_07/meshes/cotton_pick_A_07.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_A_08">
+      <static>true</static>
+      <pose>93.7396 31.0419 1.6004 0 0 0</pose>
+      <link name="cotton_pick_A_08_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_A_08/meshes/cotton_pick_A_08.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_A_09">
+      <static>true</static>
+      <pose>94.0427 31.2323 1.9089 0 0 0</pose>
+      <link name="cotton_pick_A_09_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_A_09/meshes/cotton_pick_A_09.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_A_10">
+      <static>true</static>
+      <pose>64.5852 36.4121 0.9313 0 0 0</pose>
+      <link name="cotton_pick_A_10_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_A_10/meshes/cotton_pick_A_10.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_A_11">
+      <static>true</static>
+      <pose>64.8860 36.1972 1.2226 0 0 0</pose>
+      <link name="cotton_pick_A_11_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_A_11/meshes/cotton_pick_A_11.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_A_12">
+      <static>true</static>
+      <pose>64.6229 36.2755 1.4048 0 0 0</pose>
+      <link name="cotton_pick_A_12_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_A_12/meshes/cotton_pick_A_12.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_A_13">
+      <static>true</static>
+      <pose>64.8895 36.1139 1.7274 0 0 0</pose>
+      <link name="cotton_pick_A_13_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_A_13/meshes/cotton_pick_A_13.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_A_14">
+      <static>true</static>
+      <pose>97.0090 36.0016 0.9499 0 0 0</pose>
+      <link name="cotton_pick_A_14_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_A_14/meshes/cotton_pick_A_14.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_A_15">
+      <static>true</static>
+      <pose>97.3898 36.1070 1.0996 0 0 0</pose>
+      <link name="cotton_pick_A_15_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_A_15/meshes/cotton_pick_A_15.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_A_16">
+      <static>true</static>
+      <pose>97.0977 35.9298 1.4068 0 0 0</pose>
+      <link name="cotton_pick_A_16_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_A_16/meshes/cotton_pick_A_16.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_A_17">
+      <static>true</static>
+      <pose>97.4213 35.8617 1.6940 0 0 0</pose>
+      <link name="cotton_pick_A_17_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_A_17/meshes/cotton_pick_A_17.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_B_01">
+      <static>true</static>
+      <pose>72.4371 30.7985 1.0064 0 0 0</pose>
+      <link name="cotton_pick_B_01_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_B_01/meshes/cotton_pick_B_01.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_B_02">
+      <static>true</static>
+      <pose>72.3833 30.9198 1.4603 0 0 0</pose>
+      <link name="cotton_pick_B_02_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_B_02/meshes/cotton_pick_B_02.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_B_03">
+      <static>true</static>
+      <pose>71.9506 30.9907 1.7740 0 0 0</pose>
+      <link name="cotton_pick_B_03_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_B_03/meshes/cotton_pick_B_03.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_B_04">
+      <static>true</static>
+      <pose>104.9553 31.2475 0.8917 0 0 0</pose>
+      <link name="cotton_pick_B_04_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_B_04/meshes/cotton_pick_B_04.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_B_05">
+      <static>true</static>
+      <pose>105.0984 31.4466 1.4106 0 0 0</pose>
+      <link name="cotton_pick_B_05_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_B_05/meshes/cotton_pick_B_05.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_B_06">
+      <static>true</static>
+      <pose>104.7589 31.4303 1.5895 0 0 0</pose>
+      <link name="cotton_pick_B_06_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_B_06/meshes/cotton_pick_B_06.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_B_07">
+      <static>true</static>
+      <pose>75.4918 36.0031 0.8649 0 0 0</pose>
+      <link name="cotton_pick_B_07_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_B_07/meshes/cotton_pick_B_07.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_B_08">
+      <static>true</static>
+      <pose>75.5613 35.9482 1.2741 0 0 0</pose>
+      <link name="cotton_pick_B_08_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_B_08/meshes/cotton_pick_B_08.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_B_09">
+      <static>true</static>
+      <pose>75.8341 35.8921 1.5933 0 0 0</pose>
+      <link name="cotton_pick_B_09_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_B_09/meshes/cotton_pick_B_09.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_B_10">
+      <static>true</static>
+      <pose>107.7098 36.5990 1.0211 0 0 0</pose>
+      <link name="cotton_pick_B_10_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_B_10/meshes/cotton_pick_B_10.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_B_11">
+      <static>true</static>
+      <pose>107.7803 36.4460 1.5462 0 0 0</pose>
+      <link name="cotton_pick_B_11_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_B_11/meshes/cotton_pick_B_11.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_B_12">
+      <static>true</static>
+      <pose>108.0929 36.2258 1.8629 0 0 0</pose>
+      <link name="cotton_pick_B_12_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_B_12/meshes/cotton_pick_B_12.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_C_01">
+      <static>true</static>
+      <pose>83.4832 31.1475 0.9286 0 0 0</pose>
+      <link name="cotton_pick_C_01_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_C_01/meshes/cotton_pick_C_01.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_C_02">
+      <static>true</static>
+      <pose>83.1682 31.1752 1.0475 0 0 0</pose>
+      <link name="cotton_pick_C_02_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_C_02/meshes/cotton_pick_C_02.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_C_03">
+      <static>true</static>
+      <pose>83.1854 31.3679 1.5611 0 0 0</pose>
+      <link name="cotton_pick_C_03_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_C_03/meshes/cotton_pick_C_03.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_C_04">
+      <static>true</static>
+      <pose>115.5119 30.9423 0.9583 0 0 0</pose>
+      <link name="cotton_pick_C_04_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_C_04/meshes/cotton_pick_C_04.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_C_05">
+      <static>true</static>
+      <pose>115.2133 30.9990 1.2145 0 0 0</pose>
+      <link name="cotton_pick_C_05_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_C_05/meshes/cotton_pick_C_05.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_C_06">
+      <static>true</static>
+      <pose>115.0826 31.1324 1.7400 0 0 0</pose>
+      <link name="cotton_pick_C_06_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_C_06/meshes/cotton_pick_C_06.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_C_07">
+      <static>true</static>
+      <pose>86.1790 36.4887 1.0112 0 0 0</pose>
+      <link name="cotton_pick_C_07_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_C_07/meshes/cotton_pick_C_07.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_C_08">
+      <static>true</static>
+      <pose>86.5573 36.2847 1.3209 0 0 0</pose>
+      <link name="cotton_pick_C_08_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_C_08/meshes/cotton_pick_C_08.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_C_09">
+      <static>true</static>
+      <pose>86.5027 36.0745 1.9055 0 0 0</pose>
+      <link name="cotton_pick_C_09_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_C_09/meshes/cotton_pick_C_09.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_C_10">
+      <static>true</static>
+      <pose>118.6887 36.0748 0.9358 0 0 0</pose>
+      <link name="cotton_pick_C_10_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_C_10/meshes/cotton_pick_C_10.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_C_11">
+      <static>true</static>
+      <pose>119.0349 36.2386 1.0862 0 0 0</pose>
+      <link name="cotton_pick_C_11_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_C_11/meshes/cotton_pick_C_11.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cotton_pick_C_12">
+      <static>true</static>
+      <pose>119.0597 36.0577 1.6447 0 0 0</pose>
+      <link name="cotton_pick_C_12_link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_C_12/meshes/cotton_pick_C_12.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>

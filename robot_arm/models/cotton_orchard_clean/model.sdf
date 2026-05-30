@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <model name="cotton_orchard_clean">
+    <static>true</static>
+    <link name="orchard_clean_link">
+      <!-- Same 4x scale as cotton_orchard_static for visual consistency
+           (cotton plants ~2m, matching our orchard tree heights).
+           Mesh URI points to the no-trees DAE living under
+           cotton_orchard_static/meshes/ (resolved via GZ_SIM_RESOURCE_PATH). -->
+      <visual name="orchard_clean_visual">
+        <geometry>
+          <mesh>
+            <uri>model://cotton_orchard_static/meshes/cotton_orchard_static_no_trees.dae</uri>
+            <scale>4 4 4</scale>
+          </mesh>
+        </geometry>
+      </visual>
+      <!-- No collision: arm/Husky pass through plant geometry, our orchard.world's
+           infinite ground_plane handles physics. -->
+    </link>
+  </model>
+</sdf>

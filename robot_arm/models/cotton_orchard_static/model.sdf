@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <model name="cotton_orchard_static">
+    <static>true</static>
+    <link name="orchard_static_link">
+      <!-- Mesh scaled 4x uniform so the bundle's ~50cm cotton plants reach
+           ~2m — matches our orchard tree-canopy heights (canopy_z_max 1.7-2.0
+           from orchard_tree_positions.yaml). Bolls at z=0.2-0.5m × 4 land at
+           0.8-2m, right in the Husky+M1013 arm reach envelope.
+           Side effect: Tree_lp_* distractor trees also scale 4x (~8m tall) in
+           the with-trees version; use cotton_orchard_clean to remove them. -->
+      <visual name="orchard_static_visual">
+        <geometry>
+          <mesh>
+            <uri>model://cotton_orchard_static/meshes/cotton_orchard_static_without_pickable_cottons.dae</uri>
+            <scale>4 4 4</scale>
+          </mesh>
+        </geometry>
+      </visual>
+      <!-- Ground collision intentionally removed: our orchard.world has its
+           own infinite-plane ground_plane that handles physics. Plant geometry
+           remains visual-only so the arm/Husky can pass through stems (same
+           pattern as our original orchard's trunks/leaves links). -->
+    </link>
+  </model>
+</sdf>

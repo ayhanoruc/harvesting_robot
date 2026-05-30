@@ -40,10 +40,12 @@ def generate_launch_description():
     pkg_path = get_package_share_directory('robot_arm')
     ros_gz_sim = get_package_share_directory('ros_gz_sim')
 
-    # Prefer orchard_bolls.world if available
-    world_file = os.path.join(pkg_path, 'worlds', 'orchard_bolls.world')
-    if not os.path.exists(world_file):
-        world_file = os.path.join(pkg_path, 'worlds', 'orchard.world')
+    # World file is overridable via `world:=<filename>` launch arg.
+    # Default: orchard_bolls.world (legacy sphere bolls).
+    # Available: orchard.world (no bolls), orchard_bolls.world (spheres),
+    #            orchard_pickable.world (cotton_pick_* models, no trees).
+    world_arg = LaunchConfiguration('world')
+    worlds_dir = os.path.join(pkg_path, 'worlds') + '/'
 
     controllers_yaml = os.path.join(pkg_path, 'yaml', 'controllers.yaml')
     bridge_params = os.path.join(pkg_path, 'config', 'husky_gz_bridge.yaml')
@@ -75,6 +77,13 @@ def generate_launch_description():
         'GZ_SIM_RESOURCE_PATH', os.path.join(pkg_path, 'models'))
     set_ign_resource_path = AppendEnvironmentVariable(
         'IGN_GAZEBO_RESOURCE_PATH', os.path.join(pkg_path, 'models'))
+    # Pickable cotton models are one level deeper (models/cotton_picks/cotton_pick_*).
+    # Gazebo doesn't recurse, so the cotton_picks dir must also be on the path
+    # for `model://cotton_pick_*` URIs to resolve.
+    set_gz_picks_path = AppendEnvironmentVariable(
+        'GZ_SIM_RESOURCE_PATH', os.path.join(pkg_path, 'models', 'cotton_picks'))
+    set_ign_picks_path = AppendEnvironmentVariable(
+        'IGN_GAZEBO_RESOURCE_PATH', os.path.join(pkg_path, 'models', 'cotton_picks'))
     set_gz_mesh_path = AppendEnvironmentVariable(
         'GZ_SIM_RESOURCE_PATH', os.path.join(pkg_path, '..'))
     set_ign_mesh_path = AppendEnvironmentVariable(
@@ -85,7 +94,8 @@ def generate_launch_description():
             os.path.join(ros_gz_sim, 'launch', 'gz_sim.launch.py')
         ),
         launch_arguments={
-            'gz_args': f'-r -v4 {world_file}',
+            # Substitution-aware composition so `world:=...` arg takes effect
+            'gz_args': ['-r -v4 ', worlds_dir, world_arg],
             'on_exit_shutdown': 'true'
         }.items()
     )
@@ -195,6 +205,10 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='true'),
+        DeclareLaunchArgument('world', default_value='orchard_bolls.world',
+                              description='World file under robot_arm/worlds/. '
+                                          'Options: orchard.world, orchard_bolls.world, '
+                                          'orchard_pickable.world'),
         DeclareLaunchArgument('spawn_x', default_value='15.8',
                               description='Husky spawn X (default: in front of tree_000)'),
         DeclareLaunchArgument('spawn_y', default_value='4.85',
@@ -205,6 +219,8 @@ def generate_launch_description():
                               description='Husky yaw (default: -pi/2 → faces -Y/tree)'),
         set_gz_resource_path,
         set_ign_resource_path,
+        set_gz_picks_path,
+        set_ign_picks_path,
         set_gz_mesh_path,
         set_ign_mesh_path,
         gazebo,

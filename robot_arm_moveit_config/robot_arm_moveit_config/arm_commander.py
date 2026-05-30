@@ -164,6 +164,24 @@ class ArmCommander(Node):
         """Return current joint values as list, ordered by arm_joint_names."""
         return [self.current_joints.get(n, 0.0) for n in self.arm_joint_names]
 
+    def _wait_for_joint_state(self, target_joints, tolerance=0.05, timeout_s=2.0):
+        """Poll /joint_states until reported state matches target within
+        tolerance (per-joint, absolute). Returns True if reached, False
+        on timeout. Used between sequential MoveGroup goals to defeat the
+        planning_scene staleness that triggers Invalid-Trajectory rejects."""
+        import time as _time
+        t0 = _time.time()
+        while _time.time() - t0 < timeout_s:
+            current = self._get_current_joint_values()
+            max_diff = max(abs(c - t) for c, t in zip(current, target_joints))
+            if max_diff < tolerance:
+                return True
+            _time.sleep(0.05)
+        self.get_logger().warn(
+            f'[wait_for_joint_state] timeout after {timeout_s:.1f}s '
+            f'(max diff still {max_diff:.3f} rad)')
+        return False
+
     # ─── Config loading ────────────────────────────────────────
 
     def load_targets_from_config(self):
@@ -518,6 +536,20 @@ class ArmCommander(Node):
             response.success = False
             response.message = "FAIL: joint1 rotation"
             return response
+
+        # Settle wait: MoveGroup's "Goal reached!" fires when the trajectory
+        # finishes execution, but planning_scene_monitor's view of joint
+        # state lags by ~50-300ms (especially with incomplete /joint_states
+        # due to missing wheel joints from DiffDrive). If we go straight to
+        # Stage 3, the next plan starts from a STALE start state, and the
+        # controller rejects it with "Invalid Trajectory: start point
+        # deviates from current robot state more than 0.5" (error_code=-4).
+        # Active poll: wait until /joint_states matches the Stage 2 target
+        # within tolerance, plus a small grace period for planning_scene to
+        # propagate the latest value.
+        self._wait_for_joint_state(rotated, tolerance=0.05, timeout_s=2.0)
+        import time as _time
+        _time.sleep(0.3)
 
         # Stage 3: IK to reservoir hover position. Use TF (works on mobile base).
         hover_m = 0.30

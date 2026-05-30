@@ -1,0 +1,288 @@
+cotton_targets:
+  - name: cotton_pick_A_01
+    model: cotton_pick_A_01
+    link: cotton_pick_A_01_link
+    pose_xyz: [15.467057, 7.752350, 0.236700]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.02031
+    harvest_target: true
+  - name: cotton_pick_A_02
+    model: cotton_pick_A_02
+    link: cotton_pick_A_02_link
+    pose_xyz: [15.375262, 7.761182, 0.274582]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01715
+    harvest_target: true
+  - name: cotton_pick_A_03
+    model: cotton_pick_A_03
+    link: cotton_pick_A_03_link
+    pose_xyz: [15.466768, 7.775310, 0.336166]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01982
+    harvest_target: true
+  - name: cotton_pick_A_04
+    model: cotton_pick_A_04
+    link: cotton_pick_A_04_link
+    pose_xyz: [15.382873, 7.821609, 0.408730]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.02118
+    harvest_target: true
+  - name: cotton_pick_A_05
+    model: cotton_pick_A_05
+    link: cotton_pick_A_05_link
+    pose_xyz: [23.507437, 7.701055, 0.212698]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01773
+    harvest_target: true
+  - name: cotton_pick_A_06
+    model: cotton_pick_A_06
+    link: cotton_pick_A_06_link
+    pose_xyz: [23.440260, 7.728427, 0.278887]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01855
+    harvest_target: true
+  - name: cotton_pick_A_07
+    model: cotton_pick_A_07
+    link: cotton_pick_A_07_link
+    pose_xyz: [23.528475, 7.774302, 0.353453]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01945
+    harvest_target: true
+  - name: cotton_pick_A_08
+    model: cotton_pick_A_08
+    link: cotton_pick_A_08_link
+    pose_xyz: [23.434896, 7.760475, 0.400096]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01762
+    harvest_target: true
+  - name: cotton_pick_A_09
+    model: cotton_pick_A_09
+    link: cotton_pick_A_09_link
+    pose_xyz: [23.510683, 7.808071, 0.477214]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01989
+    harvest_target: true
+  - name: cotton_pick_A_10
+    model: cotton_pick_A_10
+    link: cotton_pick_A_10_link
+    pose_xyz: [16.146297, 9.103013, 0.232819]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01955
+    harvest_target: true
+  - name: cotton_pick_A_11
+    model: cotton_pick_A_11
+    link: cotton_pick_A_11_link
+    pose_xyz: [16.221491, 9.049300, 0.305660]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.02162
+    harvest_target: true
+  - name: cotton_pick_A_12
+    model: cotton_pick_A_12
+    link: cotton_pick_A_12_link
+    pose_xyz: [16.155727, 9.068880, 0.351212]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01787
+    harvest_target: true
+  - name: cotton_pick_A_13
+    model: cotton_pick_A_13
+    link: cotton_pick_A_13_link
+    pose_xyz: [16.222364, 9.028477, 0.431859]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01773
+    harvest_target: true
+  - name: cotton_pick_A_14
+    model: cotton_pick_A_14
+    link: cotton_pick_A_14_link
+    pose_xyz: [24.252256, 9.000401, 0.237467]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01918
+    harvest_target: true
+  - name: cotton_pick_A_15
+    model: cotton_pick_A_15
+    link: cotton_pick_A_15_link
+    pose_xyz: [24.347452, 9.026749, 0.274889]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01793
+    harvest_target: true
+  - name: cotton_pick_A_16
+    model: cotton_pick_A_16
+    link: cotton_pick_A_16_link
+    pose_xyz: [24.274420, 8.982458, 0.351692]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01997
+    harvest_target: true
+  - name: cotton_pick_A_17
+    model: cotton_pick_A_17
+    link: cotton_pick_A_17_link
+    pose_xyz: [24.355320, 8.965418, 0.423503]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.02029
+    harvest_target: true
+  - name: cotton_pick_B_01
+    model: cotton_pick_B_01
+    link: cotton_pick_B_01_link
+    pose_xyz: [18.109276, 7.699622, 0.251594]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01962
+    harvest_target: true
+  - name: cotton_pick_B_02
+    model: cotton_pick_B_02
+    link: cotton_pick_B_02_link
+    pose_xyz: [18.095818, 7.729945, 0.365065]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01979
+    harvest_target: true
+  - name: cotton_pick_B_03
+    model: cotton_pick_B_03
+    link: cotton_pick_B_03_link
+    pose_xyz: [17.987654, 7.747676, 0.443504]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01975
+    harvest_target: true
+  - name: cotton_pick_B_04
+    model: cotton_pick_B_04
+    link: cotton_pick_B_04_link
+    pose_xyz: [26.238821, 7.811876, 0.222924]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01785
+    harvest_target: true
+  - name: cotton_pick_B_05
+    model: cotton_pick_B_05
+    link: cotton_pick_B_05_link
+    pose_xyz: [26.274611, 7.861639, 0.352651]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.02013
+    harvest_target: true
+  - name: cotton_pick_B_06
+    model: cotton_pick_B_06
+    link: cotton_pick_B_06_link
+    pose_xyz: [26.189714, 7.857565, 0.397377]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01796
+    harvest_target: true
+  - name: cotton_pick_B_07
+    model: cotton_pick_B_07
+    link: cotton_pick_B_07_link
+    pose_xyz: [18.872940, 9.000783, 0.216224]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.02012
+    harvest_target: true
+  - name: cotton_pick_B_08
+    model: cotton_pick_B_08
+    link: cotton_pick_B_08_link
+    pose_xyz: [18.890337, 8.987062, 0.318520]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01788
+    harvest_target: true
+  - name: cotton_pick_B_09
+    model: cotton_pick_B_09
+    link: cotton_pick_B_09_link
+    pose_xyz: [18.958536, 8.973022, 0.398320]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01910
+    harvest_target: true
+  - name: cotton_pick_B_10
+    model: cotton_pick_B_10
+    link: cotton_pick_B_10_link
+    pose_xyz: [26.927454, 9.149752, 0.255284]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01970
+    harvest_target: true
+  - name: cotton_pick_B_11
+    model: cotton_pick_B_11
+    link: cotton_pick_B_11_link
+    pose_xyz: [26.945072, 9.111503, 0.386560]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01923
+    harvest_target: true
+  - name: cotton_pick_B_12
+    model: cotton_pick_B_12
+    link: cotton_pick_B_12_link
+    pose_xyz: [27.023235, 9.056455, 0.465714]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.02026
+    harvest_target: true
+  - name: cotton_pick_C_01
+    model: cotton_pick_C_01
+    link: cotton_pick_C_01_link
+    pose_xyz: [20.870800, 7.786874, 0.232156]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.02021
+    harvest_target: true
+  - name: cotton_pick_C_02
+    model: cotton_pick_C_02
+    link: cotton_pick_C_02_link
+    pose_xyz: [20.792044, 7.793802, 0.261870]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01763
+    harvest_target: true
+  - name: cotton_pick_C_03
+    model: cotton_pick_C_03
+    link: cotton_pick_C_03_link
+    pose_xyz: [20.796356, 7.841980, 0.390274]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01977
+    harvest_target: true
+  - name: cotton_pick_C_04
+    model: cotton_pick_C_04
+    link: cotton_pick_C_04_link
+    pose_xyz: [28.877985, 7.735586, 0.239577]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01905
+    harvest_target: true
+  - name: cotton_pick_C_05
+    model: cotton_pick_C_05
+    link: cotton_pick_C_05_link
+    pose_xyz: [28.803314, 7.749762, 0.303633]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01831
+    harvest_target: true
+  - name: cotton_pick_C_06
+    model: cotton_pick_C_06
+    link: cotton_pick_C_06_link
+    pose_xyz: [28.770643, 7.783101, 0.434996]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01655
+    harvest_target: true
+  - name: cotton_pick_C_07
+    model: cotton_pick_C_07
+    link: cotton_pick_C_07_link
+    pose_xyz: [21.544756, 9.122165, 0.252789]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01940
+    harvest_target: true
+  - name: cotton_pick_C_08
+    model: cotton_pick_C_08
+    link: cotton_pick_C_08_link
+    pose_xyz: [21.639320, 9.071187, 0.330236]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01993
+    harvest_target: true
+  - name: cotton_pick_C_09
+    model: cotton_pick_C_09
+    link: cotton_pick_C_09_link
+    pose_xyz: [21.625675, 9.018627, 0.476373]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01839
+    harvest_target: true
+  - name: cotton_pick_C_10
+    model: cotton_pick_C_10
+    link: cotton_pick_C_10_link
+    pose_xyz: [29.672184, 9.018706, 0.233957]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01987
+    harvest_target: true
+  - name: cotton_pick_C_11
+    model: cotton_pick_C_11
+    link: cotton_pick_C_11_link
+    pose_xyz: [29.758715, 9.059659, 0.271556]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01826
+    harvest_target: true
+  - name: cotton_pick_C_12
+    model: cotton_pick_C_12
+    link: cotton_pick_C_12_link
+    pose_xyz: [29.764936, 9.014433, 0.411185]
+    pose_rpy: [0.0, 0.0, 0.0]
+    collision_radius_m: 0.01966
+    harvest_target: true

@@ -1,0 +1,19 @@
+source_anchor: branch_main_A_01
+cluster_radius_m: 0.6
+sockets:
+- name: socket_A_01
+  x: 0.0599
+  y: 0.0844
+  z: 0.207
+- name: socket_A_02
+  x: -0.0204
+  y: 0.0933
+  z: 0.2467
+- name: socket_A_03
+  x: 0.0597
+  y: 0.1076
+  z: 0.3076
+- name: socket_A_04
+  x: -0.0132
+  y: 0.1514
+  z: 0.3799
