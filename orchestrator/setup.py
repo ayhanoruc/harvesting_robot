@@ -47,6 +47,7 @@ setup(
             'cv_boll_detector = orchestrator.cv_boll_detector:main',
             'cluster_scanner = orchestrator.cluster_scanner:main',
             'cluster_harvester = orchestrator.cluster_harvester:main',
+            'row_navigator = orchestrator.row_navigator:main',
         ],
     },
 )

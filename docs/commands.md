@@ -194,3 +194,41 @@ ros2 run rqt_image_view rqt_image_view
 
 # Trigger
 ros2 service call /cluster_harvester/run std_srvs/srv/Trigger '{}'
+
+
+---
+# === Row navigator — full-row pipeline (drive + harvest + drive + harvest ...) ===
+# Layer 3: walks a fixed list of tree_ids, driving Husky to each scout pose
+# with closed-loop cmd_vel + TF feedback, then triggers cluster_harvester.
+
+colcon build --packages-select orchestrator
+source install/setup.bash
+
+# Same prereqs + row_navigator on top
+ros2 launch robot_arm husky_orchard_demo.launch.py spawn_x:=15.8 spawn_y:=4.85 spawn_yaw:=-1.5708
+ros2 launch robot_arm_moveit_config moveit.launch.py
+ros2 run orchestrator cv_boll_detector
+ros2 run orchestrator depth_processor
+ros2 run orchestrator cluster_scanner
+ros2 run orchestrator simple_cluster_harvester
+ros2 run orchestrator cluster_harvester
+ros2 run orchestrator row_navigator     # ← top-level row pipeline
+
+# Trigger full row run (tree_000 → tree_001 → tree_002 + harvest each)
+ros2 service call /row_nav/run std_srvs/srv/Trigger '{}'
+
+# Override route at runtime:
+ros2 param set /row_navigator route "['tree_000', 'tree_001', 'tree_002', 'tree_003']"
+
+
+---
+# === Compact launch — bundle the 5 harvester nodes into one terminal ===
+# Saves you from juggling 5 individual `ros2 run` terminals.
+
+ros2 launch robot_arm husky_orchard_demo.launch.py spawn_x:=15.8 spawn_y:=4.85 spawn_yaw:=-1.5708
+ros2 launch robot_arm_moveit_config moveit.launch.py
+ros2 launch orchestrator harvester_modules.launch.py   # ← cv + depth + cluster_scanner + simple_harvester + cluster_harvester
+ros2 run orchestrator row_navigator                    # ← top-level (separate so you can restart it alone)
+
+# Trigger
+ros2 service call /row_nav/run std_srvs/srv/Trigger '{}'
