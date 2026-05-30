@@ -70,7 +70,11 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
 
 from sensor_msgs.msg import Image, CameraInfo
+from geometry_msgs.msg import PointStamped
 from cv_bridge import CvBridge
+
+import tf2_ros
+from tf2_geometry_msgs import do_transform_point
 
 from harvester_interfaces.msg import BoundingBox
 from harvester_interfaces.srv import YoloDetect
@@ -101,10 +105,21 @@ class CvBollDetector(Node):
         self.declare_parameter('blob_min_area',        15)   # pixel-count sanity floor
         self.declare_parameter('blob_min_circularity', 0.5)  # spheres → ~1.0; allow partial occlusion
 
+        # Hard pixel floor — "I refuse to call anything below this size a boll".
+        # Below ~10px radius, physics filters (radius_vs_depth, depth_std)
+        # can no longer discriminate sphere from tiny ground/canopy noise.
+        # All real bolls observed at scout pose are ≥19px; 14 leaves 5px
+        # margin. Effective max useful depth = fx·r_world/min_pixel_radius
+        # ≈ 277·0.035/14 ≈ 0.69m, well within pick distance envelope.
+        self.declare_parameter('min_pixel_radius',     14)
+
         # Color mask (used only at mask-building stage to drop saturated canopy)
+        # chroma_max tightened to 25: URDF boll color is rgba(0.95,0.95,0.9)
+        # → near-zero chroma in render (max ~10-15). Dirt has warm tint
+        # (chroma 20-35) and was leaking through the older 50 cap.
         self.declare_parameter('use_color_filter',     True)
         self.declare_parameter('color_min_brightness', 90)
-        self.declare_parameter('color_max_chroma',     50)
+        self.declare_parameter('color_max_chroma',     25)
 
         # Depth filter (also mask stage — drops sky / NaN / far things)
         self.declare_parameter('use_depth_filter', True)
@@ -115,15 +130,32 @@ class CvBollDetector(Node):
         # Ground truth: boll is a sphere of radius r_world.
         #
         # Invariant A: at depth d, the pixel radius MUST be ≈ fx · r_world / d.
-        #   Tolerance = ±radius_tol around 1.0 (sensor noise band, not "magic").
-        # Invariant B: inside the silhouette, depth values come from one sphere
-        #   surface so std(depth) ≈ r_world / √3. Anything else (branches,
-        #   ground, multi-object blob, sky leak) has much larger spread.
-        #   Threshold = depth_std_factor · r_world.
+        #   Tolerance band = ±radius_tol (sensor noise, not "magic").
+        #   Tightened from ±50% to ±30%: 50% was letting half-expected-size
+        #   noise spots pass (ratio 0.5 at depth ~1m was just at the edge).
+        # Invariant B (upper): inside the silhouette, depth values come from
+        #   one sphere surface so std(depth) ≈ r_world / √3. Anything broader
+        #   (branches, ground, multi-object blob, sky leak) has much larger
+        #   spread.  std_max = depth_std_factor · r_world.
+        # Invariant B (lower): a sphere has *some* depth curvature across its
+        #   silhouette; a flat ground patch has near-zero depth variation.
+        #   std_min = depth_std_min_factor · r_world.
+        #   Real bolls observed: ~10-11mm std; flat dirt: ~1-3mm.
+        # Invariant C (within-reach): the detection's 3D position, expressed
+        #   in the arm base frame, must be within max_arm_reach_m. If we can't
+        #   physically grasp it, we don't care about detecting it.
         self.declare_parameter('boll_world_radius_m',  0.035)
-        self.declare_parameter('radius_tol',           0.5)   # ±50% around predicted
+        self.declare_parameter('radius_tol',           0.3)   # ±30% around predicted
         self.declare_parameter('depth_std_factor',     3.0)   # max std = 3·r_world
+        self.declare_parameter('depth_std_min_factor', 0.15)  # min std = 0.15·r_world ≈ 5mm
         self.declare_parameter('depth_min_samples',    8)     # min valid pixels inside silhouette
+        # 1.5m: above M1013 reach (~1.3m) for some scan margin, but ground
+        # noise (typically 1.5m+ from camera at scout poses) still gets killed.
+        # Bumped from initial 1.0m because that was clipping valid bolls on
+        # the far side of the canopy.
+        self.declare_parameter('max_arm_reach_m',      1.5)
+        self.declare_parameter('arm_base_frame',       'base_0')
+        self.declare_parameter('camera_frame',         'camera_optical_frame')
 
         # Cluster merging + output
         self.declare_parameter('cluster_pixel_distance', 150)
@@ -140,7 +172,16 @@ class CvBollDetector(Node):
         self.bridge = CvBridge()
         self.latest_bgr: Optional[np.ndarray] = None
         self.latest_depth: Optional[np.ndarray] = None
-        self.fx: Optional[float] = None  # focal length px (for radius check)
+        # Camera intrinsics (set on first CameraInfo). fx for radius check,
+        # all four for proper pixel→3D back-projection.
+        self.fx: Optional[float] = None
+        self.fy: Optional[float] = None
+        self.cx_px: Optional[float] = None
+        self.cy_px: Optional[float] = None
+
+        # TF (needed for within-reach check: camera_optical_frame → arm base)
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
         # ── Subscriptions ──────────────────────────────────────
         self.create_subscription(
@@ -176,16 +217,29 @@ class CvBollDetector(Node):
             f'  PRE: area≥{self.get_parameter("blob_min_area").value}, '
             f'circ≥{self.get_parameter("blob_min_circularity").value} '
             f'← cheap noise pre-filter')
+        min_r = self.get_parameter("min_pixel_radius").value
+        eff_max_d = self.get_parameter("boll_world_radius_m").value * 277.0 / min_r
+        self.get_logger().info(
+            f'  PIXEL-FLOOR: r_actual ≥ {min_r}px '
+            f'(→ effective max depth ≈ {eff_max_d:.2f}m) '
+            f'← cuts uniformly-small noise that physics filters can\'t separate')
         self.get_logger().info(
             f'  PHYSICS-A: r_actual / (fx · {self.get_parameter("boll_world_radius_m").value}m / depth) '
             f'∈ [{1 - self.get_parameter("radius_tol").value:.2f}, '
             f'{1 + self.get_parameter("radius_tol").value:.2f}] '
             f'← ROBUST: pixel radius matches depth')
+        r_w = self.get_parameter("boll_world_radius_m").value
         self.get_logger().info(
-            f'  PHYSICS-B: std(depth_inside_silhouette) ≤ '
-            f'{self.get_parameter("depth_std_factor").value:.1f}·r_world = '
-            f'{self.get_parameter("depth_std_factor").value * self.get_parameter("boll_world_radius_m").value:.3f}m '
-            f'← ROBUST: sphere surface is one depth band')
+            f'  PHYSICS-B: std(depth_inside_silhouette) ∈ '
+            f'[{self.get_parameter("depth_std_min_factor").value:.2f}·r, '
+            f'{self.get_parameter("depth_std_factor").value:.1f}·r] '
+            f'= [{self.get_parameter("depth_std_min_factor").value * r_w * 1000:.1f}mm, '
+            f'{self.get_parameter("depth_std_factor").value * r_w * 1000:.0f}mm] '
+            f'← ROBUST: sphere is curved (lower) and single-surface (upper)')
+        self.get_logger().info(
+            f'  PHYSICS-C: ‖pt‖ in {self.get_parameter("arm_base_frame").value} ≤ '
+            f'{self.get_parameter("max_arm_reach_m").value:.2f}m '
+            f'← ROBUST: kills out-of-reach noise (ground spots, etc.)')
         self.get_logger().info('  services: /yolo/detect, /yolo/detect_clusters')
         self.get_logger().info('=' * 60)
 
@@ -214,9 +268,14 @@ class CvBollDetector(Node):
 
     def _cam_info_cb(self, msg: CameraInfo):
         # K = [fx 0 cx, 0 fy cy, 0 0 1] — flat row-major
-        if self.fx is None and len(msg.k) >= 5 and msg.k[0] > 0:
+        if self.fx is None and len(msg.k) >= 6 and msg.k[0] > 0:
             self.fx = float(msg.k[0])
-            self.get_logger().info(f'camera fx={self.fx:.1f}px')
+            self.fy = float(msg.k[4])
+            self.cx_px = float(msg.k[2])
+            self.cy_px = float(msg.k[5])
+            self.get_logger().info(
+                f'camera intrinsics: fx={self.fx:.1f} fy={self.fy:.1f} '
+                f'cx={self.cx_px:.1f} cy={self.cy_px:.1f}')
 
     # ─── Core detection (depth-first → color → shape) ──────────
 
@@ -304,8 +363,9 @@ class CvBollDetector(Node):
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         # 3. Per-contour: cheap pre-filters, then PHYSICS invariants.
-        min_area  = int(self.get_parameter('blob_min_area').value)
-        min_circ  = float(self.get_parameter('blob_min_circularity').value)
+        min_area      = int(self.get_parameter('blob_min_area').value)
+        min_circ      = float(self.get_parameter('blob_min_circularity').value)
+        min_r_px      = float(self.get_parameter('min_pixel_radius').value)
         min_d     = float(self.get_parameter('min_depth').value)
         max_d     = float(self.get_parameter('max_depth').value)
         r_world   = float(self.get_parameter('boll_world_radius_m').value)
@@ -313,13 +373,20 @@ class CvBollDetector(Node):
         std_fact  = float(self.get_parameter('depth_std_factor').value)
         min_samps = int(self.get_parameter('depth_min_samples').value)
 
-        max_depth_std = std_fact * r_world  # invariant B threshold
+        std_min_fact  = float(self.get_parameter('depth_std_min_factor').value)
+        max_depth_std = std_fact * r_world       # invariant B upper bound
+        min_depth_std = std_min_fact * r_world   # invariant B lower bound (flatness)
+        max_reach     = float(self.get_parameter('max_arm_reach_m').value)
+        base_frame    = self.get_parameter('arm_base_frame').value
+        cam_frame     = self.get_parameter('camera_frame').value
 
         depth = self.latest_depth
         depth_ok = (depth is not None and depth.shape[:2] == (H, W))
 
-        rej = {'area': 0, 'circ': 0, 'no_depth_at_center': 0, 'depth_range': 0,
-               'no_fx': 0, 'radius_mismatch': 0, 'few_samples': 0, 'depth_spread': 0}
+        rej = {'area': 0, 'circ': 0, 'too_small_px': 0, 'no_depth_at_center': 0,
+               'depth_range': 0, 'no_fx': 0, 'radius_mismatch': 0,
+               'few_samples': 0, 'depth_too_flat': 0, 'depth_spread': 0,
+               'tf_fail': 0, 'out_of_reach': 0}
 
         detections = []
         for cnt in contours:
@@ -339,25 +406,24 @@ class CvBollDetector(Node):
             cx, cy, r_px = int(fcx), int(fcy), max(2.0, float(fradius))
             x, y, w, h = cv2.boundingRect(cnt)
 
-            # ── PHYSICS — need valid depth data ────────────────
+            # ── Hard pixel floor: below this size, even the physics ──
+            #    checks can't reliably tell sphere from noise (real bolls
+            #    at scout distance are always ≥19px; noise is 8-10px).
+            if r_px < min_r_px:
+                rej['too_small_px'] += 1; continue
+
+            # ── Need valid depth data ──────────────────────────
             if not depth_ok:
                 rej['no_depth_at_center'] += 1; continue
             if not (0 <= cy < H and 0 <= cx < W):
                 rej['no_depth_at_center'] += 1; continue
 
-            d_center = float(depth[cy, cx])
-            if not (math.isfinite(d_center) and min_d <= d_center <= max_d):
-                rej['depth_range'] += 1; continue
-
-            # ── Invariant A: r_predicted = fx · r_world / d ────
-            if self.fx is None:
-                rej['no_fx'] += 1; continue
-            r_predicted = self.fx * r_world / d_center
-            ratio = r_px / r_predicted
-            if not (1.0 - r_tol <= ratio <= 1.0 + r_tol):
-                rej['radius_mismatch'] += 1; continue
-
-            # ── Invariant B: depth uniformity inside silhouette ─
+            # ── Sample all depths inside the silhouette FIRST ──
+            # Use the median for Invariants A/C — robust to a single bad
+            # centroid pixel from frame tearing / sensor noise. (Earlier we
+            # used depth[cy,cx] which made detection fragile: one broken
+            # pixel at the centroid killed the whole detection even when
+            # the rest of the silhouette had valid depth.)
             silhouette = np.zeros((H, W), dtype=np.uint8)
             cv2.drawContours(silhouette, [cnt], -1, 255, thickness=cv2.FILLED)
             depth_inside = depth[silhouette > 0]
@@ -367,8 +433,48 @@ class CvBollDetector(Node):
                 rej['few_samples'] += 1; continue
             d_median = float(np.median(valid))
             d_std    = float(np.std(valid))
+            if not (min_d <= d_median <= max_d):
+                rej['depth_range'] += 1; continue
+
+            # ── Invariant A: r_predicted = fx · r_world / d ────
+            if self.fx is None:
+                rej['no_fx'] += 1; continue
+            r_predicted = self.fx * r_world / d_median
+            ratio = r_px / r_predicted
+            if not (1.0 - r_tol <= ratio <= 1.0 + r_tol):
+                rej['radius_mismatch'] += 1; continue
+
+            # ── Invariant B: depth uniformity inside silhouette ─
+            if d_std < min_depth_std:
+                rej['depth_too_flat'] += 1; continue   # too flat → not a sphere
             if d_std > max_depth_std:
-                rej['depth_spread'] += 1; continue
+                rej['depth_spread'] += 1; continue     # too spread → multi-surface
+
+            # ── Invariant C: within-reach (camera→base TF, distance) ─
+            # Use d_median (robust to centroid-sitting-on-gap) for back-projection.
+            if self.cx_px is None or self.fy is None:
+                rej['no_fx'] += 1; continue
+            X_cam = (cx - self.cx_px) * d_median / self.fx
+            Y_cam = (cy - self.cy_px) * d_median / self.fy
+            Z_cam = d_median
+            pt = PointStamped()
+            pt.header.frame_id = cam_frame
+            pt.header.stamp = self.get_clock().now().to_msg()
+            pt.point.x, pt.point.y, pt.point.z = X_cam, Y_cam, Z_cam
+            try:
+                tf = self.tf_buffer.lookup_transform(
+                    base_frame, cam_frame, rclpy.time.Time(),
+                    timeout=rclpy.duration.Duration(seconds=0.2))
+                pt_base = do_transform_point(pt, tf)
+            except Exception as e:
+                rej['tf_fail'] += 1
+                self.get_logger().warn(
+                    f'TF {cam_frame}→{base_frame} lookup failed: {e}')
+                continue
+            bx, by, bz = pt_base.point.x, pt_base.point.y, pt_base.point.z
+            reach_dist = math.sqrt(bx * bx + by * by + bz * bz)
+            if reach_dist > max_reach:
+                rej['out_of_reach'] += 1; continue
 
             # Confidence: combine the physical fit qualities (1.0 = perfect)
             radius_quality = max(0.0, 1.0 - abs(ratio - 1.0) / r_tol)
@@ -386,6 +492,8 @@ class CvBollDetector(Node):
                 'circularity': float(circularity),
                 'depth': d_median,
                 'depth_std': d_std,
+                'xyz_base': (float(bx), float(by), float(bz)),
+                'reach_dist': float(reach_dist),
                 'confidence': conf,
             })
 
@@ -395,24 +503,33 @@ class CvBollDetector(Node):
             f'color_pass={dbg["color_pass_px"]} ∩={dbg["combined_px"]} '
             f'morph={dbg["morph_px"]}  contours={len(contours)}  '
             f'rej(area={rej["area"]},circ={rej["circ"]},'
+            f'too_small={rej["too_small_px"]},'
             f'no_depth={rej["no_depth_at_center"]},'
             f'd_range={rej["depth_range"]},no_fx={rej["no_fx"]},'
             f'r_mis={rej["radius_mismatch"]},'
             f'few_samps={rej["few_samples"]},'
-            f'd_spread={rej["depth_spread"]}) → kept={len(detections)}')
+            f'flat={rej["depth_too_flat"]},'
+            f'd_spread={rej["depth_spread"]},'
+            f'tf_fail={rej["tf_fail"]},'
+            f'reach={rej["out_of_reach"]}) → kept={len(detections)}')
         for i, d in enumerate(detections):
+            xb, yb, zb = d['xyz_base']
             self.get_logger().info(
                 f'  #{i}: ({d["cx"]},{d["cy"]}) '
                 f'r={d["radius"]}px vs predicted {d["r_predicted_px"]:.1f}px '
                 f'(ratio={d["radius_ratio"]:.2f}) '
                 f'depth={d["depth"]:.3f}m±{d["depth_std"]*100:.1f}cm '
-                f'circ={d["circularity"]:.2f} conf={d["confidence"]:.2f}')
+                f'base=({xb:+.2f},{yb:+.2f},{zb:+.2f}) reach={d["reach_dist"]:.2f}m '
+                f'conf={d["confidence"]:.2f}')
 
         msg = (f'kept {len(detections)} | contours={len(contours)} '
-               f'rej(area/circ/no_depth/d_range/no_fx/r_mis/few/d_spread)='
-               f'{rej["area"]}/{rej["circ"]}/{rej["no_depth_at_center"]}/'
+               f'rej(area/circ/small/no_d/d_rng/no_fx/r_mis/few/flat/d_spr/tf/reach)='
+               f'{rej["area"]}/{rej["circ"]}/{rej["too_small_px"]}/'
+               f'{rej["no_depth_at_center"]}/'
                f'{rej["depth_range"]}/{rej["no_fx"]}/{rej["radius_mismatch"]}/'
-               f'{rej["few_samples"]}/{rej["depth_spread"]}')
+               f'{rej["few_samples"]}/{rej["depth_too_flat"]}/'
+               f'{rej["depth_spread"]}/'
+               f'{rej["tf_fail"]}/{rej["out_of_reach"]}')
         return detections, mask, msg
 
     # ─── Cluster merging (matches real_yolo_detector behavior) ─
@@ -541,6 +658,8 @@ class CvBollDetector(Node):
             label = f"{d['confidence']:.2f}"
             if d.get('depth') is not None:
                 label += f" d={d['depth']:.2f}m"
+            if d.get('reach_dist') is not None:
+                label += f" R={d['reach_dist']:.2f}m"
             cv2.putText(annotated, label,
                         (d['u_min'], max(8, d['v_min'] - 2)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 1)
