@@ -87,6 +87,11 @@ class SimpleClusterHarvester(Node):
 
         # ── Parameters ──────────────────────────────────────────
         self.declare_parameter('tree_id', 'tree_000')
+        # Optional runtime override: if non-empty, harvest exactly these
+        # boll IDs (looked up from the YAML inventory) instead of *all*
+        # bolls for `tree_id`. Used by cluster_harvester to feed in the
+        # subset returned by /cluster_scan/run (detected, not ground-truth).
+        self.declare_parameter('boll_ids_runtime', [''])
         self.declare_parameter('boll_inventory_yaml', '')
         self.declare_parameter('gz_world_name', 'orchard')
         self.declare_parameter('tcp_frame', 'tcp')
@@ -482,15 +487,37 @@ class SimpleClusterHarvester(Node):
             response.message = 'Already harvesting'
             return response
 
-        tree_id = self.get_parameter('tree_id').value
-        bolls = self._bolls_for_tree(tree_id)
-        if not bolls:
-            response.success = False
-            response.message = (
-                f'No bolls found for tree_id="{tree_id}". '
-                f'Check orchard_bolls.yaml.')
-            self.get_logger().error(response.message)
-            return response
+        # Boll source: runtime ID override > YAML by tree_id.
+        runtime_ids = [
+            i for i in (self.get_parameter('boll_ids_runtime').value or [])
+            if i  # drop empty strings (default '[""]' placeholder)
+        ]
+        if runtime_ids:
+            id_set = set(runtime_ids)
+            bolls_unsorted = [b for b in self._boll_items if b.get('id') in id_set]
+            # Preserve caller's requested order (cluster_harvester sorts closest-first)
+            order = {bid: i for i, bid in enumerate(runtime_ids)}
+            bolls = sorted(bolls_unsorted, key=lambda b: order.get(b['id'], 1_000_000))
+            tree_id = f'runtime[{len(bolls)}]'
+            missing = [bid for bid in runtime_ids if bid not in {b['id'] for b in bolls}]
+            if missing:
+                self.get_logger().warn(
+                    f'runtime IDs missing in inventory: {missing}')
+            if not bolls:
+                response.success = False
+                response.message = f'No matching bolls for runtime IDs: {runtime_ids}'
+                self.get_logger().error(response.message)
+                return response
+        else:
+            tree_id = self.get_parameter('tree_id').value
+            bolls = self._bolls_for_tree(tree_id)
+            if not bolls:
+                response.success = False
+                response.message = (
+                    f'No bolls found for tree_id="{tree_id}". '
+                    f'Check orchard_bolls.yaml.')
+                self.get_logger().error(response.message)
+                return response
 
         self._busy = True
         t_total = time.time()

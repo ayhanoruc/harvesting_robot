@@ -125,3 +125,72 @@ ros2 service call /yolo/detect_clusters harvester_interfaces/srv/YoloDetect '{}'
 # Tune HSV at runtime if needed (lower V or raise S_max for more permissive mask):
 ros2 param set /cv_boll_detector hsv_v_min 150
 ros2 param set /cv_boll_detector hsv_s_max 90
+
+
+---
+# === Cluster scanner — static arm sweep + boll consolidation + cluster bbox ===
+# Husky stays put at cluster scout pose; arm sweeps pan/tilt grid.
+# Saves cluster JSON + top-down PNG to yolo_output/.
+
+colcon build --packages-select orchestrator
+source install/setup.bash
+
+# Spawn at cluster_1 (tree_000) scout
+ros2 launch robot_arm husky_orchard_demo.launch.py spawn_x:=15.8 spawn_y:=4.85 spawn_yaw:=-1.5708
+ros2 launch robot_arm_moveit_config moveit.launch.py
+ros2 run orchestrator cv_boll_detector
+ros2 run orchestrator depth_processor      # ← needed for 3D back-projection (world frame)
+ros2 run orchestrator cluster_scanner
+
+# Trigger the full scan (sweep + detect + dedup + cluster bbox + save JSON/PNG)
+ros2 service call /cluster_scan/run std_srvs/srv/Trigger '{}'
+
+# Saved files (timestamped):
+#   /mnt/c/Users/ayhan/harvesting_ws/yolo_output/cluster_scan_<ts>.json   ← full data + bbox
+#   /mnt/c/Users/ayhan/harvesting_ws/yolo_output/cluster_topdown_<ts>.png ← XY map w/ bbox
+
+# Runtime tuning if needed:
+ros2 param set /cluster_scanner pan_angles_deg "[-30.0, -15.0, 0.0, 15.0, 30.0]"
+ros2 param set /cluster_scanner tilt_angles_deg "[-15.0, 0.0, 15.0]"
+ros2 param set /cluster_scanner gap_threshold_m 0.8   # tighter cluster boundary
+ros2 param set /cluster_scanner cluster_axis y        # if row aligned along Y
+
+
+---
+# === Full single-cluster pipeline (scan → match → pick → re-scan → DONE) ===
+# Reuses simple_cluster_harvester for picking (robust heuristic: base rotation
+# + carry-during-pick + reservoir-carry). Loops until 0 cluster bolls.
+
+colcon build --packages-select orchestrator
+source install/setup.bash
+
+# Same 4 prerequisite terminals as cluster_scanner section above
+ros2 launch robot_arm husky_orchard_demo.launch.py spawn_x:=15.8 spawn_y:=4.85 spawn_yaw:=-1.5708
+ros2 launch robot_arm_moveit_config moveit.launch.py
+ros2 run orchestrator cv_boll_detector
+ros2 run orchestrator depth_processor
+ros2 run orchestrator cluster_scanner
+ros2 run orchestrator simple_cluster_harvester
+ros2 run orchestrator cluster_harvester   # ← top-level pipeline node
+
+# Trigger the full cycle (scan + pick all + re-scan + DONE)
+ros2 service call /cluster_harvester/run std_srvs/srv/Trigger '{}'
+
+# Tuning
+ros2 param set /cluster_harvester max_iterations 5     # more re-scan tries
+ros2 param set /cluster_harvester match_radius_m 0.08  # looser detection→YAML match
+
+---
+---
+# 8 terminal sırayla
+ros2 launch robot_arm husky_orchard_demo.launch.py spawn_x:=15.8 spawn_y:=4.85 spawn_yaw:=-1.5708
+ros2 launch robot_arm_moveit_config moveit.launch.py
+ros2 run orchestrator cv_boll_detector
+ros2 run orchestrator depth_processor
+ros2 run orchestrator cluster_scanner
+ros2 run orchestrator simple_cluster_harvester
+ros2 run orchestrator cluster_harvester
+ros2 run rqt_image_view rqt_image_view
+
+# Trigger
+ros2 service call /cluster_harvester/run std_srvs/srv/Trigger '{}'
