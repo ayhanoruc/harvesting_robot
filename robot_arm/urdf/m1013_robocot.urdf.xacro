@@ -265,104 +265,97 @@
 	</joint>
 	<link name="tool0"/>
 
-	<!-- ==================== Robotiq Hand-E Gripper ==================== -->
-	<!-- Fixed mount: Hand-E base attaches to tool0 (tool flange) -->
+	<!-- ==================== Simple Box Gripper ==================== -->
+	<!-- Robotiq Hand-E was replaced by a from-scratch minimal design:
+	     - Palm: dark box plate attached to tool0 (where Hand-E base was).
+	     - Right finger: thin grey prism, FIXED on the +X side of the palm.
+	     - Left finger:  thin grey prism, prismatic joint along +X. Slides
+	       between OPEN (-X end) and CLOSED (meets right pad at center).
+	     Single moving joint = guaranteed to work; no mesh, no mimic, no
+	     fancy physics. -->
+
 	<joint name="robotiq_hande_base_joint" type="fixed">
 		<parent link="tool0"/>
 		<child link="hand_e_link"/>
 		<origin xyz="0 0 0" rpy="0 0 0"/>
 	</joint>
 
+	<!-- Palm: thin plate, ~6cm wide (X), ~4cm deep (Y), 5cm tall (Z).
+	     Spans Z = 0 .. 0.05 from tool0. -->
 	<link name="hand_e_link">
 		<inertial>
-			<origin rpy="0 0 0" xyz="0 0 0.04607"/>
-			<mass value="0.86387"/>
-			<inertia ixx="1.01756e-03" ixy="0" ixz="2.235e-06" iyy="1.028041e-03" iyz="0" izz="4.8981e-04"/>
+			<origin rpy="0 0 0" xyz="0 0 0.025"/>
+			<mass value="0.3"/>
+			<inertia ixx="0.0005" ixy="0" ixz="0" iyy="0.0005" iyz="0" izz="0.0005"/>
 		</inertial>
 		<visual>
-			<origin rpy="0 0 0" xyz="0 0 0"/>
+			<origin rpy="0 0 0" xyz="0 0 0.025"/>
 			<geometry>
-				<mesh filename="package://robot_arm/meshes/hande/hande.dae" scale="1.0 1.0 1.0"/>
+				<box size="0.060 0.040 0.050"/>
 			</geometry>
-			<material name="HandE_Dark">
-				<color rgba="0.1 0.1 0.1 1.0"/>
+			<material name="GripperPalm">
+				<color rgba="0.15 0.15 0.15 1.0"/>
 			</material>
 		</visual>
-		<visual>
-			<origin rpy="0 0 0" xyz="0 0 -0.0015"/>
-			<geometry>
-				<mesh filename="package://robot_arm/meshes/exchanger/hande_base.dae" scale="1.0 1.0 1.0"/>
-			</geometry>
-		</visual>
 		<collision>
-			<origin rpy="0 0 0" xyz="0 0 0"/>
+			<origin rpy="0 0 0" xyz="0 0 0.025"/>
 			<geometry>
-				<mesh filename="package://robot_arm/meshes/hande/hande-collision.dae" scale="1.0 1.0 1.0"/>
+				<box size="0.060 0.040 0.050"/>
 			</geometry>
 		</collision>
 	</link>
 
-	<!-- Left finger (driven) -->
-	<joint name="hande_left_finger_joint" type="prismatic">
-		<parent link="hand_e_link"/>
-		<child link="hande_left_finger"/>
-		<origin rpy="0 0 0" xyz="0 0 0.099"/>
-		<axis xyz="-1 0 0"/>
-		<limit effort="130" lower="0" upper="0.025" velocity="0.15"/>
-	</joint>
-	<link name="hande_left_finger">
-		<inertial>
-			<origin rpy="0 0 0" xyz="0.02262 -0.00759 0.00738"/>
-			<mass value="0.05"/>
-			<inertia ixx="1e-04" ixy="0" ixz="0" iyy="1e-04" iyz="0" izz="1e-04"/>
-		</inertial>
-		<visual>
-			<origin rpy="0 0 0" xyz="0 0 0"/>
-			<geometry>
-				<mesh filename="package://robot_arm/meshes/hande/finger_1.dae" scale="1.0 1.0 1.0"/>
-			</geometry>
-			<material name="HandE_Gray">
-				<color rgba="0.4 0.4 0.4 1.0"/>
-			</material>
-		</visual>
-		<collision>
-			<origin rpy="0 0 0" xyz="0 0 0"/>
-			<geometry>
-				<mesh filename="package://robot_arm/meshes/hande/finger_1_collision.dae" scale="1.0 1.0 1.0"/>
-			</geometry>
-		</collision>
-	</link>
-
-	<!-- Right finger (mimic of left — Gazebo drives this automatically) -->
-	<joint name="hande_right_finger_joint" type="prismatic">
+	<!-- Right finger: FIXED on +X side. Pad spans X: +0.015 .. +0.025,
+	     Z: 0.050 .. 0.130. -->
+	<joint name="hande_right_finger_joint" type="fixed">
 		<parent link="hand_e_link"/>
 		<child link="hande_right_finger"/>
-		<origin rpy="0 0 0" xyz="0 0 0.099"/>
-		<axis xyz="1 0 0"/>
-		<limit effort="130" lower="0" upper="0.025" velocity="0.15"/>
-		<mimic joint="hande_left_finger_joint" multiplier="1.0" offset="0.0"/>
+		<origin rpy="0 0 0" xyz="0.020 0 0.090"/>
 	</joint>
 	<link name="hande_right_finger">
 		<inertial>
-			<origin rpy="0 0 0" xyz="-0.02262 0.00759 0.00738"/>
-			<mass value="0.05"/>
-			<inertia ixx="1e-04" ixy="0" ixz="0" iyy="1e-04" iyz="0" izz="1e-04"/>
+			<origin rpy="0 0 0" xyz="0 0 0"/>
+			<mass value="0.02"/>
+			<inertia ixx="1e-05" ixy="0" ixz="0" iyy="1e-05" iyz="0" izz="1e-05"/>
 		</inertial>
 		<visual>
 			<origin rpy="0 0 0" xyz="0 0 0"/>
 			<geometry>
-				<mesh filename="package://robot_arm/meshes/hande/finger_2.dae" scale="1.0 1.0 1.0"/>
+				<box size="0.010 0.025 0.080"/>
 			</geometry>
-			<material name="HandE_Gray">
-				<color rgba="0.4 0.4 0.4 1.0"/>
+			<material name="GripperFinger">
+				<color rgba="0.55 0.55 0.55 1.0"/>
 			</material>
 		</visual>
-		<collision>
+	</link>
+
+	<!-- Left finger: PRISMATIC, single moving joint of the gripper.
+	     Joint origin sits at the OPEN pose (-0.020 X). Axis +X.
+	     - joint = 0     → link at (-0.020, 0, 0.090): pad spans X -0.025..-0.015 → OPEN, ~30mm gap
+	     - joint = 0.030 → link at (+0.010, 0, 0.090): pad spans X +0.005..+0.015 → CLOSED, touching right pad inner face -->
+	<joint name="hande_left_finger_joint" type="prismatic">
+		<parent link="hand_e_link"/>
+		<child link="hande_left_finger"/>
+		<origin rpy="0 0 0" xyz="-0.020 0 0.090"/>
+		<axis xyz="1 0 0"/>
+		<limit effort="100" lower="0.0" upper="0.030" velocity="1.0"/>
+		<dynamics damping="0.0" friction="0.0"/>
+	</joint>
+	<link name="hande_left_finger">
+		<inertial>
+			<origin rpy="0 0 0" xyz="0 0 0"/>
+			<mass value="0.02"/>
+			<inertia ixx="1e-05" ixy="0" ixz="0" iyy="1e-05" iyz="0" izz="1e-05"/>
+		</inertial>
+		<visual>
 			<origin rpy="0 0 0" xyz="0 0 0"/>
 			<geometry>
-				<mesh filename="package://robot_arm/meshes/hande/finger_2_collision.dae" scale="1.0 1.0 1.0"/>
+				<box size="0.010 0.025 0.080"/>
 			</geometry>
-		</collision>
+			<material name="GripperFinger">
+				<color rgba="0.55 0.55 0.55 1.0"/>
+			</material>
+		</visual>
 	</link>
 
 	<!-- TCP frame (gripper tip center) -->
@@ -472,20 +465,20 @@
 		</sensor>
 	</gazebo>
 
-	<!-- Gripper finger physics for grasping -->
+	<!-- Gripper finger physics: disable gravity on both fingers and the
+	     palm so the prismatic left finger never gets dragged by any small
+	     gravity component (axis is +X / horizontal in palm frame, but when
+	     the arm tilts the world-frame gravity gains an X component which
+	     would otherwise bias the joint). No friction tags — collision is
+	     disabled on fingers anyway. -->
+	<gazebo reference="hand_e_link">
+		<gravity>false</gravity>
+	</gazebo>
 	<gazebo reference="hande_left_finger">
-		<mu1>1.0</mu1>
-		<mu2>1.0</mu2>
-		<kp>1000000.0</kp>
-		<kd>1.0</kd>
-		<minDepth>0.001</minDepth>
+		<gravity>false</gravity>
 	</gazebo>
 	<gazebo reference="hande_right_finger">
-		<mu1>1.0</mu1>
-		<mu2>1.0</mu2>
-		<kp>1000000.0</kp>
-		<kd>1.0</kd>
-		<minDepth>0.001</minDepth>
+		<gravity>false</gravity>
 	</gazebo>
 
 	<!-- ==================== ros2_control ==================== -->
@@ -542,16 +535,15 @@
 			<state_interface name="position"/>
 			<state_interface name="velocity"/>
 		</joint>
-		<!-- Gripper joints (prismatic) -->
+		<!-- Gripper joint (left finger only — right finger is a fixed link). -->
 		<joint name="hande_left_finger_joint">
 			<command_interface name="position">
-				<param name="min">0</param>
-				<param name="max">0.025</param>
+				<param name="min">0.0</param>
+				<param name="max">0.030</param>
 			</command_interface>
 			<state_interface name="position"/>
 			<state_interface name="velocity"/>
 		</joint>
-		<!-- hande_right_finger_joint: mimic of left, driven by Gazebo physics (no ros2_control interface) -->
 	</ros2_control>
 
 	<!-- ==================== Gazebo Sim ROS2 Control Plugin ==================== -->

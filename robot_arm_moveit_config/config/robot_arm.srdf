@@ -5,7 +5,8 @@
         <chain base_link="base_0" tip_link="tool0"/>
     </group>
 
-    <!-- Gripper planning group: Hand-E left finger (right mimics) -->
+    <!-- Gripper planning group: left finger only (the single moving joint).
+         Right finger is a fixed decorative box on +X side of the palm. -->
     <group name="gripper">
         <joint name="hande_left_finger_joint"/>
     </group>
@@ -44,13 +45,16 @@
         <joint name="joint6" value="0.0"/>
     </group_state>
 
-    <!-- Named poses: gripper -->
+    <!-- Named poses: gripper (left finger, prismatic, range 0..0.030).
+         joint=0      → left pad at -X end of palm = OPEN (~30mm gap)
+         joint=0.022  → CLOSED with ~8mm visible gap (matches /gripper/close
+                       default in gripper_controller_node) -->
     <group_state name="open" group="gripper">
-        <joint name="hande_left_finger_joint" value="0.025"/>
+        <joint name="hande_left_finger_joint" value="0.0"/>
     </group_state>
 
     <group_state name="closed" group="gripper">
-        <joint name="hande_left_finger_joint" value="0.0"/>
+        <joint name="hande_left_finger_joint" value="0.022"/>
     </group_state>
 
     <!-- ==================== Collision Matrix ==================== -->

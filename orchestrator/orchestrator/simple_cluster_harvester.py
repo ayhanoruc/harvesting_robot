@@ -148,6 +148,16 @@ class SimpleClusterHarvester(Node):
         self.arm_set_params_cli = self.create_client(
             SetParameters, '/arm_commander/set_parameters', callback_group=self.cb)
 
+        # ── Gripper service clients ─────────────────────────────
+        # The pick stays MOCK (teleport-based — boll moves into the bin
+        # by set_pose, not by real grasp physics) but we ALSO command the
+        # gripper to open/close visually so the user can see the fingers
+        # animate in Gazebo. These calls don't affect the boll's motion.
+        self.gripper_open_cli = self.create_client(
+            Trigger, '/gripper/open', callback_group=self.cb)
+        self.gripper_close_cli = self.create_client(
+            Trigger, '/gripper/close', callback_group=self.cb)
+
         # ── Status publisher ────────────────────────────────────
         self.status_pub = self.create_publisher(String, '/simple_harvest/status', 10)
 
@@ -465,6 +475,27 @@ class SimpleClusterHarvester(Node):
         self._wait_future(future, 180.0)
         return (future.result() is not None and future.result().success)
 
+    def _gripper_call(self, client, label: str) -> bool:
+        """Fire-and-block call to /gripper/open or /gripper/close.
+
+        We *don't* care if it fails (the pick is mock-teleport — boll motion
+        doesn't depend on gripper physics). The whole point is just to see
+        the fingers animate in Gazebo. Logs the outcome and moves on.
+        """
+        if not client.wait_for_service(timeout_sec=2.0):
+            self.get_logger().warn(f'[GRIP] /{label} service unavailable, skipping')
+            return False
+        future = client.call_async(Trigger.Request())
+        # Gripper motion is fast (~0.4s default); 5s is generous.
+        result = self._wait_future(future, 5.0)
+        if result is None:
+            self.get_logger().warn(f'[GRIP] /{label} timeout')
+            return False
+        if not result.success:
+            self.get_logger().warn(f'[GRIP] /{label} reported failure: {result.message}')
+            return False
+        return True
+
     def _wait_future(self, future, timeout_sec: float) -> Optional[object]:
         t0 = time.time()
         while not future.done():
@@ -531,6 +562,10 @@ class SimpleClusterHarvester(Node):
                 response.message = 'Failed to reach HOME at start'
                 return response
 
+            # Make sure the gripper is OPEN before picking the first boll
+            # (visual: fingers spread). Idempotent — fine if already open.
+            self._gripper_call(self.gripper_open_cli, 'gripper/open')
+
             for i, boll in enumerate(bolls, 1):
                 tag = f'[{i}/{len(bolls)}] {boll["id"]} ({boll["type"]})'
                 bx, by, bz = float(boll['x']), float(boll['y']), float(boll['z'])
@@ -544,10 +579,12 @@ class SimpleClusterHarvester(Node):
                     continue
                 self.get_logger().info(f'{tag} reached in {time.time()-t_step:.1f}s')
 
-                # 2. Mock close
+                # 2. Visual GRIP CLOSE — animate fingers in Gazebo (mock,
+                #    boll motion is handled by teleport below).
+                self.get_logger().info(f'{tag} [GRIP CLOSE] commanding /gripper/close')
+                self._gripper_call(self.gripper_close_cli, 'gripper/close')
                 close_dt = float(self.get_parameter('mock_close_delay_s').value)
-                self.get_logger().info(f'{tag} [MOCK GRIP CLOSE] (sleep {close_dt}s)')
-                time.sleep(close_dt)
+                time.sleep(close_dt)  # extra dwell so the close is visible
 
                 # 3. Teleport boll → TCP and START continuous follow
                 if not self._teleport_to_tcp(boll['id']):
@@ -566,11 +603,14 @@ class SimpleClusterHarvester(Node):
                 self.get_logger().info(
                     f'{tag} reservoir hover reached in {time.time()-t_step:.1f}s')
 
-                # 5. Stop carry, mock open, drop boll into bin (with grid scatter).
+                # 5. Stop carry, visually GRIP OPEN, then teleport boll
+                #    into the bin (with grid scatter). The open animation
+                #    plays in parallel with the teleport for a clean visual.
                 self._carry_stop()
+                self.get_logger().info(f'{tag} [GRIP OPEN] commanding /gripper/open')
+                self._gripper_call(self.gripper_open_cli, 'gripper/open')
                 open_dt = float(self.get_parameter('mock_open_delay_s').value)
-                self.get_logger().info(f'{tag} [MOCK GRIP OPEN] (sleep {open_dt}s)')
-                time.sleep(open_dt)
+                time.sleep(open_dt)  # extra dwell so the open is visible
                 if not self._teleport_to_reservoir(boll['id']):
                     self.get_logger().warn(f'{tag} teleport-to-reservoir failed')
                 picked += 1

@@ -1,7 +1,9 @@
+# MoveIt only drives the arm. The gripper is teleport-only (no trajectory),
+# commanded directly by orchestrator/gripper_controller_node via the
+# /gripper/open and /gripper/close services — not through MoveIt.
 moveit_simple_controller_manager:
   controller_names:
     - arm_controller
-    - gripper_controller
 
   arm_controller:
     type: FollowJointTrajectory
@@ -14,10 +16,3 @@ moveit_simple_controller_manager:
       - joint4
       - joint5
       - joint6
-
-  gripper_controller:
-    type: FollowJointTrajectory
-    action_ns: follow_joint_trajectory
-    default: true
-    joints:
-      - hande_left_finger_joint

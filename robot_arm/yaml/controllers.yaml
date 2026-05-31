@@ -11,7 +11,7 @@ controller_manager:
       type: joint_trajectory_controller/JointTrajectoryController
 
     gripper_controller:
-      type: joint_trajectory_controller/JointTrajectoryController
+      type: position_controllers/JointGroupPositionController
 
 # Joint State Broadcaster - publishes all joint states
 joint_state_broadcaster:
@@ -50,22 +50,14 @@ arm_controller:
     open_loop_control: true
     allow_integration_in_goal_trajectories: true
 
-# Gripper Controller - Hand-E (left finger only, right follows via mimic)
+# Gripper Controller - simple box gripper, left finger only.
+# Right finger is a FIXED decorative box on +X side of palm. Left finger
+# slides along +X via this single prismatic joint (range 0..0.030).
+# Commands published as std_msgs/Float64MultiArray on
+# /gripper_controller/commands → forwarded straight to IgnitionSystem
+# position interface.
 gripper_controller:
   ros__parameters:
     joints:
       - hande_left_finger_joint
-
-    command_interfaces:
-      - position
-
-    state_interfaces:
-      - position
-      - velocity
-
-    state_publish_rate: 50.0
-    action_monitor_rate: 20.0
-
-    allow_partial_joints_goal: true
-    open_loop_control: true
-    allow_integration_in_goal_trajectories: true
+    interface_name: position
