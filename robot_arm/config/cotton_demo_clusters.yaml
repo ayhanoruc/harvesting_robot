@@ -1,0 +1,123 @@
+metadata:
+  source: cotton_cluster_template instances (compact)
+  plant_scale: 4.0
+  col_spacing_m: 3.0
+  row_spacing_m: 6.0
+  aisle_offset_m: 1.0
+spawn_hint:
+  x: 0.0
+  y: 1.0
+  z: 0.0
+  yaw: 0.0
+  comment: in front of cluster_A_01, +Y aisle side, drives along row +X
+sample_route_row1:
+- cluster_A_01
+- cluster_B_01
+- cluster_C_01
+- cluster_A_02
+- cluster_B_02
+- cluster_C_02
+sample_route_row2:
+- cluster_A_03
+- cluster_B_03
+- cluster_C_03
+- cluster_A_04
+- cluster_B_04
+- cluster_C_04
+trees:
+- id: cluster_A_01
+  row: 0
+  col: 0
+  x: 0.0
+  y: 0.0
+  yaw: 0.0
+  canopy_z_min: 1.6
+  canopy_z_max: 1.6
+- id: cluster_B_01
+  row: 0
+  col: 1
+  x: 3.0
+  y: 0.0
+  yaw: 0.0
+  canopy_z_min: 1.6
+  canopy_z_max: 1.6
+- id: cluster_C_01
+  row: 0
+  col: 2
+  x: 6.0
+  y: 0.0
+  yaw: 0.0
+  canopy_z_min: 1.6
+  canopy_z_max: 1.6
+- id: cluster_A_02
+  row: 0
+  col: 3
+  x: 9.0
+  y: 0.0
+  yaw: 0.0
+  canopy_z_min: 1.6
+  canopy_z_max: 1.6
+- id: cluster_B_02
+  row: 0
+  col: 4
+  x: 12.0
+  y: 0.0
+  yaw: 0.0
+  canopy_z_min: 1.6
+  canopy_z_max: 1.6
+- id: cluster_C_02
+  row: 0
+  col: 5
+  x: 15.0
+  y: 0.0
+  yaw: 0.0
+  canopy_z_min: 1.6
+  canopy_z_max: 1.6
+- id: cluster_A_03
+  row: 1
+  col: 0
+  x: 1.5
+  y: 6.0
+  yaw: 3.141593
+  canopy_z_min: 1.6
+  canopy_z_max: 1.6
+- id: cluster_B_03
+  row: 1
+  col: 1
+  x: 4.5
+  y: 6.0
+  yaw: 3.141593
+  canopy_z_min: 1.6
+  canopy_z_max: 1.6
+- id: cluster_C_03
+  row: 1
+  col: 2
+  x: 7.5
+  y: 6.0
+  yaw: 3.141593
+  canopy_z_min: 1.6
+  canopy_z_max: 1.6
+- id: cluster_A_04
+  row: 1
+  col: 3
+  x: 10.5
+  y: 6.0
+  yaw: 3.141593
+  canopy_z_min: 1.6
+  canopy_z_max: 1.6
+- id: cluster_B_04
+  row: 1
+  col: 4
+  x: 13.5
+  y: 6.0
+  yaw: 3.141593
+  canopy_z_min: 1.6
+  canopy_z_max: 1.6
+- id: cluster_C_04
+  row: 1
+  col: 5
+  x: 16.5
+  y: 6.0
+  yaw: 3.141593
+  canopy_z_min: 1.6
+  canopy_z_max: 1.6

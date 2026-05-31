@@ -45,29 +45,204 @@
           <geometry>
             <plane>
               <normal>0 0 1</normal>
-              <size>332 332</size>
+              <size>76 76</size>
             </plane>
           </geometry>
           <surface><friction><ode><mu>100</mu><mu2>50</mu2></ode></friction></surface>
         </collision>
-        <!-- No visual: the bundle's cotton_orchard_clean mesh has its own
-             Ground node (baked terrain texture). Z-fighting would result if
-             we added a second flat-color visual here. -->
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>76 76</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.35 0.25 0.18 1</ambient>
+            <diffuse>0.50 0.36 0.24 1</diffuse>
+          </material>
+        </visual>
       </link>
     </model>
 
-    <!-- ===== Cotton orchard (no-trees variant, scale baked into model.sdf
-             — currently 4x; if you change SCALE here, update model.sdf too) ===== -->
-    <include>
-      <uri>model://cotton_orchard_clean</uri>
-      <pose>0 0 0 0 0 0</pose>
-    </include>
-
-    <!-- ===== Pickable bolls (static visual-only, fitted to each cluster's
-             socket cup via bundle's calibrated cotton_targets.yaml) ===== -->
-    <model name="boll_cotton_pick_A_01">
+    <!-- ===== Cotton clusters: cotton_cluster_template.dae instanced per cluster
+             at custom (X, Y, 0, 0, 0, yaw). Each anchor is a single cluster
+             (4 branches + 4 pedicels + 4 sockets, branches+pedicels only —
+             bolls are placed separately below). ===== -->
+    <model name="cluster_A_01">
       <static>true</static>
-      <pose>61.8682 31.0094 0.9468 0 0 0</pose>
+      <pose>0.0000 0.0000 0 0 0 0.000000</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_orchard_static/meshes/cotton_cluster_template.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cluster_B_01">
+      <static>true</static>
+      <pose>3.0000 0.0000 0 0 0 0.000000</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_orchard_static/meshes/cotton_cluster_template.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cluster_C_01">
+      <static>true</static>
+      <pose>6.0000 0.0000 0 0 0 0.000000</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_orchard_static/meshes/cotton_cluster_template.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cluster_A_02">
+      <static>true</static>
+      <pose>9.0000 0.0000 0 0 0 0.000000</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_orchard_static/meshes/cotton_cluster_template.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cluster_B_02">
+      <static>true</static>
+      <pose>12.0000 0.0000 0 0 0 0.000000</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_orchard_static/meshes/cotton_cluster_template.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cluster_C_02">
+      <static>true</static>
+      <pose>15.0000 0.0000 0 0 0 0.000000</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_orchard_static/meshes/cotton_cluster_template.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cluster_A_03">
+      <static>true</static>
+      <pose>1.5000 6.0000 0 0 0 3.141593</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_orchard_static/meshes/cotton_cluster_template.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cluster_B_03">
+      <static>true</static>
+      <pose>4.5000 6.0000 0 0 0 3.141593</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_orchard_static/meshes/cotton_cluster_template.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cluster_C_03">
+      <static>true</static>
+      <pose>7.5000 6.0000 0 0 0 3.141593</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_orchard_static/meshes/cotton_cluster_template.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cluster_A_04">
+      <static>true</static>
+      <pose>10.5000 6.0000 0 0 0 3.141593</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_orchard_static/meshes/cotton_cluster_template.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cluster_B_04">
+      <static>true</static>
+      <pose>13.5000 6.0000 0 0 0 3.141593</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_orchard_static/meshes/cotton_cluster_template.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+    <model name="cluster_C_04">
+      <static>true</static>
+      <pose>16.5000 6.0000 0 0 0 3.141593</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_orchard_static/meshes/cotton_cluster_template.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ===== Pickable bolls (cotton_pick_*.dae cup + white fluff sphere
+             for opaque interior) at each cluster's socket offsets ===== -->
+    <model name="boll_cluster_A_01_A_01">
+      <static>true</static>
+      <pose>0.2396 0.3376 0.8280 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -79,7 +254,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -89,9 +264,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_A_02">
+    <model name="boll_cluster_A_01_A_02">
       <static>true</static>
-      <pose>61.5010 31.0447 1.0983 0 0 0</pose>
+      <pose>-0.0816 0.3732 0.9868 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -103,7 +278,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -113,9 +288,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_A_03">
+    <model name="boll_cluster_A_01_A_03">
       <static>true</static>
-      <pose>61.8671 31.1012 1.3447 0 0 0</pose>
+      <pose>0.2388 0.4304 1.2304 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -127,7 +302,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -137,9 +312,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_A_04">
+    <model name="boll_cluster_A_01_A_04">
       <static>true</static>
-      <pose>61.5315 31.2864 1.6349 0 0 0</pose>
+      <pose>-0.0528 0.6056 1.5196 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -151,7 +326,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -161,9 +336,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_A_05">
+    <model name="boll_cluster_B_01_A_01">
       <static>true</static>
-      <pose>94.0297 30.8042 0.8508 0 0 0</pose>
+      <pose>3.2396 0.3376 0.8280 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -175,7 +350,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -185,9 +360,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_A_06">
+    <model name="boll_cluster_B_01_A_02">
       <static>true</static>
-      <pose>93.7610 30.9137 1.1155 0 0 0</pose>
+      <pose>2.9184 0.3732 0.9868 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -199,7 +374,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -209,9 +384,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_A_07">
+    <model name="boll_cluster_B_01_A_03">
       <static>true</static>
-      <pose>94.1139 31.0972 1.4138 0 0 0</pose>
+      <pose>3.2388 0.4304 1.2304 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -223,7 +398,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -233,9 +408,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_A_08">
+    <model name="boll_cluster_B_01_A_04">
       <static>true</static>
-      <pose>93.7396 31.0419 1.6004 0 0 0</pose>
+      <pose>2.9472 0.6056 1.5196 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -247,7 +422,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -257,9 +432,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_A_09">
+    <model name="boll_cluster_C_01_A_01">
       <static>true</static>
-      <pose>94.0427 31.2323 1.9089 0 0 0</pose>
+      <pose>6.2396 0.3376 0.8280 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -271,7 +446,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -281,9 +456,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_A_10">
+    <model name="boll_cluster_C_01_A_02">
       <static>true</static>
-      <pose>64.5852 36.4121 0.9313 0 0 0</pose>
+      <pose>5.9184 0.3732 0.9868 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -295,7 +470,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -305,9 +480,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_A_11">
+    <model name="boll_cluster_C_01_A_03">
       <static>true</static>
-      <pose>64.8860 36.1972 1.2226 0 0 0</pose>
+      <pose>6.2388 0.4304 1.2304 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -319,7 +494,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -329,9 +504,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_A_12">
+    <model name="boll_cluster_C_01_A_04">
       <static>true</static>
-      <pose>64.6229 36.2755 1.4048 0 0 0</pose>
+      <pose>5.9472 0.6056 1.5196 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -343,7 +518,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -353,9 +528,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_A_13">
+    <model name="boll_cluster_A_02_A_01">
       <static>true</static>
-      <pose>64.8895 36.1139 1.7274 0 0 0</pose>
+      <pose>9.2396 0.3376 0.8280 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -367,7 +542,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -377,9 +552,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_A_14">
+    <model name="boll_cluster_A_02_A_02">
       <static>true</static>
-      <pose>97.0090 36.0016 0.9499 0 0 0</pose>
+      <pose>8.9184 0.3732 0.9868 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -391,7 +566,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -401,9 +576,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_A_15">
+    <model name="boll_cluster_A_02_A_03">
       <static>true</static>
-      <pose>97.3898 36.1070 1.0996 0 0 0</pose>
+      <pose>9.2388 0.4304 1.2304 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -415,7 +590,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -425,9 +600,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_A_16">
+    <model name="boll_cluster_A_02_A_04">
       <static>true</static>
-      <pose>97.0977 35.9298 1.4068 0 0 0</pose>
+      <pose>8.9472 0.6056 1.5196 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -439,7 +614,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -449,9 +624,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_A_17">
+    <model name="boll_cluster_B_02_A_01">
       <static>true</static>
-      <pose>97.4213 35.8617 1.6940 0 0 0</pose>
+      <pose>12.2396 0.3376 0.8280 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -463,7 +638,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -473,9 +648,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_B_01">
+    <model name="boll_cluster_B_02_A_02">
       <static>true</static>
-      <pose>72.4371 30.7985 1.0064 0 0 0</pose>
+      <pose>11.9184 0.3732 0.9868 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -487,7 +662,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -497,9 +672,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_B_02">
+    <model name="boll_cluster_B_02_A_03">
       <static>true</static>
-      <pose>72.3833 30.9198 1.4603 0 0 0</pose>
+      <pose>12.2388 0.4304 1.2304 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -511,7 +686,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -521,9 +696,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_B_03">
+    <model name="boll_cluster_B_02_A_04">
       <static>true</static>
-      <pose>71.9506 30.9907 1.7740 0 0 0</pose>
+      <pose>11.9472 0.6056 1.5196 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -535,7 +710,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -545,9 +720,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_B_04">
+    <model name="boll_cluster_C_02_A_01">
       <static>true</static>
-      <pose>104.9553 31.2475 0.8917 0 0 0</pose>
+      <pose>15.2396 0.3376 0.8280 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -559,7 +734,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -569,9 +744,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_B_05">
+    <model name="boll_cluster_C_02_A_02">
       <static>true</static>
-      <pose>105.0984 31.4466 1.4106 0 0 0</pose>
+      <pose>14.9184 0.3732 0.9868 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -583,7 +758,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -593,9 +768,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_B_06">
+    <model name="boll_cluster_C_02_A_03">
       <static>true</static>
-      <pose>104.7589 31.4303 1.5895 0 0 0</pose>
+      <pose>15.2388 0.4304 1.2304 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -607,7 +782,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -617,9 +792,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_B_07">
+    <model name="boll_cluster_C_02_A_04">
       <static>true</static>
-      <pose>75.4918 36.0031 0.8649 0 0 0</pose>
+      <pose>14.9472 0.6056 1.5196 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -631,7 +806,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -641,9 +816,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_B_08">
+    <model name="boll_cluster_A_03_A_01">
       <static>true</static>
-      <pose>75.5613 35.9482 1.2741 0 0 0</pose>
+      <pose>1.2604 5.6624 0.8280 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -655,7 +830,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -665,9 +840,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_B_09">
+    <model name="boll_cluster_A_03_A_02">
       <static>true</static>
-      <pose>75.8341 35.8921 1.5933 0 0 0</pose>
+      <pose>1.5816 5.6268 0.9868 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -679,7 +854,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -689,9 +864,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_B_10">
+    <model name="boll_cluster_A_03_A_03">
       <static>true</static>
-      <pose>107.7098 36.5990 1.0211 0 0 0</pose>
+      <pose>1.2612 5.5696 1.2304 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -703,7 +878,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -713,9 +888,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_B_11">
+    <model name="boll_cluster_A_03_A_04">
       <static>true</static>
-      <pose>107.7803 36.4460 1.5462 0 0 0</pose>
+      <pose>1.5528 5.3944 1.5196 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -727,7 +902,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -737,9 +912,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_B_12">
+    <model name="boll_cluster_B_03_A_01">
       <static>true</static>
-      <pose>108.0929 36.2258 1.8629 0 0 0</pose>
+      <pose>4.2604 5.6624 0.8280 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -751,7 +926,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -761,9 +936,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_C_01">
+    <model name="boll_cluster_B_03_A_02">
       <static>true</static>
-      <pose>83.4832 31.1475 0.9286 0 0 0</pose>
+      <pose>4.5816 5.6268 0.9868 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -775,7 +950,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -785,9 +960,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_C_02">
+    <model name="boll_cluster_B_03_A_03">
       <static>true</static>
-      <pose>83.1682 31.1752 1.0475 0 0 0</pose>
+      <pose>4.2612 5.5696 1.2304 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -799,7 +974,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -809,9 +984,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_C_03">
+    <model name="boll_cluster_B_03_A_04">
       <static>true</static>
-      <pose>83.1854 31.3679 1.5611 0 0 0</pose>
+      <pose>4.5528 5.3944 1.5196 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -823,7 +998,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -833,9 +1008,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_C_04">
+    <model name="boll_cluster_C_03_A_01">
       <static>true</static>
-      <pose>115.5119 30.9423 0.9583 0 0 0</pose>
+      <pose>7.2604 5.6624 0.8280 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -847,7 +1022,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -857,9 +1032,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_C_05">
+    <model name="boll_cluster_C_03_A_02">
       <static>true</static>
-      <pose>115.2133 30.9990 1.2145 0 0 0</pose>
+      <pose>7.5816 5.6268 0.9868 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -871,7 +1046,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -881,9 +1056,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_C_06">
+    <model name="boll_cluster_C_03_A_03">
       <static>true</static>
-      <pose>115.0826 31.1324 1.7400 0 0 0</pose>
+      <pose>7.2612 5.5696 1.2304 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -895,7 +1070,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -905,9 +1080,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_C_07">
+    <model name="boll_cluster_C_03_A_04">
       <static>true</static>
-      <pose>86.1790 36.4887 1.0112 0 0 0</pose>
+      <pose>7.5528 5.3944 1.5196 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -919,7 +1094,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -929,9 +1104,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_C_08">
+    <model name="boll_cluster_A_04_A_01">
       <static>true</static>
-      <pose>86.5573 36.2847 1.3209 0 0 0</pose>
+      <pose>10.2604 5.6624 0.8280 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -943,7 +1118,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -953,9 +1128,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_C_09">
+    <model name="boll_cluster_A_04_A_02">
       <static>true</static>
-      <pose>86.5027 36.0745 1.9055 0 0 0</pose>
+      <pose>10.5816 5.6268 0.9868 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -967,7 +1142,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -977,9 +1152,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_C_10">
+    <model name="boll_cluster_A_04_A_03">
       <static>true</static>
-      <pose>118.6887 36.0748 0.9358 0 0 0</pose>
+      <pose>10.2612 5.5696 1.2304 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -991,7 +1166,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -1001,9 +1176,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_C_11">
+    <model name="boll_cluster_A_04_A_04">
       <static>true</static>
-      <pose>119.0349 36.2386 1.0862 0 0 0</pose>
+      <pose>10.5528 5.3944 1.5196 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -1015,7 +1190,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -1025,9 +1200,9 @@
         </visual>
       </link>
     </model>
-    <model name="boll_cotton_pick_C_12">
+    <model name="boll_cluster_B_04_A_01">
       <static>true</static>
-      <pose>119.0597 36.0577 1.6447 0 0 0</pose>
+      <pose>13.2604 5.6624 0.8280 0 0 0</pose>
       <link name="link">
         <visual name="cup">
           <geometry>
@@ -1039,7 +1214,175 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.0720</radius></sphere>
+            <sphere><radius>0.072</radius></sphere>
+          </geometry>
+          <material>
+            <ambient>0.92 0.92 0.88 1</ambient>
+            <diffuse>0.98 0.98 0.95 1</diffuse>
+            <specular>0.10 0.10 0.10 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+    <model name="boll_cluster_B_04_A_02">
+      <static>true</static>
+      <pose>13.5816 5.6268 0.9868 0 0 0</pose>
+      <link name="link">
+        <visual name="cup">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_A_01/meshes/cotton_pick_A_01.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+        <visual name="fluff">
+          <geometry>
+            <sphere><radius>0.072</radius></sphere>
+          </geometry>
+          <material>
+            <ambient>0.92 0.92 0.88 1</ambient>
+            <diffuse>0.98 0.98 0.95 1</diffuse>
+            <specular>0.10 0.10 0.10 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+    <model name="boll_cluster_B_04_A_03">
+      <static>true</static>
+      <pose>13.2612 5.5696 1.2304 0 0 0</pose>
+      <link name="link">
+        <visual name="cup">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_A_02/meshes/cotton_pick_A_02.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+        <visual name="fluff">
+          <geometry>
+            <sphere><radius>0.072</radius></sphere>
+          </geometry>
+          <material>
+            <ambient>0.92 0.92 0.88 1</ambient>
+            <diffuse>0.98 0.98 0.95 1</diffuse>
+            <specular>0.10 0.10 0.10 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+    <model name="boll_cluster_B_04_A_04">
+      <static>true</static>
+      <pose>13.5528 5.3944 1.5196 0 0 0</pose>
+      <link name="link">
+        <visual name="cup">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_A_03/meshes/cotton_pick_A_03.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+        <visual name="fluff">
+          <geometry>
+            <sphere><radius>0.072</radius></sphere>
+          </geometry>
+          <material>
+            <ambient>0.92 0.92 0.88 1</ambient>
+            <diffuse>0.98 0.98 0.95 1</diffuse>
+            <specular>0.10 0.10 0.10 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+    <model name="boll_cluster_C_04_A_01">
+      <static>true</static>
+      <pose>16.2604 5.6624 0.8280 0 0 0</pose>
+      <link name="link">
+        <visual name="cup">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_A_04/meshes/cotton_pick_A_04.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+        <visual name="fluff">
+          <geometry>
+            <sphere><radius>0.072</radius></sphere>
+          </geometry>
+          <material>
+            <ambient>0.92 0.92 0.88 1</ambient>
+            <diffuse>0.98 0.98 0.95 1</diffuse>
+            <specular>0.10 0.10 0.10 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+    <model name="boll_cluster_C_04_A_02">
+      <static>true</static>
+      <pose>16.5816 5.6268 0.9868 0 0 0</pose>
+      <link name="link">
+        <visual name="cup">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_A_05/meshes/cotton_pick_A_05.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+        <visual name="fluff">
+          <geometry>
+            <sphere><radius>0.072</radius></sphere>
+          </geometry>
+          <material>
+            <ambient>0.92 0.92 0.88 1</ambient>
+            <diffuse>0.98 0.98 0.95 1</diffuse>
+            <specular>0.10 0.10 0.10 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+    <model name="boll_cluster_C_04_A_03">
+      <static>true</static>
+      <pose>16.2612 5.5696 1.2304 0 0 0</pose>
+      <link name="link">
+        <visual name="cup">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_A_06/meshes/cotton_pick_A_06.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+        <visual name="fluff">
+          <geometry>
+            <sphere><radius>0.072</radius></sphere>
+          </geometry>
+          <material>
+            <ambient>0.92 0.92 0.88 1</ambient>
+            <diffuse>0.98 0.98 0.95 1</diffuse>
+            <specular>0.10 0.10 0.10 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+    <model name="boll_cluster_C_04_A_04">
+      <static>true</static>
+      <pose>16.5528 5.3944 1.5196 0 0 0</pose>
+      <link name="link">
+        <visual name="cup">
+          <geometry>
+            <mesh>
+              <uri>model://cotton_pick_A_07/meshes/cotton_pick_A_07.dae</uri>
+              <scale>4.0 4.0 4.0</scale>
+            </mesh>
+          </geometry>
+        </visual>
+        <visual name="fluff">
+          <geometry>
+            <sphere><radius>0.072</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>

@@ -1,38 +1,37 @@
 #!/usr/bin/env python3
 """
-Generate `cotton_demo.world` + `cotton_demo_bolls.yaml` from Deniz's bundle
-USING THE BUNDLE'S NATIVE BOLL POSITIONS.
+Generate `cotton_demo.world` + `cotton_demo_bolls.yaml` + `cotton_demo_clusters.yaml`
+using cotton_cluster_template instancing in a COMPACT 2-row grid.
 
-Why this version
-----------------
-Earlier attempt: I extracted ONE cluster's 4 socket positions and reused them
-for every instance, then scaled by plant_scale. That produced bolls that
-floated AROUND clusters but didn't FIT the actual sepal cups — because each
-cluster in the bundle has its own unique socket positions (3-5 per cluster,
-41 total across 12 clusters), and reusing one cluster's offsets doesn't
-match the geometry of the others.
+Why this version (vs bundle-monolithic)
+---------------------------------------
+The bundle's cotton_orchard_static mesh bakes 12 clusters at fixed XY positions
+with ~10.8 m in-row spacing when scaled 4x. The user wants WITHIN-row clusters
+closer together (not across-row). To do that the mesh can't be monolithic —
+each cluster needs its own pose.
 
-Correct approach (this script):
-  1. Read bundle's config/cotton_targets.yaml — 41 boll positions calibrated
-     to fit inside each cluster's sepal cup in the baked monolithic mesh.
-  2. Scale EVERYTHING uniformly (plant mesh + boll positions + boll mesh):
-     bolls stay locked to their cluster sockets at any scale.
-  3. Each boll is grouped to its nearest cluster anchor (one of 12) for
-     `tree_id` so simple_cluster_harvester can pick per-cluster.
+Approach: re-use the already-extracted single-cluster template
+(`cotton_cluster_template.dae`, anchor at origin, 4 sockets) and instance it
+12 times in a grid we control. Each instance:
+  - plant visual: cotton_cluster_template.dae @ PLANT_SCALE
+  - 4 pickable bolls at template socket offsets (cotton_cluster_sockets.yaml)
+    rotated by per-cluster yaw, scaled by PLANT_SCALE, with a white fluff
+    sphere inside the cup (so we don't see the dark cavity from the side)
+
+Layout (compact, 12 clusters):
+  Row 1 (Y=ROW1_Y, yaw=0,  bolls face +Y): A_01,B_01,C_01,A_02,B_02,C_02
+  Row 2 (Y=ROW2_Y, yaw=π,  bolls face -Y): A_03,B_03,C_03,A_04,B_04,C_04
+  In-row X spacing: COL_SPACING_M (default 3.0 m, compact vs bundle's 10.8)
+  Row 2 X-offset:   COL_SPACING_M / 2   (offset half-period like real orchards)
+  Husky aisle:      Y = AISLE_Y, between Row 1 and Row 2
 
 Outputs
-  - worlds/cotton_demo.world           (cotton_orchard_clean + 41 fitted bolls)
-  - config/cotton_demo_bolls.yaml      (harvester inventory, items[] schema)
-
-Notes
-  - Bundle anchors (scale 1): X ∈ [15.4, 29.7], Y ∈ [7.6, 9.2].
-    At SCALE=4 → X ∈ [61.6, 118.8], Y ∈ [30.3, 37.0].
-  - Aisle Y center at scale 4: ≈ 33.6.
-  - User wanted plants at 'our tree scale' (~2 m) → SCALE 4 makes plant
-    height ~2 m (matches our orchard tree heights).
-  - Cluster spacing in X (12 m at scale 4) is fixed by the bundle's baked
-    mesh; we can't tighten without splitting the DAE per cluster. Use a
-    smaller SCALE (--scale 2 → 1 m plants, 6 m X-spacing) for a tighter demo.
+  - worlds/cotton_demo.world          (template-instanced field, no monolithic
+                                       cluster mesh, with ground)
+  - config/cotton_demo_bolls.yaml     (simple_cluster_harvester inventory,
+                                       items[] schema — same as orchard_bolls)
+  - config/cotton_demo_clusters.yaml  (row_navigator inventory, trees[] schema
+                                       — same as orchard_tree_positions.yaml)
 """
 
 from __future__ import annotations
@@ -42,40 +41,44 @@ import math
 import os
 import yaml
 
-SCRIPT_DIR        = os.path.dirname(os.path.abspath(__file__))
-PKG               = os.path.normpath(os.path.join(SCRIPT_DIR, '..'))
-BUNDLE_TARGETS    = os.path.join(PKG, 'config', 'cotton_targets_bundle.yaml')
-BOLLS_YML         = os.path.join(PKG, 'config', 'cotton_demo_bolls.yaml')
-WORLD_OUT         = os.path.join(PKG, 'worlds', 'cotton_demo.world')
+SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
+PKG         = os.path.normpath(os.path.join(SCRIPT_DIR, '..'))
+SOCKETS_YML = os.path.join(PKG, 'config', 'cotton_cluster_sockets.yaml')
+BOLLS_YML   = os.path.join(PKG, 'config', 'cotton_demo_bolls.yaml')
+CLUSTERS_YML = os.path.join(PKG, 'config', 'cotton_demo_clusters.yaml')
+WORLD_OUT   = os.path.join(PKG, 'worlds', 'cotton_demo.world')
+PICKS_DIR   = os.path.join(PKG, 'models', 'cotton_picks')
 
-# 12 branch_main anchor positions at scale 1 (from inspect_cluster_layout.py)
-ANCHORS_SCALE1 = {
-    'cluster_A_01': (15.40, 7.66),
-    'cluster_A_02': (23.50, 7.60),
-    'cluster_A_03': (16.20, 9.20),
-    'cluster_A_04': (24.30, 9.12),
-    'cluster_B_01': (18.10, 7.58),
-    'cluster_B_02': (26.20, 7.72),
-    'cluster_B_03': (18.90, 9.10),
-    'cluster_B_04': (27.00, 9.26),
-    'cluster_C_01': (20.80, 7.70),
-    'cluster_C_02': (28.90, 7.62),
-    'cluster_C_03': (21.60, 9.24),
-    'cluster_C_04': (29.70, 9.14),
-}
+CLUSTER_MESH_URI = 'model://cotton_orchard_static/meshes/cotton_cluster_template.dae'
+
+# Bundle's anchor naming preserved (12 clusters: A_01..A_04, B_01..B_04, C_01..C_04).
+# A,B,C are X-columns; _01/_02 = Row 1 (low Y), _03/_04 = Row 2 (high Y).
+# Bundle X-order within Row 1: A_01, B_01, C_01, A_02, B_02, C_02 → keep same order
+# so existing route configs (cluster_A_01 → cluster_B_01 → ...) still make sense.
+ROW1_CLUSTERS = ['cluster_A_01', 'cluster_B_01', 'cluster_C_01',
+                 'cluster_A_02', 'cluster_B_02', 'cluster_C_02']
+ROW2_CLUSTERS = ['cluster_A_03', 'cluster_B_03', 'cluster_C_03',
+                 'cluster_A_04', 'cluster_B_04', 'cluster_C_04']
 
 
-def nearest_cluster(x_s1: float, y_s1: float) -> str:
-    """Assign a boll (at scale-1 position) to its nearest of 12 cluster anchors."""
-    best_id, best_d2 = None, float('inf')
-    for cid, (ax, ay) in ANCHORS_SCALE1.items():
-        d2 = (x_s1 - ax) ** 2 + (y_s1 - ay) ** 2
-        if d2 < best_d2:
-            best_d2, best_id = d2, cid
-    return best_id
+def list_pick_models():
+    if not os.path.isdir(PICKS_DIR):
+        raise RuntimeError(f'No cotton_picks dir: {PICKS_DIR}')
+    names = sorted(
+        d for d in os.listdir(PICKS_DIR)
+        if d.startswith('cotton_pick_') and os.path.isdir(os.path.join(PICKS_DIR, d))
+    )
+    if not names:
+        raise RuntimeError(f'No cotton_pick_* models in {PICKS_DIR}')
+    return names
 
 
-def render_world(items, scale: float, ground_size: int) -> str:
+def load_socket_offsets():
+    with open(SOCKETS_YML, 'r', encoding='utf-8') as f:
+        return yaml.safe_load(f)['sockets']
+
+
+def render_world_xml(clusters, items, scale, ground_size):
     parts = [f'''<?xml version="1.0" ?>
 <sdf version="1.6">
   <world name="cotton_demo">
@@ -128,27 +131,49 @@ def render_world(items, scale: float, ground_size: int) -> str:
           </geometry>
           <surface><friction><ode><mu>100</mu><mu2>50</mu2></ode></friction></surface>
         </collision>
-        <!-- No visual: the bundle's cotton_orchard_clean mesh has its own
-             Ground node (baked terrain texture). Z-fighting would result if
-             we added a second flat-color visual here. -->
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>{ground_size * 2} {ground_size * 2}</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.35 0.25 0.18 1</ambient>
+            <diffuse>0.50 0.36 0.24 1</diffuse>
+          </material>
+        </visual>
       </link>
     </model>
 
-    <!-- ===== Cotton orchard (no-trees variant, scale baked into model.sdf
-             — currently 4x; if you change SCALE here, update model.sdf too) ===== -->
-    <include>
-      <uri>model://cotton_orchard_clean</uri>
-      <pose>0 0 0 0 0 0</pose>
-    </include>
-
-    <!-- ===== Pickable bolls (static visual-only, fitted to each cluster's
-             socket cup via bundle's calibrated cotton_targets.yaml) ===== -->
+    <!-- ===== Cotton clusters: cotton_cluster_template.dae instanced per cluster
+             at custom (X, Y, 0, 0, 0, yaw). Each anchor is a single cluster
+             (4 branches + 4 pedicels + 4 sockets, branches+pedicels only —
+             bolls are placed separately below). ===== -->
 ''']
-    # Fluff sphere size: bundle collision_radius is ~0.018-0.022 at scale 1
-    # (≈4 cm diameter). At our scale (default 4), that's ~8 cm. Fill the cup
-    # cavity with a slightly-smaller sphere so we don't see the dark interior
-    # (the cotton_pick DAE is just an open sepal cup, no fluff modeled).
-    fluff_r = 0.018 * scale
+
+    for c in clusters:
+        parts.append(
+            f'    <model name="{c["id"]}">\n'
+            f'      <static>true</static>\n'
+            f'      <pose>{c["x"]:.4f} {c["y"]:.4f} 0 0 0 {c["yaw"]:.6f}</pose>\n'
+            f'      <link name="link">\n'
+            f'        <visual name="visual">\n'
+            f'          <geometry>\n'
+            f'            <mesh>\n'
+            f'              <uri>{CLUSTER_MESH_URI}</uri>\n'
+            f'              <scale>{scale} {scale} {scale}</scale>\n'
+            f'            </mesh>\n'
+            f'          </geometry>\n'
+            f'        </visual>\n'
+            f'      </link>\n'
+            f'    </model>\n'
+        )
+
+    parts.append('\n    <!-- ===== Pickable bolls (cotton_pick_*.dae cup + white fluff sphere\n'
+                 '             for opaque interior) at each cluster\'s socket offsets ===== -->\n')
+
+    fluff_r = round(0.018 * scale, 4)
     for it in items:
         mesh_uri = f'model://{it["model"]}/meshes/{it["model"]}.dae'
         parts.append(
@@ -166,7 +191,7 @@ def render_world(items, scale: float, ground_size: int) -> str:
             f'        </visual>\n'
             f'        <visual name="fluff">\n'
             f'          <geometry>\n'
-            f'            <sphere><radius>{fluff_r:.4f}</radius></sphere>\n'
+            f'            <sphere><radius>{fluff_r}</radius></sphere>\n'
             f'          </geometry>\n'
             f'          <material>\n'
             f'            <ambient>0.92 0.92 0.88 1</ambient>\n'
@@ -177,109 +202,173 @@ def render_world(items, scale: float, ground_size: int) -> str:
             f'      </link>\n'
             f'    </model>\n'
         )
+
     parts.append('\n  </world>\n</sdf>\n')
     return ''.join(parts)
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--scale', type=float, default=4.0,
-                    help='Uniform scale (default 4 → plants ~2m, matches our trees). '
-                         'Bundle native is 1 (plants ~50cm). Plant-mesh scale lives '
-                         'in models/cotton_orchard_clean/model.sdf; keep them in sync.')
+    ap.add_argument('--col-spacing', type=float, default=3.0,
+                    help='In-row X spacing between cluster centers (m). Default 3.0 '
+                         '(vs bundle native ~10.8m at scale 4). Plant XY radius at '
+                         'PLANT_SCALE=4 is ~0.6 m so 3 m gives ~2.4 m clearance.')
+    ap.add_argument('--row-spacing', type=float, default=6.0,
+                    help='Between-row Y distance between Row 1 and Row 2 (m). '
+                         'Default 6.0 — kept wide (user requested compactness '
+                         'WITHIN rows, not across).')
+    ap.add_argument('--plant-scale', type=float, default=4.0,
+                    help='Mesh scale for cotton_cluster_template (default 4 → '
+                         '~2m plant height, matches our orchard tree heights).')
+    ap.add_argument('--row1-y', type=float, default=0.0,
+                    help='World Y of Row 1 anchors (default 0).')
+    ap.add_argument('--row1-x0', type=float, default=0.0,
+                    help='World X of Row 1 first cluster (cluster_A_01) (default 0).')
+    ap.add_argument('--aisle-offset', type=float, default=1.0,
+                    help='Husky aisle Y offset from Row 1 (m). Default 1.0 — Husky '
+                         'sits 1m on +Y of Row 1 anchors, bolls at Y≈0.34 → arm-to-'
+                         'boll dy≈0.66 m (matches old orchard_bolls reach budget).')
     args = ap.parse_args()
-    scale = float(args.scale)
 
-    with open(BUNDLE_TARGETS, 'r', encoding='utf-8') as f:
-        bundle = yaml.safe_load(f)
-    targets = bundle['cotton_targets']
-    print(f'Loaded {len(targets)} bolls from bundle cotton_targets.yaml')
+    scale       = float(args.plant_scale)
+    col_sp      = float(args.col_spacing)
+    row_sp      = float(args.row_spacing)
+    row1_y      = float(args.row1_y)
+    row1_x0     = float(args.row1_x0)
+    aisle_off   = float(args.aisle_offset)
+    row2_y      = row1_y + row_sp
+    row2_x0     = row1_x0 + col_sp / 2.0  # offset half-period (real-orchard pattern)
 
-    items = []
-    counts = {cid: 0 for cid in ANCHORS_SCALE1}
-    for t in targets:
-        name = t['name']                          # e.g. 'cotton_pick_A_01'
-        x_s1, y_s1, z_s1 = t['pose_xyz']
-        cluster_id = nearest_cluster(x_s1, y_s1)
-        counts[cluster_id] += 1
-        items.append({
-            'id':       f'boll_{name}',          # Gazebo model name (set_pose target)
-            'tree_id':  cluster_id,              # harvester groups per cluster
-            'type':     'ripe',                  # bundle bolls are 'pickable'
-            'x':        round(x_s1 * scale, 4),
-            'y':        round(y_s1 * scale, 4),
-            'z':        round(z_s1 * scale, 4),
-            'radius':   round(t.get('collision_radius_m', 0.02) * scale, 5),
-            'rgba':     [0.95, 0.95, 0.90, 1.0],
-            'model':    t['model'],              # cotton_pick_X
-            'mesh_scale': scale,
-            'source':   name,
-        })
+    socket_offsets = load_socket_offsets()
+    pick_models    = list_pick_models()
+    print(f'Sockets per cluster: {len(socket_offsets)}')
+    print(f'cotton_pick_* models available: {len(pick_models)}')
 
-    # Field bounds (for ground sizing)
-    xs = [it['x'] for it in items]
-    ys = [it['y'] for it in items]
-    min_x, max_x = min(xs), max(xs)
-    min_y, max_y = min(ys), max(ys)
+    # Build cluster anchors + bolls
+    clusters = []
+    items    = []
+    pick_idx = 0
+    for r, names in enumerate([ROW1_CLUSTERS, ROW2_CLUSTERS]):
+        # Row 1: yaw=0 → bolls on +Y side (toward aisle)
+        # Row 2: yaw=π → bolls on -Y side (toward aisle)
+        yaw  = 0.0 if r == 0 else math.pi
+        y    = row1_y if r == 0 else row2_y
+        x0   = row1_x0 if r == 0 else row2_x0
+        cos_y, sin_y = math.cos(yaw), math.sin(yaw)
+        for c_idx, cname in enumerate(names):
+            cx = x0 + c_idx * col_sp
+            cy = y
+            clusters.append({'id': cname, 'x': cx, 'y': cy, 'yaw': yaw,
+                             'row': r, 'col': c_idx})
+            # Per-cluster 4 bolls at template socket offsets
+            for s in socket_offsets:
+                sx = s['x'] * scale
+                sy = s['y'] * scale
+                sz = s['z'] * scale
+                wx = cx + cos_y * sx - sin_y * sy
+                wy = cy + sin_y * sx + cos_y * sy
+                wz = sz
+                socket_tag = s['name'].split('_', 1)[1]   # 'A_01' from 'socket_A_01'
+                items.append({
+                    'id':         f'boll_{cname}_{socket_tag}',
+                    'tree_id':    cname,
+                    'type':       'ripe',
+                    'x':          round(wx, 4),
+                    'y':          round(wy, 4),
+                    'z':          round(wz, 4),
+                    'radius':     round(0.018 * scale, 5),
+                    'rgba':       [0.95, 0.95, 0.90, 1.0],
+                    'model':      pick_models[pick_idx % len(pick_models)],
+                    'socket':     s['name'],
+                    'cluster_row': r,
+                })
+                pick_idx += 1
 
-    # Husky spawn: in front of FIRST cluster (A_01), on the +Y aisle side, within arm reach.
-    #
-    # Convention (matches husky_orchard_demo.launch.py):
-    #   - Husky yaw=0 → front along +X = row line direction
-    #   - arm rotates joint1=-π/2 → looks to Husky's right (= -Y in world)
-    #   - so Husky should be on +Y side of the cluster's bolls, facing +X
-    #
-    # Row 1 (A_01,B_01,C_01,A_02,B_02,C_02) has bolls on the +Y side of anchors
-    # (socket Y-offset is positive in the bundle's frame). So Husky at
-    # anchor_Y + ~1.0 m is ≈0.65 m from the closest boll → comfortable reach.
-    a01_ax, a01_ay = ANCHORS_SCALE1['cluster_A_01']
-    a01_bolls_y = [it['y'] for it in items if it['tree_id'] == 'cluster_A_01']
-    closest_boll_y = min(a01_bolls_y) if a01_bolls_y else a01_ay * scale
-    spawn_x  = round(a01_ax * scale, 4)             # aligned with A_01 in X
-    spawn_y  = round(closest_boll_y + 0.65, 4)      # 0.65 m on +Y from nearest boll
-    spawn_yaw = 0.0                                 # face +X = drive along row line
-    print(f'Field bounds at scale {scale}: '
-          f'X in [{min_x:.2f}, {max_x:.2f}], Y in [{min_y:.2f}, {max_y:.2f}]')
-    print(f'First cluster A_01 anchor: ({a01_ax*scale:.2f}, {a01_ay*scale:.2f})')
-    print(f'Suggested Husky spawn: ({spawn_x}, {spawn_y}, 0)  yaw=0  '
-          f'(in front of A_01, {round(spawn_y - closest_boll_y, 2)}m from nearest boll)')
+    # Field bounds (for ground sizing) — pad for camera/depth visibility
+    xs = [c['x'] for c in clusters]
+    ys = [c['y'] for c in clusters]
+    margin = 6.0
+    ground_size = int(max(max(xs) - min(xs), max(ys) - min(ys)) + margin * 2 + 10)
 
-    ground_size = max(60, int(max(max_x, max_y) * 1.4))
+    husky_spawn = {
+        'x':   round(row1_x0, 4),                        # X of cluster_A_01
+        'y':   round(row1_y + aisle_off, 4),             # +Y aisle from Row 1
+        'z':   0.0,
+        'yaw': 0.0,                                       # face +X = row line
+        'comment': 'in front of cluster_A_01, +Y aisle side, drives along row +X',
+    }
 
     with open(WORLD_OUT, 'w', encoding='utf-8') as f:
-        f.write(render_world(items, scale, ground_size))
+        f.write(render_world_xml(clusters, items, scale, ground_size))
     print(f'Wrote {WORLD_OUT}')
+    print(f'  Clusters: {len(clusters)}  (Row1 Y={row1_y}, Row2 Y={row2_y})')
+    print(f'  Bolls:    {len(items)}     ({len(socket_offsets)} per cluster)')
+    print(f'  X-spacing: {col_sp}m in row (vs bundle native ~10.8m at scale 4)')
 
-    out_doc = {
+    # cotton_demo_bolls.yaml — harvester (simple_cluster_harvester) inventory
+    bolls_doc = {
         'bolls': {
             'generation': {
-                'plan':            'bundle_native_positions_scaled_uniformly',
-                'scale':           scale,
-                'bundle_source':   'cotton_orchard_pickable_gazebo/config/cotton_targets.yaml',
-                'cluster_count':   len(ANCHORS_SCALE1),
-                'bolls_per_cluster': counts,
-                'field_bounds': {
-                    'x_min': round(min_x, 4), 'x_max': round(max_x, 4),
-                    'y_min': round(min_y, 4), 'y_max': round(max_y, 4),
-                },
-                'spawn_hint': {
-                    'x':   spawn_x,
-                    'y':   spawn_y,
-                    'yaw': spawn_yaw,
-                    'note': 'In front of cluster_A_01 on +Y aisle side; '
-                            'yaw=0 follows row line along +X.',
-                },
+                'plan':            'cotton_cluster_template_instanced_compact',
+                'plant_scale':     scale,
+                'col_spacing_m':   col_sp,
+                'row_spacing_m':   row_sp,
+                'row1_y':          row1_y,
+                'row1_x0':         row1_x0,
+                'aisle_offset_m':  aisle_off,
+                'sockets_per_cluster': len(socket_offsets),
             },
             'count': {'total': len(items)},
         },
+        'spawn_hint': husky_spawn,
         'items': items,
     }
     with open(BOLLS_YML, 'w', encoding='utf-8') as f:
-        yaml.dump(out_doc, f, sort_keys=False, default_flow_style=False)
-    print(f'Wrote {BOLLS_YML}  ({len(items)} bolls, {len(ANCHORS_SCALE1)} clusters)')
-    print('Per-cluster boll counts:')
-    for cid, n in counts.items():
-        print(f'  {cid}: {n} bolls')
+        yaml.dump(bolls_doc, f, sort_keys=False, default_flow_style=False)
+    print(f'Wrote {BOLLS_YML}  ({len(items)} bolls)')
+
+    # cotton_demo_clusters.yaml — row_navigator trees inventory (same schema
+    # as robot_arm/config/orchard_tree_positions.yaml, drop-in via param
+    # tree_positions_yaml:=cotton_demo_clusters.yaml)
+    clusters_doc = {
+        'metadata': {
+            'source':      'cotton_cluster_template instances (compact)',
+            'plant_scale': scale,
+            'col_spacing_m': col_sp,
+            'row_spacing_m': row_sp,
+            'aisle_offset_m': aisle_off,
+        },
+        'spawn_hint': husky_spawn,
+        'sample_route_row1': ROW1_CLUSTERS,
+        'sample_route_row2': ROW2_CLUSTERS,
+        'trees': [
+            {
+                'id':            c['id'],
+                'row':           c['row'],
+                'col':           c['col'],
+                'x':             round(c['x'], 4),
+                'y':             round(c['y'], 4),
+                'yaw':           round(c['yaw'], 6),
+                'canopy_z_min':  0.4 * scale,      # template plant base
+                'canopy_z_max':  0.4 * scale,      # template plant top (sockets at z≤0.38 at scale1)
+            }
+            for c in clusters
+        ],
+    }
+    with open(CLUSTERS_YML, 'w', encoding='utf-8') as f:
+        yaml.dump(clusters_doc, f, sort_keys=False, default_flow_style=False)
+    print(f'Wrote {CLUSTERS_YML}  ({len(clusters)} clusters)')
+
+    print('')
+    print('Husky spawn for cotton_demo.world:')
+    print(f'  spawn_x:={husky_spawn["x"]} spawn_y:={husky_spawn["y"]} '
+          f'spawn_yaw:={husky_spawn["yaw"]}')
+    print('Row navigator example:')
+    print(f'  ros2 run orchestrator row_navigator --ros-args \\')
+    print(f'    -p tree_positions_yaml:={CLUSTERS_YML} \\')
+    print(f'    -p scout_y:={husky_spawn["y"]} \\')
+    print(f'    -p scout_yaw:=0.0 \\')
+    print(f'    -p route:="{ROW1_CLUSTERS}"')
 
 
 if __name__ == '__main__':

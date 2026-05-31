@@ -14,6 +14,22 @@
     <!-- End effector definition -->
     <end_effector name="hande_gripper" parent_link="tool0" group="gripper" parent_group="arm"/>
 
+    <!-- Husky wheel joints: driven by Gazebo's DiffDrive plugin, NOT by
+         ros2_control. joint_state_broadcaster only publishes arm + gripper,
+         so the wheel joint states never reach MoveIt's planning_scene_monitor.
+         Declare them passive → MoveIt excludes them from "complete state"
+         checks and the
+           [WARN] The complete state of the robot is not yet known.
+           Missing front_left_wheel_joint, front_right_wheel_joint, ...
+         spam stops. Wheels still exist in the URDF for collision matrix and
+         TF; their position just stays at the URDF default (0) in MoveIt's
+         planning scene — harmless for arm planning since wheels can't reach
+         the arm workspace anyway (collisions already disabled below). -->
+    <passive_joint name="front_left_wheel_joint"/>
+    <passive_joint name="front_right_wheel_joint"/>
+    <passive_joint name="rear_left_wheel_joint"/>
+    <passive_joint name="rear_right_wheel_joint"/>
+
     <!-- Named poses: arm -->
     <!-- Home: safe retracted position (from ROBOCOB config) -->
     <group_state name="home" group="arm">

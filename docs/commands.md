@@ -232,3 +232,6 @@ ros2 run orchestrator row_navigator                    # ← top-level (separate
 
 # Trigger
 ros2 service call /row_nav/run std_srvs/srv/Trigger '{}'
+
+
+"cd \"C:\\Users\\ayhan\\harvesting_ws\\src\\robot_arm\\scripts\"; python generate_cotton_demo.py 2>&1 | Select-Object -Last 8"
