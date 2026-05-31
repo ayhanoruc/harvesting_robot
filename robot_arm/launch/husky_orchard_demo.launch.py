@@ -211,7 +211,11 @@ def generate_launch_description():
         DeclareLaunchArgument('world', default_value='orchard_bolls.world',
                               description='World file under robot_arm/worlds/. '
                                           'Options: orchard.world, orchard_bolls.world, '
-                                          'orchard_pickable.world'),
+                                          'orchard_pickable.world, cotton_demo.world. '
+                                          'For cotton_demo.world (bundle @ scale 4) use: '
+                                          'spawn_x:=61.6 spawn_y:=31.66 spawn_yaw:=0 '
+                                          '(in front of cluster_A_01, +Y aisle side, '
+                                          '~0.65m from nearest boll, drives along row +X)'),
         DeclareLaunchArgument('spawn_x', default_value='15.8',
                               description='Husky spawn X (default: in front of tree_000)'),
         DeclareLaunchArgument('spawn_y', default_value='4.85',
