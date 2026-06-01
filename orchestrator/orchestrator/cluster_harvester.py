@@ -87,7 +87,11 @@ class ClusterHarvester(Node):
 
         # ── Parameters ──────────────────────────────────────────
         self.declare_parameter('max_iterations',         3)
-        self.declare_parameter('match_radius_m',         0.05)
+        # 0.10 m tolerates the residual depth-projection noise (single
+        # depth pixel + cup/fluff dual visual + sparse mesh) without
+        # cross-matching neighbouring YAML bolls (in-cluster spacing
+        # is ~10-15 cm, in-row spacing 3 m, so 10 cm is safe).
+        self.declare_parameter('match_radius_m',         0.10)
         self.declare_parameter('arm_base_frame',         'base_0')
         self.declare_parameter('world_frame',            'world')
         self.declare_parameter('boll_inventory_yaml',    '')
@@ -96,6 +100,13 @@ class ClusterHarvester(Node):
 
         # ── Ground-truth boll inventory (for detection→ID matching) ─
         self._boll_items: List[dict] = self._load_boll_inventory()
+
+        # IDs already attempted in the CURRENT /cluster_harvester/run call.
+        # Cleared at the start of each call. Once a boll is in the pick
+        # batch we never re-match it: even if a later iteration's scan
+        # still reports a detection near its original socket (sparse-mesh
+        # ghost / stale fluff residual), it shouldn't be picked twice.
+        self._picked_ids: set = set()
 
         # ── TF (for reach-distance sort) ────────────────────────
         self.tf_buffer = Buffer(cache_time=Duration(seconds=30.0))
@@ -233,7 +244,12 @@ class ClusterHarvester(Node):
             best_id, best_d = None, float('inf')
             for b in self._boll_items:
                 bid = b.get('id')
-                if not bid or bid in used_ids:
+                # used_ids: claimed by an earlier detection in THIS scan.
+                # _picked_ids: queued for picking in an EARLIER iteration
+                # of the same run — even if the pick failed, the boll
+                # has been teleported to the reservoir (carry threads)
+                # so its YAML position is no longer the truth.
+                if not bid or bid in used_ids or bid in self._picked_ids:
                     continue
                 d = math.sqrt(
                     (dx - float(b['x'])) ** 2
@@ -310,6 +326,11 @@ class ClusterHarvester(Node):
         total_picked = 0
         last_status = 'no iterations ran'
 
+        # Reset per-call pick history. Each /cluster_harvester/run
+        # corresponds to ONE cluster (called by row_navigator per cluster),
+        # and we want a clean slate for each cluster.
+        self._picked_ids.clear()
+
         for it in range(1, max_iter + 1):
             self._publish_status(f'iter {it}/{max_iter}: scanning cluster')
             scan = self._run_cluster_scan()
@@ -359,6 +380,11 @@ class ClusterHarvester(Node):
             if ok:
                 # `simple_cluster_harvester` reports e.g. "picked 4/6 (failed 2)"
                 total_picked += self._extract_picked_count(msg)
+            # Mark every boll we sent to the pick batch as done — even
+            # the ones that failed mid-pick, because the carry thread
+            # has already moved them out of their YAML socket and they
+            # shouldn't keep matching scan ghosts in later iterations.
+            self._picked_ids.update(ordered_ids)
 
         # Reset runtime IDs so future calls go back to YAML mode
         self._push_runtime_ids([])

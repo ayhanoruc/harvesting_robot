@@ -114,27 +114,17 @@ def generate_launch_description():
         parameters=[robot_description, {'use_sim_time': use_sim_time}]
     )
 
-    # IMPORTANT: world->odom must equal Husky's Gazebo spawn pose so that
-    # TF (world->odom->husky_base->arm->tcp) matches the actual world position.
-    # DiffDrive plugin publishes odom->husky_base_link relative to spawn, so
-    # offsetting world->odom by spawn pose closes the loop.
-    static_tf_world_to_odom = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='static_tf_world_to_odom',
-        arguments=[
-            '--x', spawn_x,
-            '--y', spawn_y,
-            '--z', spawn_z,
-            '--yaw', spawn_yaw,
-            '--pitch', '0',
-            '--roll', '0',
-            '--frame-id', 'world',
-            '--child-frame-id', 'odom',
-        ],
-        output='screen',
-        parameters=[{'use_sim_time': use_sim_time}],
-    )
+    # world->odom is now broadcast dynamically by row_navigator, which
+    # recalibrates it after every drive stop using Gazebo ground-truth pose.
+    # This kills the cumulative odometry drift (DiffDrive integrates wheel
+    # angles assuming zero slip; skid-steer rotations introduce real slip
+    # that breaks that assumption) by snapping the world frame back to the
+    # simulator's physical truth at each cluster stop.
+    #
+    # Before row_navigator runs (e.g. for plain Gazebo or husky_test), tf2
+    # has no world->odom transform — that's intentional. Start row_navigator
+    # to spin up the calibrated broadcaster, or temporarily re-enable this
+    # node for ad-hoc debugging.
 
     spawn_entity = Node(
         package='ros_gz_sim',
@@ -237,7 +227,6 @@ def generate_launch_description():
         set_ign_mesh_path,
         gazebo,
         robot_state_publisher,
-        static_tf_world_to_odom,
         spawn_entity,
         ros_gz_bridge,
         ros_gz_image_bridge,

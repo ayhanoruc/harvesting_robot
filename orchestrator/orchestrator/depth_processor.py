@@ -196,14 +196,24 @@ class DepthProcessorNode(Node):
             response.message = f'Pixel ({u}, {v}) out of bounds (image: {width}x{height})'
             return response
 
-        # Get depth at pixel
-        depth = float(self.depth_image[v, u]) * self.depth_scale
-
-        # Check for invalid depth
-        if np.isnan(depth) or np.isinf(depth) or depth <= 0:
+        # Sample a 5x5 window around (u, v) and take the median of valid
+        # depth pixels. The single-pixel read used to land in gaps in
+        # the sparse cotton_cluster_template mesh (open sepal cup, the
+        # fluff-vs-cup interstice) and return the distance to a far
+        # surface, projecting detected bolls 0.4-0.6 m past the real
+        # boll position. A windowed median is robust because most pixels
+        # around a detected boll's bbox center DO land on solid boll
+        # surface; outliers (sky, background, gap-through) are dominated.
+        WIN = 2  # 5x5 window (±2 around center)
+        v0, v1 = max(0, v - WIN), min(height, v + WIN + 1)
+        u0, u1 = max(0, u - WIN), min(width, u + WIN + 1)
+        window = self.depth_image[v0:v1, u0:u1].astype(np.float32) * self.depth_scale
+        valid = window[(window > 0) & np.isfinite(window)]
+        if valid.size == 0:
             response.success = False
-            response.message = f'Invalid depth at pixel ({u}, {v}): {depth}'
+            response.message = f'No valid depth in 5x5 window around pixel ({u}, {v})'
             return response
+        depth = float(np.median(valid))
 
         # Back-project to 3D using K matrix directly (bypass buggy P matrix)
         # Standard pinhole model: X = (u - cx) * Z / fx, Y = (v - cy) * Z / fy

@@ -174,7 +174,7 @@ def render_world_xml(clusters, items, scale, ground_size):
     parts.append('\n    <!-- ===== Pickable bolls (cotton_pick_*.dae cup + white fluff sphere\n'
                  '             for opaque interior) at each cluster\'s socket offsets ===== -->\n')
 
-    fluff_r = round(0.018 * scale, 4)
+    fluff_r = round(0.024 * scale, 4)
     for it in items:
         mesh_uri = f'model://{it["model"]}/meshes/{it["model"]}.dae'
         parts.append(

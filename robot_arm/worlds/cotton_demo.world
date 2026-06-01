@@ -255,7 +255,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -279,7 +279,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -303,7 +303,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -327,7 +327,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -351,7 +351,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -375,7 +375,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -399,7 +399,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -423,7 +423,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -447,7 +447,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -471,7 +471,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -495,7 +495,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -519,7 +519,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -543,7 +543,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -567,7 +567,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -591,7 +591,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -615,7 +615,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -639,7 +639,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -663,7 +663,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -687,7 +687,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -711,7 +711,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -735,7 +735,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -759,7 +759,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -783,7 +783,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -807,7 +807,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -831,7 +831,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -855,7 +855,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -879,7 +879,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -903,7 +903,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -927,7 +927,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -951,7 +951,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -975,7 +975,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -999,7 +999,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -1023,7 +1023,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -1047,7 +1047,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -1071,7 +1071,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -1095,7 +1095,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -1119,7 +1119,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -1143,7 +1143,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -1167,7 +1167,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -1191,7 +1191,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -1215,7 +1215,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -1239,7 +1239,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -1263,7 +1263,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -1287,7 +1287,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -1311,7 +1311,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -1335,7 +1335,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -1359,7 +1359,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>
@@ -1383,7 +1383,7 @@
         </visual>
         <visual name="fluff">
           <geometry>
-            <sphere><radius>0.072</radius></sphere>
+            <sphere><radius>0.096</radius></sphere>
           </geometry>
           <material>
             <ambient>0.92 0.92 0.88 1</ambient>

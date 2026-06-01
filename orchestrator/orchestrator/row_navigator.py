@@ -42,6 +42,9 @@ from __future__ import annotations
 
 import math
 import os
+import re
+import shutil
+import subprocess
 import time
 from typing import Optional, Tuple
 
@@ -55,9 +58,9 @@ from rclpy.executors import MultiThreadedExecutor
 import yaml
 from std_srvs.srv import Trigger
 from std_msgs.msg import String
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, TransformStamped
 
-from tf2_ros import Buffer, TransformListener
+from tf2_ros import Buffer, TransformListener, StaticTransformBroadcaster
 from ament_index_python.packages import get_package_share_directory
 
 
@@ -106,6 +109,22 @@ class RowNavigator(Node):
         self.declare_parameter('harvest_timeout_s', 1200.0)
         self.declare_parameter('tree_positions_yaml', '')
 
+        # Spawn pose: initial world→odom = Husky's Gazebo spawn position.
+        # Must match the husky_orchard_demo.launch.py spawn_* values; the
+        # static_transform_publisher that USED to live in the launch file
+        # has been moved here so we can update world→odom dynamically
+        # after each drive stop (recalibrate to ground truth → kill odom
+        # drift accumulation).
+        self.declare_parameter('spawn_x',   0.0)
+        self.declare_parameter('spawn_y',   1.0)
+        self.declare_parameter('spawn_z',   0.0)
+        self.declare_parameter('spawn_yaw', 0.0)
+
+        # Recalibration knobs.
+        self.declare_parameter('gz_world_name',   'cotton_demo')
+        self.declare_parameter('husky_model_name', 'husky_robocot')
+        self.declare_parameter('recalibrate_on_stop', True)
+
         # ── State ───────────────────────────────────────────────
         self._busy = False
         self._tree_positions = self._load_tree_positions()
@@ -114,6 +133,20 @@ class RowNavigator(Node):
         self.tf_buffer = Buffer(cache_time=Duration(seconds=30.0))
         self.tf_listener = TransformListener(
             self.tf_buffer, self, spin_thread=True)
+
+        # ── world→odom dynamic broadcaster ───────────────────────
+        # Static TF infrastructure caches the latest /tf_static publication
+        # per (parent, child) pair, so sending fresh transforms here
+        # replaces the previous one. We publish an initial spawn-based
+        # transform here so the TF chain (world→odom→husky_base→...) is
+        # complete from the moment row_navigator starts.
+        self.tf_static_bc = StaticTransformBroadcaster(self)
+        self._publish_world_to_odom(
+            float(self.get_parameter('spawn_x').value),
+            float(self.get_parameter('spawn_y').value),
+            float(self.get_parameter('spawn_z').value),
+            float(self.get_parameter('spawn_yaw').value),
+        )
 
         # ── Pubs ────────────────────────────────────────────────
         self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
@@ -173,6 +206,124 @@ class RowNavigator(Node):
         except Exception as e:
             self.get_logger().error(f'Failed to read {path}: {e}')
             return {}
+
+    # ─── world→odom dynamic publish + recalibration ─────────────
+
+    def _publish_world_to_odom(self, x: float, y: float, z: float,
+                                yaw: float) -> None:
+        """Send a fresh /tf_static for world→odom. Replaces the previous
+        one because StaticTransformBroadcaster caches the latest pair."""
+        tf = TransformStamped()
+        tf.header.stamp = self.get_clock().now().to_msg()
+        tf.header.frame_id = 'world'
+        tf.child_frame_id = 'odom'
+        tf.transform.translation.x = x
+        tf.transform.translation.y = y
+        tf.transform.translation.z = z
+        tf.transform.rotation.x = 0.0
+        tf.transform.rotation.y = 0.0
+        tf.transform.rotation.z = math.sin(yaw / 2.0)
+        tf.transform.rotation.w = math.cos(yaw / 2.0)
+        self.tf_static_bc.sendTransform(tf)
+
+    def _get_gazebo_husky_pose(self) -> Optional[Tuple[float, float, float, float]]:
+        """Query Gazebo's /world/<world>/pose/info topic once via `ign topic`,
+        scan the Pose_V dump for the husky_robocot entry, return its
+        (x, y, z, yaw) in the simulator's world frame (= physical truth).
+        Returns None if the binary isn't on PATH or parsing fails."""
+        world = self.get_parameter('gz_world_name').value
+        target = self.get_parameter('husky_model_name').value
+        topic = f'/world/{world}/pose/info'
+
+        for exe in ('ign', 'gz'):
+            exe_path = shutil.which(exe)
+            if not exe_path:
+                continue
+            try:
+                # -e echo, -n 1 take a single message, -d 3 deadline 3s
+                ret = subprocess.run(
+                    [exe_path, 'topic', '-e', '-n', '1', '-t', topic],
+                    capture_output=True, text=True,
+                    timeout=4.0, check=False)
+            except Exception as ex:
+                self.get_logger().warn(f'[CAL] {exe} topic subprocess: {ex}')
+                continue
+            if ret.returncode != 0 or not ret.stdout:
+                continue
+            return self._parse_pose_v_for_model(ret.stdout, target)
+        self.get_logger().error('[CAL] No ign/gz binary on PATH; cannot read ground truth pose')
+        return None
+
+    @staticmethod
+    def _parse_pose_v_for_model(text: str, target: str
+                                 ) -> Optional[Tuple[float, float, float, float]]:
+        """Pose_V text dump has repeated `pose { name: "X" position { x:.. y:.. z:.. }
+        orientation { x:.. y:.. z:.. w:.. } }` blocks. Walk the text, find the block
+        whose name matches `target`, return (x, y, z, yaw)."""
+        # Split on `pose {` so each chunk holds one entity's pose. The first chunk
+        # is the header (`header { ... }`) and contains no pose, so we skip if no name.
+        chunks = re.split(r'\bpose\s*{', text)
+        for chunk in chunks:
+            m_name = re.search(r'name:\s*"([^"]+)"', chunk)
+            if not m_name or m_name.group(1) != target:
+                continue
+            m_pos = re.search(
+                r'position\s*{\s*x:\s*([-\d.eE+]+)\s*y:\s*([-\d.eE+]+)\s*'
+                r'z:\s*([-\d.eE+]+)\s*}',
+                chunk)
+            m_ori = re.search(
+                r'orientation\s*{\s*x:\s*([-\d.eE+]+)\s*y:\s*([-\d.eE+]+)\s*'
+                r'z:\s*([-\d.eE+]+)\s*w:\s*([-\d.eE+]+)\s*}',
+                chunk)
+            if not (m_pos and m_ori):
+                return None
+            x, y, z = map(float, m_pos.groups())
+            qx, qy, qz, qw = map(float, m_ori.groups())
+            return (x, y, z, _yaw_from_quat(qx, qy, qz, qw))
+        return None
+
+    def _recalibrate_odom(self) -> None:
+        """Snap world→odom so that TF world→husky_base_link matches Gazebo's
+        physical ground-truth. Reads ground truth via ign topic, reads the
+        current DiffDrive odom→husky_base_link from tf2, and computes the
+        new static transform that closes the loop. Cumulative odom drift
+        from skid-steer slip resets to zero each time this runs."""
+        if not bool(self.get_parameter('recalibrate_on_stop').value):
+            return
+        gt = self._get_gazebo_husky_pose()
+        if gt is None:
+            self.get_logger().warn('[CAL] ground-truth pose unavailable; skip recalibration')
+            return
+        gx, gy, gz, g_yaw = gt
+        try:
+            t = self.tf_buffer.lookup_transform(
+                'odom', 'husky_base_link',
+                rclpy.time.Time(),
+                timeout=Duration(seconds=1.0))
+        except Exception as ex:
+            self.get_logger().warn(f'[CAL] TF odom→husky_base_link: {ex}')
+            return
+        ox = t.transform.translation.x
+        oy = t.transform.translation.y
+        oz = t.transform.translation.z
+        oq = t.transform.rotation
+        o_yaw = _yaw_from_quat(oq.x, oq.y, oq.z, oq.w)
+
+        # T_world_husky_target = T_world_odom_new * T_odom_husky_current
+        # ⇒ T_world_odom_new   = T_world_husky_target * inv(T_odom_husky)
+        # In SE(2) (yaw + xy translation, identity roll/pitch):
+        new_yaw = _wrap_pi(g_yaw - o_yaw)
+        cos_y, sin_y = math.cos(new_yaw), math.sin(new_yaw)
+        new_x = gx - (cos_y * ox - sin_y * oy)
+        new_y = gy - (sin_y * ox + cos_y * oy)
+        new_z = gz - oz
+
+        self._publish_world_to_odom(new_x, new_y, new_z, new_yaw)
+        self.get_logger().info(
+            f'[CAL] world→odom updated: ({new_x:+.3f},{new_y:+.3f},{new_z:+.3f}) '
+            f'yaw={math.degrees(new_yaw):+.1f}° | '
+            f'gt=({gx:+.3f},{gy:+.3f}) odom=({ox:+.3f},{oy:+.3f}) '
+            f'odom_yaw={math.degrees(o_yaw):+.1f}°')
 
     # ─── TF helper ──────────────────────────────────────────────
 
@@ -324,6 +475,14 @@ class RowNavigator(Node):
                         f'[{i}/{len(route)}] drive to {tree_id} FAILED — skip harvest')
                     drive_fails += 1
                     continue
+
+                # ── ODOM RECALIBRATION ─────────────────────────
+                # Husky just stopped at scout pose. Snap world→odom to
+                # Gazebo ground truth so the harvester (which uses TF for
+                # detection projection and reservoir-glue snap) lines up
+                # with the physical Husky. Drift accumulated during this
+                # drive resets to zero now and starts over from the next.
+                self._recalibrate_odom()
 
                 # ── HARVEST ───────────────────────────────────
                 self._publish_status(

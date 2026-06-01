@@ -235,3 +235,21 @@ ros2 service call /row_nav/run std_srvs/srv/Trigger '{}'
 
 
 "cd \"C:\\Users\\ayhan\\harvesting_ws\\src\\robot_arm\\scripts\"; python generate_cotton_demo.py 2>&1 | Select-Object -Last 8"
+
+
+
+# Terminal 1: Gazebo + Husky spawn
+ros2 launch robot_arm husky_orchard_demo.launch.py
+
+# Terminal 2: row_navigator (world→odom'u burada yayımlar)
+ros2 run orchestrator row_navigator
+# → log'da "ROW NAVIGATOR ready" gör
+
+# Terminal 3: MoveIt (artık world→odom var, TF chain tamamlanır)
+ros2 launch robot_arm_moveit_config moveit.launch.py
+
+# Terminal 4: harvester modules (YOLO + scanner + harvesters)
+ros2 launch orchestrator harvester_modules.launch.py
+
+# Hazır olduğunda:
+ros2 service call /row_nav/run std_srvs/srv/Trigger '{}'
