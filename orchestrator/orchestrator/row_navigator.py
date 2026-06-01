@@ -86,12 +86,17 @@ class RowNavigator(Node):
         self.cb = ReentrantCallbackGroup()
 
         # ── Parameters ──────────────────────────────────────────
+        # Defaults target the cotton_demo world (template-instanced compact
+        # layout, Row 1 = 6 clusters along +X at Y=0, Husky aisle Y=1.0).
+        # Override `route`, `scout_y`, `tree_positions_yaml` for legacy
+        # orchard_bolls world (tree_000.. at scout_y=4.85).
         self.declare_parameter('route',
-                               ['tree_000', 'tree_001', 'tree_002'])
-        self.declare_parameter('scout_y',           4.85)
-        # Default yaw=0 → Husky front along world +X (row line).
-        # Drive forward = advance along the row to the next cluster.
-        # Arm rotates separately (joint1=-π/2 at scout) to look at trees.
+                               ['cluster_A_01', 'cluster_B_01', 'cluster_C_01',
+                                'cluster_A_02', 'cluster_B_02', 'cluster_C_02'])
+        self.declare_parameter('scout_y',           1.0)
+        # yaw=0 → Husky front along world +X (row line). Drive forward
+        # = advance along the row to the next cluster. Arm rotates
+        # separately (joint1=-π/2 at scout) to look at trees.
         self.declare_parameter('scout_yaw',         0.0)
         self.declare_parameter('pos_tol',           0.20)
         self.declare_parameter('yaw_tol',           0.10)
@@ -150,8 +155,11 @@ class RowNavigator(Node):
         if not path:
             try:
                 share = get_package_share_directory('robot_arm')
-                path = os.path.join(
-                    share, 'config', 'orchard_tree_positions.yaml')
+                # Default: cotton_demo clusters yaml. Falls back to legacy
+                # orchard_tree_positions.yaml if cotton_demo isn't installed.
+                cand = os.path.join(share, 'config', 'cotton_demo_clusters.yaml')
+                path = cand if os.path.isfile(cand) else \
+                       os.path.join(share, 'config', 'orchard_tree_positions.yaml')
             except Exception:
                 path = ''
         if not path or not os.path.isfile(path):

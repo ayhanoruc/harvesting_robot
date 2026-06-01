@@ -119,6 +119,9 @@ def render_world_xml(clusters, items, scale, ground_size):
       <direction>-0.4 -0.3 -0.85</direction>
     </light>
 
+    <!-- Physics-only ground plane (collision for Husky to drive on). The
+         visible terrain texture comes from cotton_field_ground below — no
+         visual here so we don't Z-fight with the textured mesh. -->
     <model name="ground_plane">
       <static>true</static>
       <link name="link">
@@ -131,20 +134,18 @@ def render_world_xml(clusters, items, scale, ground_size):
           </geometry>
           <surface><friction><ode><mu>100</mu><mu2>50</mu2></ode></friction></surface>
         </collision>
-        <visual name="visual">
-          <geometry>
-            <plane>
-              <normal>0 0 1</normal>
-              <size>{ground_size * 2} {ground_size * 2}</size>
-            </plane>
-          </geometry>
-          <material>
-            <ambient>0.35 0.25 0.18 1</ambient>
-            <diffuse>0.50 0.36 0.24 1</diffuse>
-          </material>
-        </visual>
       </link>
     </model>
+
+    <!-- ===== Textured field terrain (Ground node extracted from bundle's
+             cotton_orchard_static_no_trees.dae — plant nodes stripped).
+             Covers ~X[0,50] × Y[0,20] at scale 1, which contains our
+             compact cluster field with margin. Visual-only — physics
+             handled by ground_plane above. ===== -->
+    <include>
+      <uri>model://cotton_field_ground</uri>
+      <pose>0 0 0 0 0 0</pose>
+    </include>
 
     <!-- ===== Cotton clusters: cotton_cluster_template.dae instanced per cluster
              at custom (X, Y, 0, 0, 0, yaw). Each anchor is a single cluster
@@ -212,14 +213,20 @@ def main():
     ap.add_argument('--col-spacing', type=float, default=3.0,
                     help='In-row X spacing between cluster centers (m). Default 3.0 '
                          '(vs bundle native ~10.8m at scale 4). Plant XY radius at '
-                         'PLANT_SCALE=4 is ~0.6 m so 3 m gives ~2.4 m clearance.')
+                         'PLANT_SCALE=2 is ~0.3 m so 3 m gives ~2.4 m clearance.')
     ap.add_argument('--row-spacing', type=float, default=6.0,
                     help='Between-row Y distance between Row 1 and Row 2 (m). '
                          'Default 6.0 — kept wide (user requested compactness '
                          'WITHIN rows, not across).')
     ap.add_argument('--plant-scale', type=float, default=4.0,
                     help='Mesh scale for cotton_cluster_template (default 4 → '
-                         '~2m plant height, matches our orchard tree heights).')
+                         '~1.6m visible plant). The extracted template is just '
+                         'branches+pedicels+sockets (no leaves/foliage), so it '
+                         'reads visually smaller than the bundle full mesh at '
+                         'same scale. Use 4 to match the visual prominence the '
+                         'bundle had at scale 4. Boll socket offsets and fluff '
+                         'sphere radius all scale uniformly, locking bolls in '
+                         'the sepal cups at any scale.')
     ap.add_argument('--row1-y', type=float, default=0.0,
                     help='World Y of Row 1 anchors (default 0).')
     ap.add_argument('--row1-x0', type=float, default=0.0,

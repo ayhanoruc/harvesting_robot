@@ -86,14 +86,17 @@ class SimpleClusterHarvester(Node):
         self.cb = ReentrantCallbackGroup()
 
         # ── Parameters ──────────────────────────────────────────
-        self.declare_parameter('tree_id', 'tree_000')
+        # Defaults point at cotton_demo world (template-instanced compact).
+        # Override via launch param or `ros2 param set` to use legacy
+        # orchard_bolls world (tree_000 / 'orchard' / orchard_bolls.yaml).
+        self.declare_parameter('tree_id', 'cluster_A_01')
         # Optional runtime override: if non-empty, harvest exactly these
         # boll IDs (looked up from the YAML inventory) instead of *all*
         # bolls for `tree_id`. Used by cluster_harvester to feed in the
         # subset returned by /cluster_scan/run (detected, not ground-truth).
         self.declare_parameter('boll_ids_runtime', [''])
         self.declare_parameter('boll_inventory_yaml', '')
-        self.declare_parameter('gz_world_name', 'orchard')
+        self.declare_parameter('gz_world_name', 'cotton_demo')
         self.declare_parameter('tcp_frame', 'tcp')
         self.declare_parameter('world_frame', 'world')
         self.declare_parameter('reservoir_tf_frame', 'reservoir_link')
@@ -180,7 +183,11 @@ class SimpleClusterHarvester(Node):
         if not path:
             try:
                 share = get_package_share_directory('robot_arm')
-                path = os.path.join(share, 'config', 'orchard_bolls.yaml')
+                # Default: cotton_demo (template-instanced compact world).
+                # Falls back to orchard_bolls.yaml for legacy worlds.
+                cand = os.path.join(share, 'config', 'cotton_demo_bolls.yaml')
+                path = cand if os.path.isfile(cand) else \
+                       os.path.join(share, 'config', 'orchard_bolls.yaml')
             except Exception:
                 path = ''
         if not path or not os.path.isfile(path):

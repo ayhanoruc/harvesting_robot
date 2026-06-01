@@ -141,7 +141,11 @@ class ClusterHarvester(Node):
         if not path:
             try:
                 share = get_package_share_directory('robot_arm')
-                path = os.path.join(share, 'config', 'orchard_bolls.yaml')
+                # Default: cotton_demo (template-instanced compact world).
+                # Falls back to orchard_bolls.yaml for legacy worlds.
+                cand = os.path.join(share, 'config', 'cotton_demo_bolls.yaml')
+                path = cand if os.path.isfile(cand) else \
+                       os.path.join(share, 'config', 'orchard_bolls.yaml')
             except Exception:
                 path = ''
         if not path or not os.path.isfile(path):

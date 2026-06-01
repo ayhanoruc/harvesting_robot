@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <model name="cotton_field_ground">
+    <static>true</static>
+    <link name="ground_link">
+      <!-- Ground mesh scaled to match plant scale (4x — same as
+           cotton_cluster_template in cotton_demo.world). Bundle Ground
+           at native scale covers X~0-50, Y~0-20; at 4x covers ~200x80m
+           well beyond our compact field (X=0-15, Y=0-6). Visual only —
+           physics handled by cotton_demo.world's ground_plane (infinite
+           collision plane). -->
+      <visual name="ground_visual">
+        <geometry>
+          <mesh>
+            <uri>model://cotton_field_ground/meshes/cotton_field_ground.dae</uri>
+            <scale>4.0 4.0 4.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+  </model>
+</sdf>

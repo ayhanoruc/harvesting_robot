@@ -67,12 +67,15 @@ def generate_launch_description():
     robot_description = {'robot_description': robot_description_content}
 
     use_sim_time = LaunchConfiguration('use_sim_time', default='true')
-    spawn_x = LaunchConfiguration('spawn_x', default='15.8')
-    spawn_y = LaunchConfiguration('spawn_y', default='4.85')
+    # Defaults target cotton_demo.world (compact template-instanced layout,
+    # cluster_A_01 at world origin, Row 1 along +X, Husky aisle at Y=1.0).
+    # For legacy orchard_bolls.world override: spawn_x:=15.8 spawn_y:=4.85.
+    spawn_x = LaunchConfiguration('spawn_x', default='0.0')
+    spawn_y = LaunchConfiguration('spawn_y', default='1.0')
     spawn_z = LaunchConfiguration('spawn_z', default='0.0')
-    # Default: yaw=0 → Husky front along world +X (row line direction).
-    # Camera/arm then look sideways (toward trees) via arm_commander's
-    # joint1=-π/2 startup rotation. Driving forward = advancing along the row.
+    # yaw=0 → Husky front along world +X (row line direction). Camera/arm
+    # then look sideways (toward trees) via arm_commander's joint1=-π/2
+    # startup rotation. Driving forward = advancing along the row.
     spawn_yaw = LaunchConfiguration('spawn_yaw', default='0.0')
 
     # Resource paths
@@ -208,20 +211,20 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='true'),
-        DeclareLaunchArgument('world', default_value='orchard_bolls.world',
+        DeclareLaunchArgument('world', default_value='cotton_demo.world',
                               description='World file under robot_arm/worlds/. '
-                                          'Options: orchard.world, orchard_bolls.world, '
-                                          'orchard_pickable.world, cotton_demo.world. '
-                                          'For cotton_demo.world (compact template-instanced, '
-                                          '12 clusters, in-row X spacing 3m) use: '
-                                          'spawn_x:=0 spawn_y:=1.0 spawn_yaw:=0 '
-                                          '(in front of cluster_A_01, +Y aisle side, '
-                                          'drives along row +X through 6 Row-1 clusters)'),
-        DeclareLaunchArgument('spawn_x', default_value='15.8',
-                              description='Husky spawn X (default: in front of tree_000)'),
-        DeclareLaunchArgument('spawn_y', default_value='4.85',
-                              description='Husky spawn Y (default: aisle, base_0 lands ~0.55m from boll Y; '
-                                          'all canopy heights reachable for tree_000)'),
+                                          'Default: cotton_demo.world (compact template-instanced '
+                                          '12-cluster field). Other: orchard.world, orchard_bolls.world, '
+                                          'orchard_pickable.world. '
+                                          'For legacy orchard_bolls.world override: '
+                                          'spawn_x:=15.8 spawn_y:=4.85.'),
+        DeclareLaunchArgument('spawn_x', default_value='0.0',
+                              description='Husky spawn X (default: 0.0 = in front of cluster_A_01 '
+                                          'in cotton_demo.world; use 15.8 for orchard_bolls.world)'),
+        DeclareLaunchArgument('spawn_y', default_value='1.0',
+                              description='Husky spawn Y (default: 1.0 = +Y aisle side of Row 1 '
+                                          'in cotton_demo.world, ~0.65m from nearest boll; '
+                                          'use 4.85 for orchard_bolls.world)'),
         DeclareLaunchArgument('spawn_z', default_value='0.0'),
         DeclareLaunchArgument('spawn_yaw', default_value='0.0',
                               description='Husky yaw (default: 0 → front along +X = row line; '

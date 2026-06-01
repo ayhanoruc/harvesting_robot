@@ -107,12 +107,13 @@ class ClusterScanner(Node):
         # ── Parameters ──────────────────────────────────────────
         # Pan = joint1 offset from scout (0 = looking straight at canopy).
         # Tilt = joint5 offset from scout (0 = scout default ~+0.27 rad).
-        # 3 cols (pan) × 4 rows (tilt) = 12 poses. Tilt sign convention:
+        # 3 cols (pan) × 5 rows (tilt) = 15 poses. Tilt sign convention:
         #   negative tilt = joint5 decreases → toward HOME (-1.3) → looks UP
         #   positive tilt = joint5 increases → away from HOME → looks DOWN
-        # Extra -16° row at the top so we also catch bolls on the upper canopy.
+        # Top row is now -24° (was -16°) to catch bolls higher on the canopy
+        # — the upper cluster zone where ripe bolls tend to be in cotton_demo.
         self.declare_parameter('pan_angles_deg',  [-12.0, 0.0, 12.0])
-        self.declare_parameter('tilt_angles_deg', [-16.0, -8.0, 0.0, 8.0])
+        self.declare_parameter('tilt_angles_deg', [-24.0, -16.0, -8.0, 0.0, 8.0])
         self.declare_parameter('scan_settle_s',   1.0)
         self.declare_parameter('traj_duration_s', 1.2)
         self.declare_parameter('tree_spacing_m',  1.5)
