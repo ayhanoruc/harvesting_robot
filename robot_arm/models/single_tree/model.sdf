@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <model name="single_tree">
+    <static>true</static>
+    <link name="link">
+      <visual name="trunk">
+        <geometry><mesh>
+          <uri>model://single_tree/meshes/single_tree_trunk.dae</uri>
+        </mesh></geometry>
+      </visual>
+      <visual name="leaves">
+        <geometry><mesh>
+          <uri>model://single_tree/meshes/single_tree_leaves.dae</uri>
+        </mesh></geometry>
+      </visual>
+    </link>
+  </model>
+</sdf>

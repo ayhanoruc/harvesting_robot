@@ -48,6 +48,7 @@ setup(
             'cluster_scanner = orchestrator.cluster_scanner:main',
             'cluster_harvester = orchestrator.cluster_harvester:main',
             'row_navigator = orchestrator.row_navigator:main',
+            'control_panel = orchestrator.control_panel:main',
         ],
     },
 )

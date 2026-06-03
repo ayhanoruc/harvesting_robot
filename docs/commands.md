@@ -253,3 +253,6 @@ ros2 launch orchestrator harvester_modules.launch.py
 
 # Hazır olduğunda:
 ros2 service call /row_nav/run std_srvs/srv/Trigger '{}'
+
+
+ros2 run orchestrator control_panel
