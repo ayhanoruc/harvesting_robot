@@ -74,6 +74,16 @@ VARIANT_NATIVE_BOLL_Y_SIGN = {
     'branch_variant_F_dry_brown_01':     -1,
 }
 
+# Per-variant scale multiplier on top of --plant-scale. The E variant
+# (`branch_variant_E_tall_mature_01`) is natively ~0.83m tall vs ~0.55-
+# 0.65m for the others, so at uniform scale 3 it ends up ~2.34m — towers
+# over the other clusters. 0.8x brings it to ~1.87m, similar to A/B/D.
+# Boll pose offsets (CSV × effective_scale) and stem cylinder dims pick
+# up the multiplier too, so the cotton bolls stay attached visually.
+VARIANT_SCALE_MULTIPLIER = {
+    'branch_variant_E_tall_mature_01': 0.8,
+}
+
 # Stem cylinder approx from each variant's model.sdf <collision>.
 # Used for filler stem collisions (not load-bearing, just so Husky bumper
 # bounces off if it veers into a plant).
@@ -94,26 +104,37 @@ ROW1_CLUSTERS = ['cluster_A_01', 'cluster_B_01', 'cluster_C_01',
 ROW2_CLUSTERS = ['cluster_A_03', 'cluster_B_03', 'cluster_C_03',
                  'cluster_A_04', 'cluster_B_04', 'cluster_C_04']
 
-# Variant assignment per anchor — fixed for visual variety + reach budget.
-# Row 1 wants bolls facing +Y (toward aisle); the yaw is picked from
-# VARIANT_NATIVE_BOLL_Y_SIGN so we don't have to hand-flip variants.
-# Mix mature_white (A) + tall_mature (E) for prominent ripe targets,
-# B/C for visual variety.
+# Variant assignment per anchor — all 6 variants used per row, ONE each,
+# with the first 3 columns (closer to Husky spawn) getting variants that
+# have BAKED-IN unripe/dry boll visuals so the cluster naturally shows
+# green/brown unripe bolls without us spawning anything fake.
+#
+# Per-variant DAE effect inventory (grep of `<effect id=`):
+#   B_mixed_green : immature_green_boll-effect    (yeşil unripe)
+#   D_sparse_green: immature_green_boll-effect    (yeşil unripe, sparse)
+#   C_mixed_brown : dry_brown_boll-effect         (kahve dry)
+#   F_dry_brown   : dry_brown_boll-effect         (kahve dry)
+#   A_mature_white: <none>                        (sadece mature white)
+#   E_tall_mature : <none>                        (sadece mature white, uzun)
+#
+# Column 0..5 X positions: 0, 3, 6, 9, 12, 15  (route order = col order).
+# Cols 0-2 (first 3 stops, B/D/C): visible baked-in unripe/dry bolls.
+# Cols 3-5 (last 3 stops, F/A/E):  F still dry-brown; A and E fully ripe.
 TARGET_VARIANTS = {
-    'cluster_A_01': 'branch_variant_A_mature_white_01',  # 6 ripe
-    'cluster_B_01': 'branch_variant_E_tall_mature_01',   # 7 ripe (tall)
-    'cluster_C_01': 'branch_variant_B_mixed_green_01',   # 4 ripe
-    'cluster_A_02': 'branch_variant_A_mature_white_01',  # 6 ripe
-    'cluster_B_02': 'branch_variant_E_tall_mature_01',   # 7 ripe
-    'cluster_C_02': 'branch_variant_C_mixed_brown_01',   # 4 ripe
-    'cluster_A_03': 'branch_variant_A_mature_white_01',  # 6 ripe
-    'cluster_B_03': 'branch_variant_E_tall_mature_01',   # 7 ripe
-    'cluster_C_03': 'branch_variant_B_mixed_green_01',   # 4 ripe
-    'cluster_A_04': 'branch_variant_A_mature_white_01',  # 6 ripe
-    'cluster_B_04': 'branch_variant_E_tall_mature_01',   # 7 ripe
-    'cluster_C_04': 'branch_variant_C_mixed_brown_01',   # 4 ripe
+    'cluster_A_01': 'branch_variant_B_mixed_green_01',   # 4 ripe + yeşil unripe
+    'cluster_B_01': 'branch_variant_D_sparse_green_01',  # 3 ripe + yeşil unripe (sparse)
+    'cluster_C_01': 'branch_variant_C_mixed_brown_01',   # 4 ripe + kahve dry
+    'cluster_A_02': 'branch_variant_F_dry_brown_01',     # 4 ripe + kahve dry
+    'cluster_B_02': 'branch_variant_A_mature_white_01',  # 6 ripe (fully mature)
+    'cluster_C_02': 'branch_variant_E_tall_mature_01',   # 7 ripe (tall, fully mature)
+    'cluster_A_03': 'branch_variant_B_mixed_green_01',   # 4 ripe + yeşil unripe
+    'cluster_B_03': 'branch_variant_D_sparse_green_01',  # 3 ripe + yeşil unripe (sparse)
+    'cluster_C_03': 'branch_variant_C_mixed_brown_01',   # 4 ripe + kahve dry
+    'cluster_A_04': 'branch_variant_F_dry_brown_01',     # 4 ripe + kahve dry
+    'cluster_B_04': 'branch_variant_A_mature_white_01',  # 6 ripe (fully mature)
+    'cluster_C_04': 'branch_variant_E_tall_mature_01',   # 7 ripe (tall, fully mature)
 }
-# Total: 6×A(6) + 6×E(7) but mixed = 6+7+4+6+7+4 +6+7+4+6+7+4 = 68 ripe pickables.
+# Total pickable mature: 2×(4+3+4+4+6+7) = 56 ripe across both rows.
 
 
 def load_variant_targets():
@@ -143,6 +164,9 @@ def yaw_for_target_row(row_idx: int, variant: str) -> float:
     return 0.0 if native_sign == want_sign else math.pi
 
 
+RIPE_RGBA = (0.95, 0.93, 0.88, 1.0)   # off-white mature cotton
+
+
 def render_pick_block(model_name: str, mesh_variant: str,
                       wx: float, wy: float, wz: float, radius: float,
                       scale: float = 1.0) -> str:
@@ -165,10 +189,8 @@ def render_pick_block(model_name: str, mesh_variant: str,
     # DAE Lambert effect omits the <transparent> tag (Blender exporter
     # never writes it), OGRE2 applies the COLLADA-spec default A_ONE
     # mode and the mesh renders nearly transparent. Setting <material>
-    # on the SDF visual forces Gazebo to use these RGBA values directly,
-    # bypassing the broken DAE effect parse. Off-white cream color (0.95,
-    # 0.93, 0.88) gives the mature-white-cotton look from the bundle's
-    # own diffuse (0.91/0.88/0.76) but a touch brighter for visibility.
+    # on the SDF visual forces Gazebo to use these RGBA values directly.
+    r, g, b, a = RIPE_RGBA
     return (
         f'    <model name="{model_name}">\n'
         f'      <static>true</static>\n'
@@ -182,8 +204,8 @@ def render_pick_block(model_name: str, mesh_variant: str,
         f'            </mesh>\n'
         f'          </geometry>\n'
         f'          <material>\n'
-        f'            <ambient>0.95 0.93 0.88 1</ambient>\n'
-        f'            <diffuse>0.95 0.93 0.88 1</diffuse>\n'
+        f'            <ambient>{r} {g} {b} {a}</ambient>\n'
+        f'            <diffuse>{r} {g} {b} {a}</diffuse>\n'
         f'            <specular>0.10 0.10 0.10 1</specular>\n'
         f'          </material>\n'
         f'        </visual>\n'
@@ -359,24 +381,34 @@ def render_world_xml(targets, picks, fillers, ground_size):
     <!-- ===== TARGET clusters: branch_variant + its cotton_pick_* models ===== -->
 ''']
 
-    scale = render_world_xml.plant_scale   # set by main() before call
+    # Per-target/per-pick scale (variants with a VARIANT_SCALE_MULTIPLIER
+    # entry — currently E — get a reduced scale so they don't tower over
+    # the other clusters). Each target+pick dict carries its own 'scale'.
+    base_scale = render_world_xml.plant_scale  # for fillers (no per-anchor scale)
 
     for t in targets:
         parts.append(render_branch_block(
             f'{t["id"]}__branch', t['variant'],
-            t['x'], t['y'], t['yaw'], scale=scale))
+            t['x'], t['y'], t['yaw'], scale=t['scale']))
 
-    parts.append('\n    <!-- ===== Pickable cotton bolls (cotton_pick_*.dae visuals) ===== -->\n')
+    parts.append('\n    <!-- ===== Pickable cotton bolls (cotton_pick_*.dae visuals).\n'
+                 '             All sockets spawn their mature boll. Unripe / dry\n'
+                 '             green-brown bolls visible in the cluster come from\n'
+                 '             the branch_variant DAE itself (cols 0-3 use B/D/C/F\n'
+                 '             variants which have immature_green_boll-effect or\n'
+                 '             dry_brown_boll-effect baked in). ===== -->\n')
     for p in picks:
         parts.append(render_pick_block(
-            p['id'], p['model'], p['x'], p['y'], p['z'], p['radius'], scale=scale))
+            p['id'], p['model'], p['x'], p['y'], p['z'], p['radius'],
+            scale=p['scale']))
 
     if fillers:
         parts.append('\n    <!-- ===== FILLER background plants (no pickable bolls) ===== -->\n')
         for fi, f in enumerate(fillers):
+            f_scale = base_scale * VARIANT_SCALE_MULTIPLIER.get(f['variant'], 1.0)
             parts.append(render_branch_block(
                 f'filler_{fi:03d}', f['variant'],
-                f['x'], f['y'], f['yaw'], scale=scale))
+                f['x'], f['y'], f['yaw'], scale=f_scale))
 
     if render_world_xml.tree_band_xml:
         parts.append('\n    <!-- ===== Trees (one per cluster, outside row) ===== -->\n')
@@ -510,16 +542,26 @@ def main():
             yaw     = yaw_for_target_row(r, variant)
             cx      = x0 + c_idx * col_sp
             cy      = y
+            # Per-variant scale (E variant gets 0.8 multiplier so it
+            # doesn't tower over the other clusters at uniform plant
+            # scale 3). Boll offsets and stem use the same effective
+            # scale so geometry stays consistent.
+            eff_scale = scale * VARIANT_SCALE_MULTIPLIER.get(variant, 1.0)
             targets.append({'id': cname, 'variant': variant,
                             'x': cx, 'y': cy, 'yaw': yaw,
-                            'row': r, 'col': c_idx})
+                            'row': r, 'col': c_idx,
+                            'scale': eff_scale})
 
+            # No skip — unripe visuals come from the branch_variant DAE
+            # itself (cols 0-3 use variants with baked-in immature/dry
+            # boll effects; cols 4-5 use the fully-mature A/E variants).
             cos_y, sin_y = math.cos(yaw), math.sin(yaw)
             for pp in by_variant[variant]:
-                # Scale the CSV relative pose to match the visual mesh scale
-                # (mesh scale tag stretches verts uniformly, so the boll
-                # socket position on the visible branch lives at scale*rel).
-                rx, ry, rz = [v * scale for v in pp['xyz']]
+                # Scale the CSV relative pose to match the visual mesh
+                # scale (mesh <scale> tag stretches verts uniformly, so
+                # the boll socket position on the visible branch lives
+                # at eff_scale * rel).
+                rx, ry, rz = [v * eff_scale for v in pp['xyz']]
                 # Rotate relative offset by yaw, then translate to anchor.
                 wx = cx + cos_y * rx - sin_y * ry
                 wy = cy + sin_y * rx + cos_y * ry
@@ -533,9 +575,10 @@ def main():
                     'y':          round(wy, 4),
                     'z':          round(wz, 4),
                     'radius':     round(pp['r'], 5),
-                    'rgba':       [0.95, 0.95, 0.90, 1.0],
+                    'rgba':       list(RIPE_RGBA),
                     'model':      pp['cotton'],     # shared mesh source name
                     'variant':    variant,
+                    'scale':      eff_scale,
                     'cluster_row': r,
                 })
 
