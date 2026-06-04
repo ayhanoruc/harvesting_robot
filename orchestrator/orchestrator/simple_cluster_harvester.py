@@ -610,16 +610,24 @@ class SimpleClusterHarvester(Node):
                 self.get_logger().info(
                     f'{tag} reservoir hover reached in {time.time()-t_step:.1f}s')
 
-                # 5. Stop carry, visually GRIP OPEN, then teleport boll
-                #    into the bin (with grid scatter). The open animation
-                #    plays in parallel with the teleport for a clean visual.
+                # 5. Stop carry → teleport boll into the bin IMMEDIATELY
+                #    → only then trigger the visual gripper open. Old
+                #    order was carry_stop → open → sleep(0.5s) → teleport,
+                #    which left the boll dangling at the last TCP pose
+                #    (the hover point in mid-air) while the gripper
+                #    animation played — visually "boll detached from
+                #    hand, floating in space" for half a second before
+                #    snapping into the bin. Doing the teleport first
+                #    drops the boll instantly the moment the arm
+                #    arrives, and the gripper animation just plays in
+                #    parallel against an empty hand.
                 self._carry_stop()
+                if not self._teleport_to_reservoir(boll['id']):
+                    self.get_logger().warn(f'{tag} teleport-to-reservoir failed')
                 self.get_logger().info(f'{tag} [GRIP OPEN] commanding /gripper/open')
                 self._gripper_call(self.gripper_open_cli, 'gripper/open')
                 open_dt = float(self.get_parameter('mock_open_delay_s').value)
-                time.sleep(open_dt)  # extra dwell so the open is visible
-                if not self._teleport_to_reservoir(boll['id']):
-                    self.get_logger().warn(f'{tag} teleport-to-reservoir failed')
+                time.sleep(open_dt)  # animation dwell — boll already in bin
                 picked += 1
 
             # Return home

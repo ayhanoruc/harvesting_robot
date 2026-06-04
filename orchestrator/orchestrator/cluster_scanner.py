@@ -110,10 +110,14 @@ class ClusterScanner(Node):
         # 3 cols (pan) × 5 rows (tilt) = 15 poses. Tilt sign convention:
         #   negative tilt = joint5 decreases → toward HOME (-1.3) → looks UP
         #   positive tilt = joint5 increases → away from HOME → looks DOWN
-        # Top row is now -24° (was -16°) to catch bolls higher on the canopy
-        # — the upper cluster zone where ripe bolls tend to be in cotton_demo.
+        # Top row extended to -32° (was -24°) to catch the upper canopy
+        # bolls at plant_scale=3 — variant D top boll sits at world Z
+        # ≈1.51 m vs camera Z ≈1.18 m, so we need to tilt ~30° UP from
+        # level to look at z=1.5 m from 0.5–0.7 m horizontal distance.
+        # 3 cols (pan) × 6 rows (tilt) = 18 poses now. Bottom row +8°
+        # kept for the rare low boll on D/F variants.
         self.declare_parameter('pan_angles_deg',  [-12.0, 0.0, 12.0])
-        self.declare_parameter('tilt_angles_deg', [-24.0, -16.0, -8.0, 0.0, 8.0])
+        self.declare_parameter('tilt_angles_deg', [-32.0, -24.0, -16.0, -8.0, 0.0])
         self.declare_parameter('scan_settle_s',   1.0)
         self.declare_parameter('traj_duration_s', 1.2)
         self.declare_parameter('tree_spacing_m',  1.5)

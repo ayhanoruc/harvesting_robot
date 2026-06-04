@@ -466,7 +466,38 @@ class RowNavigator(Node):
                 tree_x, _ty = pos
                 target_x, target_y = tree_x, scout_y
 
-                # ── DRIVE ─────────────────────────────────────
+                # ── DRIVE (two stages) ────────────────────────
+                # Skid-steer Husky drifts laterally on every drive — by
+                # the time we arrive at cluster N+1, Y has wandered off
+                # the row line by 10–40 cm even though the controller
+                # thought it tracked perfectly (TF lies because odom is
+                # slip-less). Doing one diagonal drive (current → target)
+                # bakes that drift into the new approach.
+                #
+                # Fix: SNAP TO LINE first, then drive straight along it.
+                #   stage A — drive to (current_x, scout_y) → corrects Y
+                #             without moving X, like teleop "strafe back
+                #             to the lane"
+                #   stage B — drive to (target_x, scout_y) → straight
+                #             along the row line, X-only translation
+                # Both stages use the same scout_yaw, so heading stays
+                # locked to row direction throughout.
+                cur = self._get_husky_pose()
+                if cur is not None:
+                    cur_x, cur_y, _ = cur
+                    if abs(cur_y - scout_y) > 0.05:
+                        self._publish_status(
+                            f'[{i}/{len(route)}] pre-align Y → '
+                            f'({cur_x:.2f}, {scout_y:.2f})')
+                        if not self._drive_to(cur_x, scout_y, scout_yaw):
+                            self._publish_status(
+                                f'[{i}/{len(route)}] pre-align FAILED — skip')
+                            drive_fails += 1
+                            continue
+                        # Y just snapped — recalibrate odom so the next
+                        # straight drive feedback is honest from step 1.
+                        self._recalibrate_odom()
+
                 self._publish_status(
                     f'[{i}/{len(route)}] driving to {tree_id} scout '
                     f'({target_x:.2f}, {target_y:.2f}, yaw={math.degrees(scout_yaw):+.0f}°)')

@@ -74,14 +74,30 @@ VARIANT_NATIVE_BOLL_Y_SIGN = {
     'branch_variant_F_dry_brown_01':     -1,
 }
 
-# Per-variant scale multiplier on top of --plant-scale. The E variant
-# (`branch_variant_E_tall_mature_01`) is natively ~0.83m tall vs ~0.55-
-# 0.65m for the others, so at uniform scale 3 it ends up ~2.34m — towers
-# over the other clusters. 0.8x brings it to ~1.87m, similar to A/B/D.
-# Boll pose offsets (CSV × effective_scale) and stem cylinder dims pick
-# up the multiplier too, so the cotton bolls stay attached visually.
+# Per-variant scale multiplier on top of --plant-scale, normalized so
+# every variant lands at the same max-boll height as the D variant
+# (sparse_green, natively shortest with max native z=0.504 m). At
+# plant_scale=3 every cluster's tallest boll sits at ≈1.51 m — the
+# M1013 arm's vertical reach budget from arm base z≈0.48 m. Without
+# normalization, the B/A/E variants tower above arm reach and IK fails
+# for the top sockets, leaving most picks unmatched.
+#
+# Multiplier = D_max_native_z / variant_max_native_z
+#   A_mature_white  0.504 / 0.614 = 0.821
+#   B_mixed_green   0.504 / 0.690 = 0.730
+#   C_mixed_brown   0.504 / 0.587 = 0.859
+#   D_sparse_green  1.000 (reference)
+#   E_tall_mature   0.504 / 0.825 = 0.611
+#   F_dry_brown     0.504 / 0.543 = 0.928
+# Boll pose offsets (CSV × eff_scale) pick up the multiplier so cotton
+# bolls stay glued to the visible branch sockets at every variant.
 VARIANT_SCALE_MULTIPLIER = {
-    'branch_variant_E_tall_mature_01': 0.8,
+    'branch_variant_A_mature_white_01':  0.821,
+    'branch_variant_B_mixed_green_01':   0.730,
+    'branch_variant_C_mixed_brown_01':   0.859,
+    'branch_variant_D_sparse_green_01':  1.000,
+    'branch_variant_E_tall_mature_01':   0.611,
+    'branch_variant_F_dry_brown_01':     0.928,
 }
 
 # Stem cylinder approx from each variant's model.sdf <collision>.
@@ -217,14 +233,15 @@ def render_pick_block(model_name: str, mesh_variant: str,
 def render_branch_block(model_name: str, variant: str,
                         cx: float, cy: float, yaw: float,
                         scale: float = 1.0) -> str:
-    """Static branch+pedicel+husk+unripe-boll visual + stem collision.
-    Stem collision dims are scaled to keep the cylinder matching the
-    visual mesh (radius × scale, length × scale, z_center × scale)."""
+    """Static branch+pedicel+husk+unripe-boll visual ONLY (no collision).
+
+    Branches are collision-free so the arm can sweep through the canopy
+    freely during scan and pick — Gazebo depth camera renders visual
+    geometry, and pickables get teleported by set_pose (no physical
+    contact needed). Husky body stays in the aisle at scout_y ≈ 1.0 m
+    so it never gets near the stem itself either.
+    """
     mesh_uri = f'model://{variant}/meshes/{variant}.dae'
-    sr, sl, sz = VARIANT_STEM[variant]
-    sr_s = sr * scale
-    sl_s = sl * scale
-    sz_s = sz * scale
     return (
         f'    <model name="{model_name}">\n'
         f'      <static>true</static>\n'
@@ -238,11 +255,6 @@ def render_branch_block(model_name: str, variant: str,
         f'            </mesh>\n'
         f'          </geometry>\n'
         f'        </visual>\n'
-        f'        <collision name="stem">\n'
-        f'          <pose>0 0 {sz_s:.4f} 0 0 0</pose>\n'
-        f'          <geometry><cylinder><radius>{sr_s:.4f}</radius>'
-        f'<length>{sl_s:.4f}</length></cylinder></geometry>\n'
-        f'        </collision>\n'
         f'      </link>\n'
         f'    </model>\n'
     )

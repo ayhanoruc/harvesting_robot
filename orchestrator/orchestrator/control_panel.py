@@ -86,6 +86,12 @@ ARM_TRAJ_HORIZON_S = 0.2
 BASE_LIN = 0.5
 BASE_ANG = 1.0
 
+# Where real_yolo_detector writes annotated images (its `output_dir` default).
+# detect_*.png   = per-frame boll detections
+# clusters_*.png = merged "collective" cluster view (all bolls + cluster bbox)
+DETECTION_DIR = os.environ.get(
+    'YOLO_OUTPUT_DIR', '/mnt/c/Users/ayhan/harvesting_ws/yolo_output')
+
 
 # ─────────────────────────── ROS image → RGB numpy ──────────────────────────
 def image_msg_to_rgb(msg: Image):
@@ -372,20 +378,24 @@ class ProcessManager(QtCore.QObject):
 
 # ─────────────────────────────── camera widget ──────────────────────────────
 class CameraView(QtWidgets.QLabel):
-    def __init__(self):
+    def __init__(self, placeholder='waiting for image…', min_size=(480, 360)):
         super().__init__()
-        self.setMinimumSize(480, 360)
+        self.setMinimumSize(*min_size)
         self.setAlignment(Qt.AlignCenter)
         self.setStyleSheet(
             'background:#0b1120;color:#64748b;border:1px solid #334155;'
             'border-radius:10px;font-size:14px;')
-        self.setText('waiting for image…')
+        self.setText(placeholder)
         self._pix = None
 
     def set_frame(self, rgb: np.ndarray):
         h, w, _ = rgb.shape
         qimg = QtGui.QImage(rgb.data, w, h, 3 * w, QtGui.QImage.Format_RGB888)
         self._pix = QtGui.QPixmap.fromImage(qimg.copy())
+        self._rescale()
+
+    def set_pixmap(self, pix: QtGui.QPixmap):
+        self._pix = pix
         self._rescale()
 
     def _rescale(self):
@@ -417,7 +427,7 @@ class ControlPanel(QtWidgets.QMainWindow):
         self.bridge = bridge
         self.procs = ProcessManager()
         self.setWindowTitle('RoboCot Control Panel')
-        self.resize(1280, 820)
+        self.setMinimumSize(1040, 600)
 
         # base teleop velocity state (republished at 20 Hz)
         self._base_lin = 0.0
@@ -447,6 +457,13 @@ class ControlPanel(QtWidgets.QMainWindow):
         self._cam_timer.timeout.connect(self._update_cam_status)
         self._cam_timer.start(1000)
 
+        # poll the YOLO output dir for the newest annotated image
+        self._det_shown_path = None
+        self._det_collective_until = 0.0  # while > now, prefer clusters_*
+        self._det_timer = QtCore.QTimer(self)
+        self._det_timer.timeout.connect(self._update_detection)
+        self._det_timer.start(600)
+
         # 20 Hz teleop publisher loop
         self._teleop_timer = QtCore.QTimer(self)
         self._teleop_timer.timeout.connect(self._teleop_tick)
@@ -468,6 +485,10 @@ class ControlPanel(QtWidgets.QMainWindow):
         left.setSpacing(12)
         root.addLayout(left, 3)
 
+        # ----- top row: camera feed  |  latest detection (side by side) -----
+        top_row = QtWidgets.QHBoxLayout()
+        top_row.setSpacing(12)
+
         cam_box = QtWidgets.QGroupBox('Camera feed')
         cam_l = QtWidgets.QVBoxLayout(cam_box)
         topic_row = QtWidgets.QHBoxLayout()
@@ -483,54 +504,98 @@ class ControlPanel(QtWidgets.QMainWindow):
         self.cam_status.setObjectName('telemVal')
         topic_row.addWidget(self.cam_status)
         cam_l.addLayout(topic_row)
-        self.camera_view = CameraView()
+        self.camera_view = CameraView(min_size=(320, 240))
         cam_l.addWidget(self.camera_view, 1)
-        left.addWidget(cam_box, 1)
+        top_row.addWidget(cam_box, 1)
 
+        det_box = QtWidgets.QGroupBox('Latest detection')
+        det_l = QtWidgets.QVBoxLayout(det_box)
+        det_head = QtWidgets.QHBoxLayout()
+        self.det_status = QtWidgets.QLabel('no detections yet')
+        self.det_status.setObjectName('telemVal')
+        det_head.addWidget(self.det_status, 1)
+        self.det_pin = QtWidgets.QCheckBox('pin collective')
+        self.det_pin.setToolTip(
+            'Keep showing the collective cluster image during a pick cycle '
+            'instead of switching to per-boll frames.')
+        self.det_pin.setChecked(True)
+        det_head.addWidget(self.det_pin)
+        det_l.addLayout(det_head)
+        self.det_view = CameraView(placeholder='no detections yet',
+                                   min_size=(320, 240))
+        det_l.addWidget(self.det_view, 1)
+        top_row.addWidget(det_box, 1)
+
+        left.addLayout(top_row, 5)
+
+        # ----- telemetry: multi-column dashboard of metric tiles -----
         tele_box = QtWidgets.QGroupBox('Telemetry')
-        tele_l = QtWidgets.QVBoxLayout(tele_box)
-        grid = QtWidgets.QGridLayout()
-        self.lbl_odom = QtWidgets.QLabel('—')
-        self.lbl_cmd = QtWidgets.QLabel('—')
-        self.lbl_rownav = QtWidgets.QLabel('—')
-        self.lbl_harv = QtWidgets.QLabel('—')
-        self.lbl_scan = QtWidgets.QLabel('—')
-        self.lbl_simple = QtWidgets.QLabel('—')
-        rows = [
-            ('Odom (x,y,yaw°)', self.lbl_odom),
-            ('cmd_vel (lin,ang)', self.lbl_cmd),
-            ('row_nav', self.lbl_rownav),
-            ('cluster_harvester', self.lbl_harv),
-            ('cluster_scan', self.lbl_scan),
-            ('simple_harvest', self.lbl_simple),
+        tele_grid = QtWidgets.QGridLayout(tele_box)
+        tele_grid.setSpacing(8)
+        tele_grid.setContentsMargins(10, 6, 10, 10)
+
+        def make_tile(title):
+            w = QtWidgets.QWidget()
+            w.setObjectName('telemTile')
+            v = QtWidgets.QVBoxLayout(w)
+            v.setContentsMargins(10, 6, 10, 6)
+            v.setSpacing(2)
+            k = QtWidgets.QLabel(title)
+            k.setObjectName('telemKey')
+            val = QtWidgets.QLabel('—')
+            val.setObjectName('telemVal')
+            val.setWordWrap(True)
+            v.addWidget(k)
+            v.addWidget(val)
+            return w, val
+
+        metrics = [
+            ('Odom (x, y, yaw°)',),
+            ('cmd_vel (lin, ang)',),
+            ('row_nav',),
+            ('cluster_harvester',),
+            ('cluster_scan',),
+            ('simple_harvest',),
         ]
-        for i, (name, lbl) in enumerate(rows):
-            lbl.setObjectName('telemVal')
-            lbl.setWordWrap(True)
-            key = QtWidgets.QLabel(name)
-            key.setObjectName('telemKey')
-            grid.addWidget(key, i, 0, Qt.AlignTop)
-            grid.addWidget(lbl, i, 1)
-        grid.setColumnStretch(1, 1)
-        grid.setVerticalSpacing(7)
-        tele_l.addLayout(grid)
-        tele_l.addWidget(QtWidgets.QLabel('Process log:'))
+        tiles = [make_tile(m[0]) for m in metrics]
+        (self.lbl_odom, self.lbl_cmd, self.lbl_rownav,
+         self.lbl_harv, self.lbl_scan, self.lbl_simple) = [t[1] for t in tiles]
+        ncols = 3
+        for i, (tile, _) in enumerate(tiles):
+            tele_grid.addWidget(tile, i // ncols, i % ncols)
+        for c in range(ncols):
+            tele_grid.setColumnStretch(c, 1)
+        left.addWidget(tele_box, 0)
+
+        # ----- process log: takes all remaining vertical space -----
+        log_box = QtWidgets.QGroupBox('Process log')
+        log_l = QtWidgets.QVBoxLayout(log_box)
+        log_l.setContentsMargins(10, 8, 10, 10)
         self.log = QtWidgets.QPlainTextEdit()
         self.log.setReadOnly(True)
-        self.log.setMaximumBlockCount(2000)
-        self.log.setStyleSheet(
-            'font-family:monospace;font-size:11px;background:#0c0c0c;color:#cfcfcf;')
-        tele_l.addWidget(self.log, 1)
-        left.addWidget(tele_box, 1)
+        self.log.setMaximumBlockCount(3000)
+        log_l.addWidget(self.log)
+        left.addWidget(log_box, 4)
 
-        # ===== RIGHT: controls =====
-        right = QtWidgets.QVBoxLayout()
-        right.setSpacing(12)
-        root.addLayout(right, 2)
+        # ===== RIGHT: controls (in a scroll area — robust on small screens) =====
+        right_container = QtWidgets.QWidget()
+        right_container.setStyleSheet('background:transparent;')
+        right = QtWidgets.QVBoxLayout(right_container)
+        right.setContentsMargins(0, 0, 6, 0)
+        right.setSpacing(10)
+        right_scroll = QtWidgets.QScrollArea()
+        right_scroll.setWidgetResizable(True)
+        right_scroll.setFrameShape(QtWidgets.QFrame.NoFrame)
+        right_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        right_scroll.setStyleSheet('QScrollArea{background:transparent;border:none;}')
+        right_scroll.setWidget(right_container)
+        right_scroll.setMinimumWidth(430)
+        root.addWidget(right_scroll, 2)
 
         # -- launch / process controls --
         launch_box = QtWidgets.QGroupBox('Launch / Pipeline')
         lb = QtWidgets.QVBoxLayout(launch_box)
+        lb.setSpacing(6)
         self.sim_btn = QtWidgets.QPushButton('Sim: husky_orchard_demo (auto)')
         self.sim_btn.setObjectName('primaryBtn')
         self.arm_launch_btn = QtWidgets.QPushButton('🦾 Start the arm  (MoveIt)')
@@ -538,10 +603,12 @@ class ControlPanel(QtWidgets.QMainWindow):
         self.engine_btn = QtWidgets.QPushButton('🚜 Start the car engine')
         self.engine_btn.setObjectName('successBtn')
         for b in (self.sim_btn, self.arm_launch_btn, self.engine_btn):
-            b.setMinimumHeight(44)
+            b.setMinimumHeight(34)
             lb.addWidget(b)
-        lb.addWidget(QtWidgets.QLabel(
-            '<i>“car engine” = row_navigator + harvester_modules</i>'))
+        _eng_hint = QtWidgets.QLabel(
+            '“car engine” = row_navigator + harvester_modules')
+        _eng_hint.setObjectName('hint')
+        lb.addWidget(_eng_hint)
         right.addWidget(launch_box)
 
         # -- triggers --
@@ -552,19 +619,20 @@ class ControlPanel(QtWidgets.QMainWindow):
         self.fullrun_btn = QtWidgets.QPushButton('▶ Full run')
         self.fullrun_btn.setObjectName('successBtn')
         for b in (self.scan_btn, self.fullrun_btn):
-            b.setMinimumHeight(48)
+            b.setMinimumHeight(38)
             tb.addWidget(b)
         right.addWidget(trig_box)
 
         # -- base (WASD) teleop --
         self.base_box = QtWidgets.QGroupBox('Base teleop (WASD)')
         bb = QtWidgets.QVBoxLayout(self.base_box)
+        bb.setSpacing(6)
         self.base_toggle = QtWidgets.QPushButton('Start WASD teleop')
         self.base_toggle.setObjectName('toggleBtn')
         self.base_toggle.setCheckable(True)
         bb.addWidget(self.base_toggle)
         pad = QtWidgets.QGridLayout()
-        pad.setSpacing(8)
+        pad.setSpacing(6)
         self.btn_w = HoldButton('W\n↑ fwd')
         self.btn_a = HoldButton('A\n↶ left')
         self.btn_s = HoldButton('S\n↓ back')
@@ -573,8 +641,8 @@ class ControlPanel(QtWidgets.QMainWindow):
         self.btn_stop.setObjectName('dangerBtn')
         for b in (self.btn_w, self.btn_a, self.btn_s, self.btn_d):
             b.setObjectName('padBtn')
-            b.setMinimumHeight(54)
-        self.btn_stop.setMinimumHeight(54)
+            b.setMinimumHeight(40)
+        self.btn_stop.setMinimumHeight(40)
         pad.addWidget(self.btn_w, 0, 1)
         pad.addWidget(self.btn_a, 1, 0)
         pad.addWidget(self.btn_stop, 1, 1)
@@ -597,6 +665,7 @@ class ControlPanel(QtWidgets.QMainWindow):
         bb.addLayout(speed_row)
         self.base_hint = QtWidgets.QLabel(
             'Enable, then hold buttons — or focus this box and press W/A/S/D.')
+        self.base_hint.setObjectName('hint')
         self.base_hint.setWordWrap(True)
         bb.addWidget(self.base_hint)
         self.base_box.setFocusPolicy(Qt.StrongFocus)
@@ -605,19 +674,20 @@ class ControlPanel(QtWidgets.QMainWindow):
         # -- camera/arm teleop --
         self.arm_box = QtWidgets.QGroupBox('Camera teleop (wrist arm)')
         ab = QtWidgets.QVBoxLayout(self.arm_box)
+        ab.setSpacing(6)
         self.arm_toggle = QtWidgets.QPushButton('Start camera teleop')
         self.arm_toggle.setObjectName('toggleBtn')
         self.arm_toggle.setCheckable(True)
         ab.addWidget(self.arm_toggle)
         agrid = QtWidgets.QGridLayout()
-        agrid.setSpacing(8)
+        agrid.setSpacing(6)
         # (label, joint idx, sign)
         self.arm_btns = []
 
         def mk(label, idx, sign, r, c):
             b = HoldButton(label)
             b.setObjectName('padBtn')
-            b.setMinimumHeight(42)
+            b.setMinimumHeight(32)
             b.held.connect(lambda on, i=idx, s=sign: self._arm_hold(i, s, on))
             agrid.addWidget(b, r, c)
             self.arm_btns.append(b)
@@ -650,6 +720,7 @@ class ControlPanel(QtWidgets.QMainWindow):
         self.arm_hint = QtWidgets.QLabel(
             'Enable, then hold buttons — or focus this box and use the key in '
             'each label (a/d/w/s/e/q/r/f/z/x, h=home, space=stop).')
+        self.arm_hint.setObjectName('hint')
         self.arm_hint.setWordWrap(True)
         ab.addWidget(self.arm_hint)
         self.arm_box.setFocusPolicy(Qt.StrongFocus)
@@ -729,6 +800,72 @@ class ControlPanel(QtWidgets.QMainWindow):
             h, w = self._last_shape[0], self._last_shape[1]
             self.cam_status.setText(f'● {w}×{h} @ {fps} fps')
             self.cam_status.setStyleSheet('color:#22c55e;')
+
+    # ---------------- latest detection ----------------
+    @staticmethod
+    def _scan_detection_dir():
+        """Newest detect_ and clusters_ filenames by name (timestamp-prefixed,
+        so lexical order == chronological). One scandir, no per-file stat —
+        fast even with thousands of images on /mnt/c."""
+        newest_detect = newest_clusters = None
+        try:
+            with os.scandir(DETECTION_DIR) as it:
+                for e in it:
+                    n = e.name
+                    if not n.endswith('.png'):
+                        continue
+                    if n.startswith('detect_'):
+                        if newest_detect is None or n > newest_detect:
+                            newest_detect = n
+                    elif n.startswith('clusters_'):
+                        if newest_clusters is None or n > newest_clusters:
+                            newest_clusters = n
+        except OSError:
+            pass
+        return newest_detect, newest_clusters
+
+    def _update_detection(self):
+        det_n, clu_n = self._scan_detection_dir()
+        if det_n is None and clu_n is None:
+            return
+
+        # A fresh collective (clusters_) image means a scan / pick cycle just
+        # started — pin it for a few seconds so per-boll frames don't bury it.
+        now = time.time()
+        clu_is_newest = clu_n is not None and (det_n is None or clu_n >= det_n)
+        if clu_n and clu_is_newest and clu_n != os.path.basename(
+                self._det_shown_path or ''):
+            self._det_collective_until = now + 8.0
+
+        pin = self.det_pin.isChecked() and clu_n is not None and \
+            now < self._det_collective_until
+        if pin or (clu_is_newest and clu_n is not None):
+            name, kind = clu_n, 'collective'
+        else:
+            name, kind = det_n, 'boll'
+        if name is None:
+            return
+
+        if name == os.path.basename(self._det_shown_path or ''):
+            return  # already showing it
+
+        path = os.path.join(DETECTION_DIR, name)
+        pix = QtGui.QPixmap(path)
+        if pix.isNull():
+            return  # likely mid-write; retry next tick
+        self.det_view.set_pixmap(pix)
+        self._det_shown_path = path
+
+        try:
+            ts = time.strftime('%H:%M:%S', time.localtime(os.path.getmtime(path)))
+        except OSError:
+            ts = ''
+        if kind == 'collective':
+            self.det_status.setText(f'🟣 COLLECTIVE cluster view · {ts}')
+            self.det_status.setStyleSheet('color:#c084fc;font-weight:600;')
+        else:
+            self.det_status.setText(f'🟢 boll detections · {ts}')
+            self.det_status.setStyleSheet('color:#22c55e;font-weight:600;')
 
     # ---------------- camera topics ----------------
     def _refresh_topics(self):
@@ -965,31 +1102,35 @@ QMainWindow, QWidget { background: #0f172a; color: #e2e8f0; }
 QGroupBox {
     background: #1e293b;
     border: 1px solid #334155;
-    border-radius: 12px;
-    margin-top: 16px;
-    padding: 16px 12px 12px 12px;
+    border-radius: 11px;
+    margin-top: 13px;
+    padding: 12px 10px 9px 10px;
     font-weight: 600;
 }
 QGroupBox::title {
     subcontrol-origin: margin;
     subcontrol-position: top left;
-    left: 14px; padding: 2px 10px;
+    left: 12px; padding: 1px 9px;
     color: #38bdf8;
     background: #1e293b;
     border-radius: 6px;
 }
 
 QLabel { color: #e2e8f0; background: transparent; }
-QLabel#telemKey { color: #94a3b8; font-weight: 600; }
+QLabel#telemKey { color: #94a3b8; font-weight: 600; font-size: 11px; }
 QLabel#telemVal { color: #38bdf8; font-family: 'JetBrains Mono','Consolas',monospace; }
+QLabel#hint { color: #64748b; font-size: 11px; }
+QWidget#telemTile {
+    background: #162033; border: 1px solid #2b3a52; border-radius: 8px;
+}
 
 /* ---- base buttons ---- */
 QPushButton {
     background: #334155;
     color: #e2e8f0;
     border: 1px solid #475569;
-    border-radius: 9px;
-    padding: 9px 14px;
+    border-radius: 8px;
+    padding: 6px 10px;
     font-weight: 600;
 }
 QPushButton:hover { background: #3d4d63; border-color: #64748b; }
@@ -998,7 +1139,8 @@ QPushButton:disabled { color: #64748b; background: #18202f; border-color: #2b364
 
 /* ---- pad (teleop) buttons ---- */
 QPushButton#padBtn {
-    background: #273449; border: 1px solid #3b4a63; font-weight: 700; font-size: 14px;
+    background: #273449; border: 1px solid #3b4a63; font-weight: 700; font-size: 12px;
+    padding: 4px 6px;
 }
 QPushButton#padBtn:hover { background: #324465; border-color: #6366f1; color: #c7d2fe; }
 QPushButton#padBtn:pressed { background: #4338ca; border-color: #818cf8; color: white; }
@@ -1069,6 +1211,14 @@ def main():
     rclpy.init()
     bridge = RosBridge()
     win = ControlPanel(bridge)
+
+    # Fit the window to the screen's available work area (minus a small margin
+    # for the title bar / decorations) so nothing is clipped off-screen.
+    avail = app.primaryScreen().availableGeometry()
+    w = min(1366, avail.width())
+    h = max(600, avail.height() - 48)
+    win.resize(w, h)
+    win.move(avail.left() + max(0, (avail.width() - w) // 2), avail.top())
     win.show()
     try:
         rc = app.exec_()
