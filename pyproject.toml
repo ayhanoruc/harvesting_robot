@@ -1,0 +1,42 @@
+[project]
+name = "robocot"
+version = "0.1.0"
+description = "RoboCot — autonomous cotton harvesting demo. Non-ROS Python deps."
+requires-python = ">=3.10,<3.11"
+
+# These are the Python packages the orchestrator nodes import that aren't
+# provided by `apt install ros-humble-*`. ROS itself (rclpy, cv_bridge,
+# image_geometry, tf2_ros, etc.) is installed via apt — see scripts/setup.sh.
+#
+# Install into the system Python ROS uses:
+#   uv pip install -r pyproject.toml --python /usr/bin/python3
+#
+# Pinned upper bounds reflect what the current pipeline was developed against;
+# raise them once you've re-tested.
+dependencies = [
+    "ultralytics>=8.3,<9",      # YOLO11 inference (real_yolo_detector)
+    "torch>=2.5,<3",            # YOLO backend; install CUDA build separately, see README
+    "torchvision>=0.20,<1",
+    "opencv-python>=4.9,<5",    # cv_boll_detector + cluster_scanner PNG output
+    "numpy>=1.24,<2",           # apt cv_bridge / rclpy on Humble were built against numpy 1.x
+    "PyYAML>=5.4",              # config loading
+    "Pillow>=9",
+    "matplotlib>=3.5",          # generate_*.py helpers + figure scripts
+    "scipy>=1.8",
+    "PyQt5>=5.15,<6",           # control_panel UI
+    "pymodbus>=3,<4",           # real Hand-E gripper driver (deployment only)
+]
+
+[project.optional-dependencies]
+# Extra figure / log analysis helpers used by docs/figures/ and docs/parse_harvest_log.py.
+analysis = [
+    "pandas>=1.4",
+    "seaborn>=0.12",
+    "tqdm>=4",
+]
+
+[tool.uv]
+# We don't want uv to create a managed `.venv` for this project — the ROS
+# overlay is sourced from the system Python under /usr/bin/python3. Use
+# `uv pip install --python /usr/bin/python3 ...` (see scripts/setup.sh).
+package = false
