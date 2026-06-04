@@ -472,11 +472,54 @@ class ControlPanel(QtWidgets.QMainWindow):
         # auto-launch the sim on startup (requirement 2)
         QtCore.QTimer.singleShot(300, self._start_sim)
 
+    # ---------------- brand header ----------------
+    def _build_brand_header(self):
+        header = QtWidgets.QWidget()
+        header.setObjectName('brandHeader')
+        header.setFixedHeight(58)
+
+        row = QtWidgets.QHBoxLayout(header)
+        row.setContentsMargins(20, 8, 20, 8)
+        row.setSpacing(14)
+
+        mark = QtWidgets.QLabel('◧')
+        mark.setObjectName('brandMark')
+        mark.setAlignment(Qt.AlignVCenter)
+        row.addWidget(mark)
+
+        text_col = QtWidgets.QVBoxLayout()
+        text_col.setContentsMargins(0, 0, 0, 0)
+        text_col.setSpacing(0)
+
+        title = QtWidgets.QLabel('RoboCot Control Panel')
+        title.setObjectName('brandTitle')
+        subtitle = QtWidgets.QLabel(
+            'Autonomous cotton harvesting · ME492 — Boğaziçi University')
+        subtitle.setObjectName('brandSubtitle')
+
+        text_col.addWidget(title)
+        text_col.addWidget(subtitle)
+        row.addLayout(text_col)
+        row.addStretch(1)
+
+        return header
+
     # ---------------- UI construction ----------------
     def _build_ui(self):
         central = QtWidgets.QWidget()
         self.setCentralWidget(central)
-        root = QtWidgets.QHBoxLayout(central)
+
+        outer = QtWidgets.QVBoxLayout(central)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+
+        outer.addWidget(self._build_brand_header())
+
+        body = QtWidgets.QWidget()
+        body.setObjectName('body')
+        outer.addWidget(body, 1)
+
+        root = QtWidgets.QHBoxLayout(body)
         root.setContentsMargins(14, 14, 14, 14)
         root.setSpacing(14)
 
@@ -1098,6 +1141,30 @@ class ControlPanel(QtWidgets.QMainWindow):
 THEME_QSS = """
 * { font-family: 'Segoe UI', 'Ubuntu', 'Noto Sans', sans-serif; font-size: 13px; }
 QMainWindow, QWidget { background: #0f172a; color: #e2e8f0; }
+
+/* ---- brand header ---- */
+QWidget#brandHeader {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                                stop:0 #0b1120, stop:1 #1e293b);
+    border-bottom: 1px solid #1e3a5f;
+}
+QLabel#brandMark {
+    color: #38bdf8;
+    font-size: 26px;
+    font-weight: 700;
+    padding-right: 2px;
+}
+QLabel#brandTitle {
+    color: #f1f5f9;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+}
+QLabel#brandSubtitle {
+    color: #64748b;
+    font-size: 11px;
+    letter-spacing: 0.2px;
+}
 
 QGroupBox {
     background: #1e293b;
