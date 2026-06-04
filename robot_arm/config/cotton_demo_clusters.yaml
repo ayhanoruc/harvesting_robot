@@ -1,15 +1,27 @@
 metadata:
-  source: cotton_cluster_template instances (compact)
-  plant_scale: 4.0
+  source: branch_variant_* + cotton_pick_* instances
   col_spacing_m: 3.0
   row_spacing_m: 6.0
   aisle_offset_m: 1.0
+  target_variants:
+    cluster_A_01: branch_variant_B_mixed_green_01
+    cluster_B_01: branch_variant_D_sparse_green_01
+    cluster_C_01: branch_variant_C_mixed_brown_01
+    cluster_A_02: branch_variant_F_dry_brown_01
+    cluster_B_02: branch_variant_A_mature_white_01
+    cluster_C_02: branch_variant_E_tall_mature_01
+    cluster_A_03: branch_variant_B_mixed_green_01
+    cluster_B_03: branch_variant_D_sparse_green_01
+    cluster_C_03: branch_variant_C_mixed_brown_01
+    cluster_A_04: branch_variant_F_dry_brown_01
+    cluster_B_04: branch_variant_A_mature_white_01
+    cluster_C_04: branch_variant_E_tall_mature_01
 spawn_hint:
   x: 0.0
   y: 1.0
   z: 0.0
   yaw: 0.0
-  comment: in front of cluster_A_01, +Y aisle side, drives along row +X
+  comment: aisle Y=1.00 (Row1 +0.85), Husky drives along row +X
 sample_route_row1:
 - cluster_A_01
 - cluster_B_01
@@ -31,93 +43,105 @@ trees:
   x: 0.0
   y: 0.0
   yaw: 0.0
-  canopy_z_min: 1.6
-  canopy_z_max: 1.6
+  variant: branch_variant_B_mixed_green_01
+  canopy_z_min: 0.3
+  canopy_z_max: 0.85
 - id: cluster_B_01
   row: 0
   col: 1
   x: 3.0
   y: 0.0
   yaw: 0.0
-  canopy_z_min: 1.6
-  canopy_z_max: 1.6
+  variant: branch_variant_D_sparse_green_01
+  canopy_z_min: 0.3
+  canopy_z_max: 0.85
 - id: cluster_C_01
   row: 0
   col: 2
   x: 6.0
   y: 0.0
-  yaw: 0.0
-  canopy_z_min: 1.6
-  canopy_z_max: 1.6
+  yaw: 3.141593
+  variant: branch_variant_C_mixed_brown_01
+  canopy_z_min: 0.3
+  canopy_z_max: 0.85
 - id: cluster_A_02
   row: 0
   col: 3
   x: 9.0
   y: 0.0
-  yaw: 0.0
-  canopy_z_min: 1.6
-  canopy_z_max: 1.6
+  yaw: 3.141593
+  variant: branch_variant_F_dry_brown_01
+  canopy_z_min: 0.3
+  canopy_z_max: 0.85
 - id: cluster_B_02
   row: 0
   col: 4
   x: 12.0
   y: 0.0
   yaw: 0.0
-  canopy_z_min: 1.6
-  canopy_z_max: 1.6
+  variant: branch_variant_A_mature_white_01
+  canopy_z_min: 0.3
+  canopy_z_max: 0.85
 - id: cluster_C_02
   row: 0
   col: 5
   x: 15.0
   y: 0.0
-  yaw: 0.0
-  canopy_z_min: 1.6
-  canopy_z_max: 1.6
+  yaw: 3.141593
+  variant: branch_variant_E_tall_mature_01
+  canopy_z_min: 0.3
+  canopy_z_max: 0.85
 - id: cluster_A_03
   row: 1
   col: 0
   x: 1.5
   y: 6.0
   yaw: 3.141593
-  canopy_z_min: 1.6
-  canopy_z_max: 1.6
+  variant: branch_variant_B_mixed_green_01
+  canopy_z_min: 0.3
+  canopy_z_max: 0.85
 - id: cluster_B_03
   row: 1
   col: 1
   x: 4.5
   y: 6.0
   yaw: 3.141593
-  canopy_z_min: 1.6
-  canopy_z_max: 1.6
+  variant: branch_variant_D_sparse_green_01
+  canopy_z_min: 0.3
+  canopy_z_max: 0.85
 - id: cluster_C_03
   row: 1
   col: 2
   x: 7.5
   y: 6.0
-  yaw: 3.141593
-  canopy_z_min: 1.6
-  canopy_z_max: 1.6
+  yaw: 0.0
+  variant: branch_variant_C_mixed_brown_01
+  canopy_z_min: 0.3
+  canopy_z_max: 0.85
 - id: cluster_A_04
   row: 1
   col: 3
   x: 10.5
   y: 6.0
-  yaw: 3.141593
-  canopy_z_min: 1.6
-  canopy_z_max: 1.6
+  yaw: 0.0
+  variant: branch_variant_F_dry_brown_01
+  canopy_z_min: 0.3
+  canopy_z_max: 0.85
 - id: cluster_B_04
   row: 1
   col: 4
   x: 13.5
   y: 6.0
   yaw: 3.141593
-  canopy_z_min: 1.6
-  canopy_z_max: 1.6
+  variant: branch_variant_A_mature_white_01
+  canopy_z_min: 0.3
+  canopy_z_max: 0.85
 - id: cluster_C_04
   row: 1
   col: 5
   x: 16.5
   y: 6.0
-  yaw: 3.141593
-  canopy_z_min: 1.6
-  canopy_z_max: 1.6
+  yaw: 0.0
+  variant: branch_variant_E_tall_mature_01
+  canopy_z_min: 0.3
+  canopy_z_max: 0.85

@@ -1,739 +1,930 @@
 bolls:
   generation:
-    plan: cotton_cluster_template_instanced_compact
-    plant_scale: 4.0
+    plan: branch_variant_instanced_with_fillers
     col_spacing_m: 3.0
     row_spacing_m: 6.0
     row1_y: 0.0
     row1_x0: 0.0
     aisle_offset_m: 1.0
-    sockets_per_cluster: 4
+    fillers_enabled: false
+    plant_scale: 3.0
+    target_variants:
+      cluster_A_01: branch_variant_B_mixed_green_01
+      cluster_B_01: branch_variant_D_sparse_green_01
+      cluster_C_01: branch_variant_C_mixed_brown_01
+      cluster_A_02: branch_variant_F_dry_brown_01
+      cluster_B_02: branch_variant_A_mature_white_01
+      cluster_C_02: branch_variant_E_tall_mature_01
+      cluster_A_03: branch_variant_B_mixed_green_01
+      cluster_B_03: branch_variant_D_sparse_green_01
+      cluster_C_03: branch_variant_C_mixed_brown_01
+      cluster_A_04: branch_variant_F_dry_brown_01
+      cluster_B_04: branch_variant_A_mature_white_01
+      cluster_C_04: branch_variant_E_tall_mature_01
   count:
-    total: 48
+    total: 56
+    targets: 12
+    fillers: 0
 spawn_hint:
   x: 0.0
   y: 1.0
   z: 0.0
   yaw: 0.0
-  comment: in front of cluster_A_01, +Y aisle side, drives along row +X
+  comment: aisle Y=1.00 (Row1 +0.85), Husky drives along row +X
 items:
-- id: boll_cluster_A_01_A_01
+- id: cluster_A_01__cotton_pick_B_01
   tree_id: cluster_A_01
   type: ripe
-  x: 0.2396
-  y: 0.3376
-  z: 0.828
-  radius: 0.072
+  x: -0.2356
+  y: 0.1103
+  z: 0.8285
+  radius: 0.0154
   rgba:
   - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_A_01
-  socket: socket_A_01
-  cluster_row: 0
-- id: boll_cluster_A_01_A_02
-  tree_id: cluster_A_01
-  type: ripe
-  x: -0.0816
-  y: 0.3732
-  z: 0.9868
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_A_02
-  socket: socket_A_02
-  cluster_row: 0
-- id: boll_cluster_A_01_A_03
-  tree_id: cluster_A_01
-  type: ripe
-  x: 0.2388
-  y: 0.4304
-  z: 1.2304
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_A_03
-  socket: socket_A_03
-  cluster_row: 0
-- id: boll_cluster_A_01_A_04
-  tree_id: cluster_A_01
-  type: ripe
-  x: -0.0528
-  y: 0.6056
-  z: 1.5196
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_A_04
-  socket: socket_A_04
-  cluster_row: 0
-- id: boll_cluster_B_01_A_01
-  tree_id: cluster_B_01
-  type: ripe
-  x: 3.2396
-  y: 0.3376
-  z: 0.828
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_A_05
-  socket: socket_A_01
-  cluster_row: 0
-- id: boll_cluster_B_01_A_02
-  tree_id: cluster_B_01
-  type: ripe
-  x: 2.9184
-  y: 0.3732
-  z: 0.9868
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_A_06
-  socket: socket_A_02
-  cluster_row: 0
-- id: boll_cluster_B_01_A_03
-  tree_id: cluster_B_01
-  type: ripe
-  x: 3.2388
-  y: 0.4304
-  z: 1.2304
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_A_07
-  socket: socket_A_03
-  cluster_row: 0
-- id: boll_cluster_B_01_A_04
-  tree_id: cluster_B_01
-  type: ripe
-  x: 2.9472
-  y: 0.6056
-  z: 1.5196
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_A_08
-  socket: socket_A_04
-  cluster_row: 0
-- id: boll_cluster_C_01_A_01
-  tree_id: cluster_C_01
-  type: ripe
-  x: 6.2396
-  y: 0.3376
-  z: 0.828
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_A_09
-  socket: socket_A_01
-  cluster_row: 0
-- id: boll_cluster_C_01_A_02
-  tree_id: cluster_C_01
-  type: ripe
-  x: 5.9184
-  y: 0.3732
-  z: 0.9868
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_A_10
-  socket: socket_A_02
-  cluster_row: 0
-- id: boll_cluster_C_01_A_03
-  tree_id: cluster_C_01
-  type: ripe
-  x: 6.2388
-  y: 0.4304
-  z: 1.2304
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_A_11
-  socket: socket_A_03
-  cluster_row: 0
-- id: boll_cluster_C_01_A_04
-  tree_id: cluster_C_01
-  type: ripe
-  x: 5.9472
-  y: 0.6056
-  z: 1.5196
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_A_12
-  socket: socket_A_04
-  cluster_row: 0
-- id: boll_cluster_A_02_A_01
-  tree_id: cluster_A_02
-  type: ripe
-  x: 9.2396
-  y: 0.3376
-  z: 0.828
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_A_13
-  socket: socket_A_01
-  cluster_row: 0
-- id: boll_cluster_A_02_A_02
-  tree_id: cluster_A_02
-  type: ripe
-  x: 8.9184
-  y: 0.3732
-  z: 0.9868
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_A_14
-  socket: socket_A_02
-  cluster_row: 0
-- id: boll_cluster_A_02_A_03
-  tree_id: cluster_A_02
-  type: ripe
-  x: 9.2388
-  y: 0.4304
-  z: 1.2304
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_A_15
-  socket: socket_A_03
-  cluster_row: 0
-- id: boll_cluster_A_02_A_04
-  tree_id: cluster_A_02
-  type: ripe
-  x: 8.9472
-  y: 0.6056
-  z: 1.5196
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_A_16
-  socket: socket_A_04
-  cluster_row: 0
-- id: boll_cluster_B_02_A_01
-  tree_id: cluster_B_02
-  type: ripe
-  x: 12.2396
-  y: 0.3376
-  z: 0.828
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_A_17
-  socket: socket_A_01
-  cluster_row: 0
-- id: boll_cluster_B_02_A_02
-  tree_id: cluster_B_02
-  type: ripe
-  x: 11.9184
-  y: 0.3732
-  z: 0.9868
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
+  - 0.93
+  - 0.88
   - 1.0
   model: cotton_pick_B_01
-  socket: socket_A_02
+  variant: branch_variant_B_mixed_green_01
+  scale: 2.19
   cluster_row: 0
-- id: boll_cluster_B_02_A_03
-  tree_id: cluster_B_02
+- id: cluster_A_01__cotton_pick_B_02
+  tree_id: cluster_A_01
   type: ripe
-  x: 12.2388
-  y: 0.4304
-  z: 1.2304
-  radius: 0.072
+  x: -0.292
+  y: 0.2762
+  z: 1.321
+  radius: 0.0182
   rgba:
   - 0.95
-  - 0.95
-  - 0.9
+  - 0.93
+  - 0.88
   - 1.0
   model: cotton_pick_B_02
-  socket: socket_A_03
+  variant: branch_variant_B_mixed_green_01
+  scale: 2.19
   cluster_row: 0
-- id: boll_cluster_B_02_A_04
-  tree_id: cluster_B_02
+- id: cluster_A_01__cotton_pick_B_03
+  tree_id: cluster_A_01
   type: ripe
-  x: 11.9472
-  y: 0.6056
-  z: 1.5196
-  radius: 0.072
+  x: -0.0923
+  y: 0.3287
+  z: 1.5059
+  radius: 0.014
   rgba:
   - 0.95
-  - 0.95
-  - 0.9
+  - 0.93
+  - 0.88
   - 1.0
   model: cotton_pick_B_03
-  socket: socket_A_04
+  variant: branch_variant_B_mixed_green_01
+  scale: 2.19
   cluster_row: 0
-- id: boll_cluster_C_02_A_01
-  tree_id: cluster_C_02
+- id: cluster_A_01__cotton_pick_B_04
+  tree_id: cluster_A_01
   type: ripe
-  x: 15.2396
-  y: 0.3376
-  z: 0.828
-  radius: 0.072
+  x: -0.028
+  y: 0.3131
+  z: 1.5106
+  radius: 0.0154
   rgba:
   - 0.95
-  - 0.95
-  - 0.9
+  - 0.93
+  - 0.88
   - 1.0
   model: cotton_pick_B_04
-  socket: socket_A_01
+  variant: branch_variant_B_mixed_green_01
+  scale: 2.19
   cluster_row: 0
-- id: boll_cluster_C_02_A_02
-  tree_id: cluster_C_02
+- id: cluster_B_01__cotton_pick_D_01
+  tree_id: cluster_B_01
   type: ripe
-  x: 14.9184
-  y: 0.3732
-  z: 0.9868
-  radius: 0.072
+  x: 2.7297
+  y: -0.0304
+  z: 0.978
+  radius: 0.0154
   rgba:
   - 0.95
-  - 0.95
-  - 0.9
+  - 0.93
+  - 0.88
   - 1.0
-  model: cotton_pick_B_05
-  socket: socket_A_02
+  model: cotton_pick_D_01
+  variant: branch_variant_D_sparse_green_01
+  scale: 3.0
   cluster_row: 0
-- id: boll_cluster_C_02_A_03
-  tree_id: cluster_C_02
+- id: cluster_B_01__cotton_pick_D_02
+  tree_id: cluster_B_01
   type: ripe
-  x: 15.2388
-  y: 0.4304
-  z: 1.2304
-  radius: 0.072
+  x: 2.7359
+  y: 0.1604
+  z: 1.5077
+  radius: 0.0161
   rgba:
   - 0.95
-  - 0.95
-  - 0.9
+  - 0.93
+  - 0.88
   - 1.0
-  model: cotton_pick_B_06
-  socket: socket_A_03
+  model: cotton_pick_D_02
+  variant: branch_variant_D_sparse_green_01
+  scale: 3.0
   cluster_row: 0
-- id: boll_cluster_C_02_A_04
-  tree_id: cluster_C_02
+- id: cluster_B_01__cotton_pick_D_03
+  tree_id: cluster_B_01
   type: ripe
-  x: 14.9472
-  y: 0.6056
-  z: 1.5196
-  radius: 0.072
+  x: 2.6474
+  y: 0.1335
+  z: 1.5127
+  radius: 0.0182
   rgba:
   - 0.95
-  - 0.95
-  - 0.9
+  - 0.93
+  - 0.88
   - 1.0
-  model: cotton_pick_B_07
-  socket: socket_A_04
+  model: cotton_pick_D_03
+  variant: branch_variant_D_sparse_green_01
+  scale: 3.0
   cluster_row: 0
-- id: boll_cluster_A_03_A_01
-  tree_id: cluster_A_03
+- id: cluster_C_01__cotton_pick_C_01
+  tree_id: cluster_C_01
   type: ripe
-  x: 1.2604
-  y: 5.6624
-  z: 0.828
-  radius: 0.072
+  x: 6.1366
+  y: 0.0146
+  z: 0.8564
+  radius: 0.0182
   rgba:
   - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_B_08
-  socket: socket_A_01
-  cluster_row: 1
-- id: boll_cluster_A_03_A_02
-  tree_id: cluster_A_03
-  type: ripe
-  x: 1.5816
-  y: 5.6268
-  z: 0.9868
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_B_09
-  socket: socket_A_02
-  cluster_row: 1
-- id: boll_cluster_A_03_A_03
-  tree_id: cluster_A_03
-  type: ripe
-  x: 1.2612
-  y: 5.5696
-  z: 1.2304
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_B_10
-  socket: socket_A_03
-  cluster_row: 1
-- id: boll_cluster_A_03_A_04
-  tree_id: cluster_A_03
-  type: ripe
-  x: 1.5528
-  y: 5.3944
-  z: 1.5196
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_B_11
-  socket: socket_A_04
-  cluster_row: 1
-- id: boll_cluster_B_03_A_01
-  tree_id: cluster_B_03
-  type: ripe
-  x: 4.2604
-  y: 5.6624
-  z: 0.828
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_B_12
-  socket: socket_A_01
-  cluster_row: 1
-- id: boll_cluster_B_03_A_02
-  tree_id: cluster_B_03
-  type: ripe
-  x: 4.5816
-  y: 5.6268
-  z: 0.9868
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
+  - 0.93
+  - 0.88
   - 1.0
   model: cotton_pick_C_01
-  socket: socket_A_02
-  cluster_row: 1
-- id: boll_cluster_B_03_A_03
-  tree_id: cluster_B_03
+  variant: branch_variant_C_mixed_brown_01
+  scale: 2.577
+  cluster_row: 0
+- id: cluster_C_01__cotton_pick_C_02
+  tree_id: cluster_C_01
   type: ripe
-  x: 4.2612
-  y: 5.5696
-  z: 1.2304
-  radius: 0.072
+  x: 5.8561
+  y: 0.0675
+  z: 1.0451
+  radius: 0.014
   rgba:
   - 0.95
-  - 0.95
-  - 0.9
+  - 0.93
+  - 0.88
   - 1.0
   model: cotton_pick_C_02
-  socket: socket_A_03
-  cluster_row: 1
-- id: boll_cluster_B_03_A_04
-  tree_id: cluster_B_03
+  variant: branch_variant_C_mixed_brown_01
+  scale: 2.577
+  cluster_row: 0
+- id: cluster_C_01__cotton_pick_C_03
+  tree_id: cluster_C_01
   type: ripe
-  x: 4.5528
-  y: 5.3944
-  z: 1.5196
-  radius: 0.072
+  x: 5.7915
+  y: 0.0869
+  z: 1.0543
+  radius: 0.0154
   rgba:
   - 0.95
-  - 0.95
-  - 0.9
+  - 0.93
+  - 0.88
   - 1.0
   model: cotton_pick_C_03
-  socket: socket_A_04
-  cluster_row: 1
-- id: boll_cluster_C_03_A_01
-  tree_id: cluster_C_03
+  variant: branch_variant_C_mixed_brown_01
+  scale: 2.577
+  cluster_row: 0
+- id: cluster_C_01__cotton_pick_C_04
+  tree_id: cluster_C_01
   type: ripe
-  x: 7.2604
-  y: 5.6624
-  z: 0.828
-  radius: 0.072
+  x: 5.6901
+  y: 0.2898
+  z: 1.5132
+  radius: 0.0182
   rgba:
   - 0.95
-  - 0.95
-  - 0.9
+  - 0.93
+  - 0.88
   - 1.0
   model: cotton_pick_C_04
-  socket: socket_A_01
-  cluster_row: 1
-- id: boll_cluster_C_03_A_02
-  tree_id: cluster_C_03
+  variant: branch_variant_C_mixed_brown_01
+  scale: 2.577
+  cluster_row: 0
+- id: cluster_A_02__cotton_pick_F_01
+  tree_id: cluster_A_02
   type: ripe
-  x: 7.5816
-  y: 5.6268
-  z: 0.9868
-  radius: 0.072
+  x: 9.3409
+  y: 0.106
+  z: 1.0071
+  radius: 0.0182
   rgba:
   - 0.95
-  - 0.95
-  - 0.9
+  - 0.93
+  - 0.88
   - 1.0
-  model: cotton_pick_C_05
-  socket: socket_A_02
-  cluster_row: 1
-- id: boll_cluster_C_03_A_03
-  tree_id: cluster_C_03
+  model: cotton_pick_F_01
+  variant: branch_variant_F_dry_brown_01
+  scale: 2.7840000000000003
+  cluster_row: 0
+- id: cluster_A_02__cotton_pick_F_02
+  tree_id: cluster_A_02
   type: ripe
-  x: 7.2612
-  y: 5.5696
-  z: 1.2304
-  radius: 0.072
+  x: 9.0832
+  y: 0.0534
+  z: 1.2364
+  radius: 0.014
   rgba:
   - 0.95
-  - 0.95
-  - 0.9
+  - 0.93
+  - 0.88
   - 1.0
-  model: cotton_pick_C_06
-  socket: socket_A_03
-  cluster_row: 1
-- id: boll_cluster_C_03_A_04
-  tree_id: cluster_C_03
+  model: cotton_pick_F_02
+  variant: branch_variant_F_dry_brown_01
+  scale: 2.7840000000000003
+  cluster_row: 0
+- id: cluster_A_02__cotton_pick_F_03
+  tree_id: cluster_A_02
   type: ripe
-  x: 7.5528
-  y: 5.3944
-  z: 1.5196
-  radius: 0.072
+  x: 9.0127
+  y: 0.0788
+  z: 1.2463
+  radius: 0.0154
   rgba:
   - 0.95
-  - 0.95
-  - 0.9
+  - 0.93
+  - 0.88
   - 1.0
-  model: cotton_pick_C_07
-  socket: socket_A_04
-  cluster_row: 1
-- id: boll_cluster_A_04_A_01
-  tree_id: cluster_A_04
+  model: cotton_pick_F_03
+  variant: branch_variant_F_dry_brown_01
+  scale: 2.7840000000000003
+  cluster_row: 0
+- id: cluster_A_02__cotton_pick_F_04
+  tree_id: cluster_A_02
   type: ripe
-  x: 10.2604
-  y: 5.6624
-  z: 0.828
-  radius: 0.072
+  x: 9.3868
+  y: 0.0845
+  z: 1.5116
+  radius: 0.0168
   rgba:
   - 0.95
-  - 0.95
-  - 0.9
+  - 0.93
+  - 0.88
   - 1.0
-  model: cotton_pick_C_08
-  socket: socket_A_01
-  cluster_row: 1
-- id: boll_cluster_A_04_A_02
-  tree_id: cluster_A_04
+  model: cotton_pick_F_04
+  variant: branch_variant_F_dry_brown_01
+  scale: 2.7840000000000003
+  cluster_row: 0
+- id: cluster_B_02__cotton_pick_A_01
+  tree_id: cluster_B_02
   type: ripe
-  x: 10.5816
-  y: 5.6268
-  z: 0.9868
-  radius: 0.072
+  x: 11.931
+  y: 0.0604
+  z: 0.8379
+  radius: 0.0154
   rgba:
   - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_C_09
-  socket: socket_A_02
-  cluster_row: 1
-- id: boll_cluster_A_04_A_03
-  tree_id: cluster_A_04
-  type: ripe
-  x: 10.2612
-  y: 5.5696
-  z: 1.2304
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_C_10
-  socket: socket_A_03
-  cluster_row: 1
-- id: boll_cluster_A_04_A_04
-  tree_id: cluster_A_04
-  type: ripe
-  x: 10.5528
-  y: 5.3944
-  z: 1.5196
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_C_11
-  socket: socket_A_04
-  cluster_row: 1
-- id: boll_cluster_B_04_A_01
-  tree_id: cluster_B_04
-  type: ripe
-  x: 13.2604
-  y: 5.6624
-  z: 0.828
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
-  - 1.0
-  model: cotton_pick_C_12
-  socket: socket_A_01
-  cluster_row: 1
-- id: boll_cluster_B_04_A_02
-  tree_id: cluster_B_04
-  type: ripe
-  x: 13.5816
-  y: 5.6268
-  z: 0.9868
-  radius: 0.072
-  rgba:
-  - 0.95
-  - 0.95
-  - 0.9
+  - 0.93
+  - 0.88
   - 1.0
   model: cotton_pick_A_01
-  socket: socket_A_02
-  cluster_row: 1
-- id: boll_cluster_B_04_A_03
-  tree_id: cluster_B_04
+  variant: branch_variant_A_mature_white_01
+  scale: 2.463
+  cluster_row: 0
+- id: cluster_B_02__cotton_pick_A_02
+  tree_id: cluster_B_02
   type: ripe
-  x: 13.2612
-  y: 5.5696
-  z: 1.2304
-  radius: 0.072
+  x: 12.2252
+  y: 0.1086
+  z: 1.0986
+  radius: 0.01505
   rgba:
   - 0.95
-  - 0.95
-  - 0.9
+  - 0.93
+  - 0.88
   - 1.0
   model: cotton_pick_A_02
-  socket: socket_A_03
-  cluster_row: 1
-- id: boll_cluster_B_04_A_04
-  tree_id: cluster_B_04
+  variant: branch_variant_A_mature_white_01
+  scale: 2.463
+  cluster_row: 0
+- id: cluster_B_02__cotton_pick_A_03
+  tree_id: cluster_B_02
   type: ripe
-  x: 13.5528
-  y: 5.3944
-  z: 1.5196
-  radius: 0.072
+  x: 12.2976
+  y: 0.0928
+  z: 1.1
+  radius: 0.0168
   rgba:
   - 0.95
-  - 0.95
-  - 0.9
+  - 0.93
+  - 0.88
   - 1.0
   model: cotton_pick_A_03
-  socket: socket_A_04
-  cluster_row: 1
-- id: boll_cluster_C_04_A_01
-  tree_id: cluster_C_04
+  variant: branch_variant_A_mature_white_01
+  scale: 2.463
+  cluster_row: 0
+- id: cluster_B_02__cotton_pick_A_04
+  tree_id: cluster_B_02
   type: ripe
-  x: 16.2604
-  y: 5.6624
-  z: 0.828
-  radius: 0.072
+  x: 12.031
+  y: 0.0872
+  z: 1.3275
+  radius: 0.0182
   rgba:
   - 0.95
-  - 0.95
-  - 0.9
+  - 0.93
+  - 0.88
   - 1.0
   model: cotton_pick_A_04
-  socket: socket_A_01
-  cluster_row: 1
-- id: boll_cluster_C_04_A_02
-  tree_id: cluster_C_04
+  variant: branch_variant_A_mature_white_01
+  scale: 2.463
+  cluster_row: 0
+- id: cluster_B_02__cotton_pick_A_05
+  tree_id: cluster_B_02
   type: ripe
-  x: 16.5816
-  y: 5.6268
-  z: 0.9868
-  radius: 0.072
+  x: 12.3514
+  y: 0.0866
+  z: 1.5072
+  radius: 0.014
   rgba:
   - 0.95
-  - 0.95
-  - 0.9
+  - 0.93
+  - 0.88
   - 1.0
   model: cotton_pick_A_05
-  socket: socket_A_02
-  cluster_row: 1
-- id: boll_cluster_C_04_A_03
-  tree_id: cluster_C_04
+  variant: branch_variant_A_mature_white_01
+  scale: 2.463
+  cluster_row: 0
+- id: cluster_B_02__cotton_pick_A_06
+  tree_id: cluster_B_02
   type: ripe
-  x: 16.2612
-  y: 5.5696
-  z: 1.2304
-  radius: 0.072
+  x: 12.417
+  y: 0.0567
+  z: 1.5126
+  radius: 0.0154
   rgba:
   - 0.95
-  - 0.95
-  - 0.9
+  - 0.93
+  - 0.88
   - 1.0
   model: cotton_pick_A_06
-  socket: socket_A_03
-  cluster_row: 1
-- id: boll_cluster_C_04_A_04
-  tree_id: cluster_C_04
+  variant: branch_variant_A_mature_white_01
+  scale: 2.463
+  cluster_row: 0
+- id: cluster_C_02__cotton_pick_E_01
+  tree_id: cluster_C_02
   type: ripe
-  x: 16.5528
-  y: 5.3944
-  z: 1.5196
-  radius: 0.072
+  x: 15.0233
+  y: 0.1509
+  z: 0.6778
+  radius: 0.0154
   rgba:
   - 0.95
-  - 0.95
-  - 0.9
+  - 0.93
+  - 0.88
   - 1.0
-  model: cotton_pick_A_07
-  socket: socket_A_04
+  model: cotton_pick_E_01
+  variant: branch_variant_E_tall_mature_01
+  scale: 1.833
+  cluster_row: 0
+- id: cluster_C_02__cotton_pick_E_02
+  tree_id: cluster_C_02
+  type: ripe
+  x: 14.7688
+  y: 0.1382
+  z: 0.9176
+  radius: 0.01505
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_E_02
+  variant: branch_variant_E_tall_mature_01
+  scale: 1.833
+  cluster_row: 0
+- id: cluster_C_02__cotton_pick_E_03
+  tree_id: cluster_C_02
+  type: ripe
+  x: 14.7389
+  y: 0.1911
+  z: 0.9178
+  radius: 0.0168
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_E_03
+  variant: branch_variant_E_tall_mature_01
+  scale: 1.833
+  cluster_row: 0
+- id: cluster_C_02__cotton_pick_E_04
+  tree_id: cluster_C_02
+  type: ripe
+  x: 14.9725
+  y: 0.1913
+  z: 1.1213
+  radius: 0.0182
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_E_04
+  variant: branch_variant_E_tall_mature_01
+  scale: 1.833
+  cluster_row: 0
+- id: cluster_C_02__cotton_pick_E_05
+  tree_id: cluster_C_02
+  type: ripe
+  x: 14.6683
+  y: 0.1705
+  z: 1.2931
+  radius: 0.014
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_E_05
+  variant: branch_variant_E_tall_mature_01
+  scale: 1.833
+  cluster_row: 0
+- id: cluster_C_02__cotton_pick_E_06
+  tree_id: cluster_C_02
+  type: ripe
+  x: 14.6126
+  y: 0.1896
+  z: 1.2969
+  radius: 0.0154
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_E_06
+  variant: branch_variant_E_tall_mature_01
+  scale: 1.833
+  cluster_row: 0
+- id: cluster_C_02__cotton_pick_E_07
+  tree_id: cluster_C_02
+  type: ripe
+  x: 14.8395
+  y: 0.209
+  z: 1.5123
+  radius: 0.0168
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_E_07
+  variant: branch_variant_E_tall_mature_01
+  scale: 1.833
+  cluster_row: 0
+- id: cluster_A_03__cotton_pick_B_01
+  tree_id: cluster_A_03
+  type: ripe
+  x: 1.7356
+  y: 5.8897
+  z: 0.8285
+  radius: 0.0154
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_B_01
+  variant: branch_variant_B_mixed_green_01
+  scale: 2.19
+  cluster_row: 1
+- id: cluster_A_03__cotton_pick_B_02
+  tree_id: cluster_A_03
+  type: ripe
+  x: 1.792
+  y: 5.7238
+  z: 1.321
+  radius: 0.0182
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_B_02
+  variant: branch_variant_B_mixed_green_01
+  scale: 2.19
+  cluster_row: 1
+- id: cluster_A_03__cotton_pick_B_03
+  tree_id: cluster_A_03
+  type: ripe
+  x: 1.5923
+  y: 5.6713
+  z: 1.5059
+  radius: 0.014
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_B_03
+  variant: branch_variant_B_mixed_green_01
+  scale: 2.19
+  cluster_row: 1
+- id: cluster_A_03__cotton_pick_B_04
+  tree_id: cluster_A_03
+  type: ripe
+  x: 1.528
+  y: 5.6869
+  z: 1.5106
+  radius: 0.0154
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_B_04
+  variant: branch_variant_B_mixed_green_01
+  scale: 2.19
+  cluster_row: 1
+- id: cluster_B_03__cotton_pick_D_01
+  tree_id: cluster_B_03
+  type: ripe
+  x: 4.7703
+  y: 6.0304
+  z: 0.978
+  radius: 0.0154
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_D_01
+  variant: branch_variant_D_sparse_green_01
+  scale: 3.0
+  cluster_row: 1
+- id: cluster_B_03__cotton_pick_D_02
+  tree_id: cluster_B_03
+  type: ripe
+  x: 4.7641
+  y: 5.8396
+  z: 1.5077
+  radius: 0.0161
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_D_02
+  variant: branch_variant_D_sparse_green_01
+  scale: 3.0
+  cluster_row: 1
+- id: cluster_B_03__cotton_pick_D_03
+  tree_id: cluster_B_03
+  type: ripe
+  x: 4.8526
+  y: 5.8665
+  z: 1.5127
+  radius: 0.0182
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_D_03
+  variant: branch_variant_D_sparse_green_01
+  scale: 3.0
+  cluster_row: 1
+- id: cluster_C_03__cotton_pick_C_01
+  tree_id: cluster_C_03
+  type: ripe
+  x: 7.3634
+  y: 5.9854
+  z: 0.8564
+  radius: 0.0182
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_C_01
+  variant: branch_variant_C_mixed_brown_01
+  scale: 2.577
+  cluster_row: 1
+- id: cluster_C_03__cotton_pick_C_02
+  tree_id: cluster_C_03
+  type: ripe
+  x: 7.6439
+  y: 5.9325
+  z: 1.0451
+  radius: 0.014
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_C_02
+  variant: branch_variant_C_mixed_brown_01
+  scale: 2.577
+  cluster_row: 1
+- id: cluster_C_03__cotton_pick_C_03
+  tree_id: cluster_C_03
+  type: ripe
+  x: 7.7085
+  y: 5.9131
+  z: 1.0543
+  radius: 0.0154
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_C_03
+  variant: branch_variant_C_mixed_brown_01
+  scale: 2.577
+  cluster_row: 1
+- id: cluster_C_03__cotton_pick_C_04
+  tree_id: cluster_C_03
+  type: ripe
+  x: 7.8099
+  y: 5.7102
+  z: 1.5132
+  radius: 0.0182
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_C_04
+  variant: branch_variant_C_mixed_brown_01
+  scale: 2.577
+  cluster_row: 1
+- id: cluster_A_04__cotton_pick_F_01
+  tree_id: cluster_A_04
+  type: ripe
+  x: 10.1591
+  y: 5.894
+  z: 1.0071
+  radius: 0.0182
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_F_01
+  variant: branch_variant_F_dry_brown_01
+  scale: 2.7840000000000003
+  cluster_row: 1
+- id: cluster_A_04__cotton_pick_F_02
+  tree_id: cluster_A_04
+  type: ripe
+  x: 10.4168
+  y: 5.9466
+  z: 1.2364
+  radius: 0.014
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_F_02
+  variant: branch_variant_F_dry_brown_01
+  scale: 2.7840000000000003
+  cluster_row: 1
+- id: cluster_A_04__cotton_pick_F_03
+  tree_id: cluster_A_04
+  type: ripe
+  x: 10.4873
+  y: 5.9212
+  z: 1.2463
+  radius: 0.0154
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_F_03
+  variant: branch_variant_F_dry_brown_01
+  scale: 2.7840000000000003
+  cluster_row: 1
+- id: cluster_A_04__cotton_pick_F_04
+  tree_id: cluster_A_04
+  type: ripe
+  x: 10.1132
+  y: 5.9155
+  z: 1.5116
+  radius: 0.0168
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_F_04
+  variant: branch_variant_F_dry_brown_01
+  scale: 2.7840000000000003
+  cluster_row: 1
+- id: cluster_B_04__cotton_pick_A_01
+  tree_id: cluster_B_04
+  type: ripe
+  x: 13.569
+  y: 5.9396
+  z: 0.8379
+  radius: 0.0154
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_A_01
+  variant: branch_variant_A_mature_white_01
+  scale: 2.463
+  cluster_row: 1
+- id: cluster_B_04__cotton_pick_A_02
+  tree_id: cluster_B_04
+  type: ripe
+  x: 13.2748
+  y: 5.8914
+  z: 1.0986
+  radius: 0.01505
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_A_02
+  variant: branch_variant_A_mature_white_01
+  scale: 2.463
+  cluster_row: 1
+- id: cluster_B_04__cotton_pick_A_03
+  tree_id: cluster_B_04
+  type: ripe
+  x: 13.2024
+  y: 5.9072
+  z: 1.1
+  radius: 0.0168
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_A_03
+  variant: branch_variant_A_mature_white_01
+  scale: 2.463
+  cluster_row: 1
+- id: cluster_B_04__cotton_pick_A_04
+  tree_id: cluster_B_04
+  type: ripe
+  x: 13.469
+  y: 5.9128
+  z: 1.3275
+  radius: 0.0182
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_A_04
+  variant: branch_variant_A_mature_white_01
+  scale: 2.463
+  cluster_row: 1
+- id: cluster_B_04__cotton_pick_A_05
+  tree_id: cluster_B_04
+  type: ripe
+  x: 13.1486
+  y: 5.9134
+  z: 1.5072
+  radius: 0.014
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_A_05
+  variant: branch_variant_A_mature_white_01
+  scale: 2.463
+  cluster_row: 1
+- id: cluster_B_04__cotton_pick_A_06
+  tree_id: cluster_B_04
+  type: ripe
+  x: 13.083
+  y: 5.9433
+  z: 1.5126
+  radius: 0.0154
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_A_06
+  variant: branch_variant_A_mature_white_01
+  scale: 2.463
+  cluster_row: 1
+- id: cluster_C_04__cotton_pick_E_01
+  tree_id: cluster_C_04
+  type: ripe
+  x: 16.4767
+  y: 5.8491
+  z: 0.6778
+  radius: 0.0154
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_E_01
+  variant: branch_variant_E_tall_mature_01
+  scale: 1.833
+  cluster_row: 1
+- id: cluster_C_04__cotton_pick_E_02
+  tree_id: cluster_C_04
+  type: ripe
+  x: 16.7312
+  y: 5.8618
+  z: 0.9176
+  radius: 0.01505
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_E_02
+  variant: branch_variant_E_tall_mature_01
+  scale: 1.833
+  cluster_row: 1
+- id: cluster_C_04__cotton_pick_E_03
+  tree_id: cluster_C_04
+  type: ripe
+  x: 16.7611
+  y: 5.8089
+  z: 0.9178
+  radius: 0.0168
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_E_03
+  variant: branch_variant_E_tall_mature_01
+  scale: 1.833
+  cluster_row: 1
+- id: cluster_C_04__cotton_pick_E_04
+  tree_id: cluster_C_04
+  type: ripe
+  x: 16.5275
+  y: 5.8087
+  z: 1.1213
+  radius: 0.0182
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_E_04
+  variant: branch_variant_E_tall_mature_01
+  scale: 1.833
+  cluster_row: 1
+- id: cluster_C_04__cotton_pick_E_05
+  tree_id: cluster_C_04
+  type: ripe
+  x: 16.8317
+  y: 5.8295
+  z: 1.2931
+  radius: 0.014
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_E_05
+  variant: branch_variant_E_tall_mature_01
+  scale: 1.833
+  cluster_row: 1
+- id: cluster_C_04__cotton_pick_E_06
+  tree_id: cluster_C_04
+  type: ripe
+  x: 16.8874
+  y: 5.8104
+  z: 1.2969
+  radius: 0.0154
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_E_06
+  variant: branch_variant_E_tall_mature_01
+  scale: 1.833
+  cluster_row: 1
+- id: cluster_C_04__cotton_pick_E_07
+  tree_id: cluster_C_04
+  type: ripe
+  x: 16.6605
+  y: 5.791
+  z: 1.5123
+  radius: 0.0168
+  rgba:
+  - 0.95
+  - 0.93
+  - 0.88
+  - 1.0
+  model: cotton_pick_E_07
+  variant: branch_variant_E_tall_mature_01
+  scale: 1.833
   cluster_row: 1

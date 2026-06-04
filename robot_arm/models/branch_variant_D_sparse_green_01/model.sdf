@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <model name="branch_variant_D_sparse_green_01">
+    <static>true</static>
+    <link name="branch_variant_D_sparse_green_01_link">
+      <visual name="branch_variant_D_sparse_green_01_visual">
+        <geometry><mesh><uri>model://branch_variant_D_sparse_green_01/meshes/branch_variant_D_sparse_green_01.dae</uri></mesh></geometry>
+      </visual>
+      <collision name="branch_variant_D_sparse_green_01_stem_collision">
+        <pose>0 0 0.24000 0 0 0</pose>
+        <geometry><cylinder><radius>0.018</radius><length>0.48000</length></cylinder></geometry>
+      </collision>
+    </link>
+  </model>
+</sdf>

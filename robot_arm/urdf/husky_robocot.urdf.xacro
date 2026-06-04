@@ -198,12 +198,11 @@
 				<color rgba="0.2 0.3 0.6 1"/>
 			</material>
 		</visual>
-		<collision name="floor_collision">
-			<origin xyz="0 0 ${-reservoir_lz/2 + reservoir_wall/2}"/>
-			<geometry>
-				<box size="${reservoir_lx} ${reservoir_ly} ${reservoir_wall}"/>
-			</geometry>
-		</collision>
+		<!-- No floor collision: bolls are dropped via Gazebo set_pose
+		     teleport (not physical drop), and removing the box from
+		     MoveIt's planning_scene means the arm can path freely from
+		     scout into the reservoir-hover pose without false self-
+		     collision flags against the bin walls. -->
 
 		<!-- Wall +X -->
 		<visual name="wall_xp_visual">
@@ -213,12 +212,6 @@
 			</geometry>
 			<material name="reservoir_blue"/>
 		</visual>
-		<collision name="wall_xp_collision">
-			<origin xyz="${reservoir_lx/2 - reservoir_wall/2} 0 0"/>
-			<geometry>
-				<box size="${reservoir_wall} ${reservoir_ly} ${reservoir_lz}"/>
-			</geometry>
-		</collision>
 
 		<!-- Wall -X -->
 		<visual name="wall_xn_visual">
@@ -228,12 +221,6 @@
 			</geometry>
 			<material name="reservoir_blue"/>
 		</visual>
-		<collision name="wall_xn_collision">
-			<origin xyz="${-reservoir_lx/2 + reservoir_wall/2} 0 0"/>
-			<geometry>
-				<box size="${reservoir_wall} ${reservoir_ly} ${reservoir_lz}"/>
-			</geometry>
-		</collision>
 
 		<!-- Wall +Y -->
 		<visual name="wall_yp_visual">
@@ -243,12 +230,6 @@
 			</geometry>
 			<material name="reservoir_blue"/>
 		</visual>
-		<collision name="wall_yp_collision">
-			<origin xyz="0 ${reservoir_ly/2 - reservoir_wall/2} 0"/>
-			<geometry>
-				<box size="${reservoir_lx} ${reservoir_wall} ${reservoir_lz}"/>
-			</geometry>
-		</collision>
 
 		<!-- Wall -Y -->
 		<visual name="wall_yn_visual">
@@ -258,12 +239,6 @@
 			</geometry>
 			<material name="reservoir_blue"/>
 		</visual>
-		<collision name="wall_yn_collision">
-			<origin xyz="0 ${-reservoir_ly/2 + reservoir_wall/2} 0"/>
-			<geometry>
-				<box size="${reservoir_lx} ${reservoir_wall} ${reservoir_lz}"/>
-			</geometry>
-		</collision>
 	</link>
 
 	<!-- ==================== DiffDrive (skid-steer 4-wheel) ==================== -->

@@ -1,0 +1,113 @@
+targets:
+  - variant: branch_variant_A_mature_white_01
+    cotton: cotton_pick_A_01
+    pose_xyz_m: [-0.027995, 0.024533, 0.340207]
+    collision_radius_m: 0.015400
+  - variant: branch_variant_A_mature_white_01
+    cotton: cotton_pick_A_02
+    pose_xyz_m: [0.091447, 0.044107, 0.446023]
+    collision_radius_m: 0.015050
+  - variant: branch_variant_A_mature_white_01
+    cotton: cotton_pick_A_03
+    pose_xyz_m: [0.120813, 0.037661, 0.446595]
+    collision_radius_m: 0.016800
+  - variant: branch_variant_A_mature_white_01
+    cotton: cotton_pick_A_04
+    pose_xyz_m: [0.012593, 0.035390, 0.538996]
+    collision_radius_m: 0.018200
+  - variant: branch_variant_A_mature_white_01
+    cotton: cotton_pick_A_05
+    pose_xyz_m: [0.142670, 0.035151, 0.611948]
+    collision_radius_m: 0.014000
+  - variant: branch_variant_A_mature_white_01
+    cotton: cotton_pick_A_06
+    pose_xyz_m: [0.169287, 0.023014, 0.614137]
+    collision_radius_m: 0.015400
+  - variant: branch_variant_B_mixed_green_01
+    cotton: cotton_pick_B_01
+    pose_xyz_m: [-0.107573, 0.050369, 0.378316]
+    collision_radius_m: 0.015400
+  - variant: branch_variant_B_mixed_green_01
+    cotton: cotton_pick_B_02
+    pose_xyz_m: [-0.133335, 0.126101, 0.603200]
+    collision_radius_m: 0.018200
+  - variant: branch_variant_B_mixed_green_01
+    cotton: cotton_pick_B_03
+    pose_xyz_m: [-0.042143, 0.150094, 0.687614]
+    collision_radius_m: 0.014000
+  - variant: branch_variant_B_mixed_green_01
+    cotton: cotton_pick_B_04
+    pose_xyz_m: [-0.012786, 0.142967, 0.689775]
+    collision_radius_m: 0.015400
+  - variant: branch_variant_C_mixed_brown_01
+    cotton: cotton_pick_C_01
+    pose_xyz_m: [-0.053003, -0.005653, 0.332332]
+    collision_radius_m: 0.018200
+  - variant: branch_variant_C_mixed_brown_01
+    cotton: cotton_pick_C_02
+    pose_xyz_m: [0.055833, -0.026210, 0.405557]
+    collision_radius_m: 0.014000
+  - variant: branch_variant_C_mixed_brown_01
+    cotton: cotton_pick_C_03
+    pose_xyz_m: [0.080917, -0.033713, 0.409120]
+    collision_radius_m: 0.015400
+  - variant: branch_variant_C_mixed_brown_01
+    cotton: cotton_pick_C_04
+    pose_xyz_m: [0.120256, -0.112467, 0.587177]
+    collision_radius_m: 0.018200
+  - variant: branch_variant_D_sparse_green_01
+    cotton: cotton_pick_D_01
+    pose_xyz_m: [-0.090103, -0.010141, 0.326005]
+    collision_radius_m: 0.015400
+  - variant: branch_variant_D_sparse_green_01
+    cotton: cotton_pick_D_02
+    pose_xyz_m: [-0.088024, 0.053465, 0.502571]
+    collision_radius_m: 0.016100
+  - variant: branch_variant_D_sparse_green_01
+    cotton: cotton_pick_D_03
+    pose_xyz_m: [-0.117521, 0.044496, 0.504231]
+    collision_radius_m: 0.018200
+  - variant: branch_variant_E_tall_mature_01
+    cotton: cotton_pick_E_01
+    pose_xyz_m: [-0.012688, -0.082339, 0.369797]
+    collision_radius_m: 0.015400
+  - variant: branch_variant_E_tall_mature_01
+    cotton: cotton_pick_E_02
+    pose_xyz_m: [0.126134, -0.075421, 0.500588]
+    collision_radius_m: 0.015050
+  - variant: branch_variant_E_tall_mature_01
+    cotton: cotton_pick_E_03
+    pose_xyz_m: [0.142440, -0.104245, 0.500685]
+    collision_radius_m: 0.016800
+  - variant: branch_variant_E_tall_mature_01
+    cotton: cotton_pick_E_04
+    pose_xyz_m: [0.015003, -0.104340, 0.611737]
+    collision_radius_m: 0.018200
+  - variant: branch_variant_E_tall_mature_01
+    cotton: cotton_pick_E_05
+    pose_xyz_m: [0.180952, -0.093015, 0.705443]
+    collision_radius_m: 0.014000
+  - variant: branch_variant_E_tall_mature_01
+    cotton: cotton_pick_E_06
+    pose_xyz_m: [0.211342, -0.103413, 0.707547]
+    collision_radius_m: 0.015400
+  - variant: branch_variant_E_tall_mature_01
+    cotton: cotton_pick_E_07
+    pose_xyz_m: [0.087571, -0.114040, 0.825063]
+    collision_radius_m: 0.016800
+  - variant: branch_variant_F_dry_brown_01
+    cotton: cotton_pick_F_01
+    pose_xyz_m: [-0.122439, -0.038065, 0.361728]
+    collision_radius_m: 0.018200
+  - variant: branch_variant_F_dry_brown_01
+    cotton: cotton_pick_F_02
+    pose_xyz_m: [-0.029893, -0.019183, 0.444092]
+    collision_radius_m: 0.014000
+  - variant: branch_variant_F_dry_brown_01
+    cotton: cotton_pick_F_03
+    pose_xyz_m: [-0.004578, -0.028297, 0.447667]
+    collision_radius_m: 0.015400
+  - variant: branch_variant_F_dry_brown_01
+    cotton: cotton_pick_F_04
+    pose_xyz_m: [-0.138939, -0.030345, 0.542968]
+    collision_radius_m: 0.016800
