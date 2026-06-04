@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 900" font-family="'Segoe UI', system-ui, sans-serif" font-size="11">
+  <rect width="1000" height="900" fill="white"/>
+
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L9,3 L0,6 Z" fill="#475569"/>
+    </marker>
+    <marker id="ar-cy" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L9,3 L0,6 Z" fill="#0e7490"/>
+    </marker>
+    <marker id="ar-amber" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L9,3 L0,6 Z" fill="#b45309"/>
+    </marker>
+  </defs>
+
+  <!-- ======================= Title ======================= -->
+  <text x="500" y="30" text-anchor="middle" font-size="17" font-weight="700" fill="#1f2937">
+    Vision &amp; Spatial-Detection Pipeline
+  </text>
+  <text x="500" y="48" text-anchor="middle" font-size="11" fill="#6b7280">
+    one /cluster_scan/run call — 15 poses → boll positions in world frame
+  </text>
+
+  <!-- ======================= Inputs (top bar) ======================= -->
+  <g>
+    <rect x="40" y="70" width="920" height="48" rx="6" fill="#fefce8" stroke="#a16207" stroke-width="1.4"/>
+    <text x="55" y="89" font-weight="700" fill="#854d0e" font-size="11">STATIC INPUTS</text>
+    <text x="55" y="105" fill="#713f12" font-size="10" font-family="monospace">
+      /camera/depth/camera_info (K matrix: fx=fy=277, cx=320, cy=240)   ·   TF tree:  world → odom → husky_base_link → ... → tool0 → camera_optical_frame
+    </text>
+  </g>
+
+  <!-- ======================= Step 1 ======================= -->
+  <g>
+    <rect x="40" y="140" width="920" height="56" rx="6" fill="#dcfce7" stroke="#15803d" stroke-width="1.8"/>
+    <text x="55" y="159" font-weight="700" fill="#14532d" font-size="11">① row_navigator drives Husky to scout pose · recalibrates world→odom from Gazebo truth</text>
+    <text x="55" y="178" fill="#166534" font-size="10">arm_commander startup leaves the arm in SCOUT pose:  joint1=−π/2, joint5=+π/2 (HOME + wrist tilt toward canopy)</text>
+    <text x="942" y="178" text-anchor="end" fill="#16a34a" font-size="9" font-family="monospace">orchestrator/row_navigator.py</text>
+  </g>
+  <line x1="500" y1="196" x2="500" y2="224" stroke="#475569" stroke-width="1.5" marker-end="url(#ar)"/>
+
+  <!-- ======================= Step 2 — sweep loop ======================= -->
+  <g>
+    <rect x="40" y="226" width="920" height="240" rx="8" fill="#ecfeff" stroke="#0e7490" stroke-width="2"/>
+    <text x="55" y="247" font-weight="700" fill="#155e75" font-size="12">② sweep loop  ×15 poses  (pan ∈ {−12°, 0°, +12°} × tilt ∈ {−32°, −24°, −16°, −8°, 0°} offsets from SCOUT)</text>
+    <text x="942" y="247" text-anchor="end" fill="#0e7490" font-size="9" font-family="monospace">orchestrator/cluster_scanner.py</text>
+
+    <!-- 2a -->
+    <g transform="translate(60, 260)">
+      <rect width="200" height="60" rx="5" fill="white" stroke="#0e7490" stroke-width="1.5"/>
+      <text x="100" y="20" text-anchor="middle" font-weight="700" fill="#155e75" font-size="11">2a.  send pose</text>
+      <text x="100" y="36" text-anchor="middle" fill="#0e7490" font-size="9.5" font-family="monospace">/arm_controller/</text>
+      <text x="100" y="48" text-anchor="middle" fill="#0e7490" font-size="9.5" font-family="monospace">joint_trajectory</text>
+      <text x="100" y="58" text-anchor="middle" fill="#64748b" font-size="9">direct publish · settle 1.0 s</text>
+    </g>
+    <line x1="260" y1="290" x2="295" y2="290" stroke="#0e7490" stroke-width="1.4" marker-end="url(#ar-cy)"/>
+
+    <!-- 2b yolo -->
+    <g transform="translate(295, 260)">
+      <rect width="225" height="60" rx="5" fill="white" stroke="#0e7490" stroke-width="1.5"/>
+      <text x="112" y="20" text-anchor="middle" font-weight="700" fill="#155e75" font-size="11">2b.  /yolo/detect</text>
+      <text x="112" y="36" text-anchor="middle" fill="#0e7490" font-size="9.5" font-family="monospace">real_yolo_detector → YOLO11</text>
+      <text x="112" y="48" text-anchor="middle" fill="#0e7490" font-size="9.5">best.pt · conf 0.30</text>
+      <text x="112" y="58" text-anchor="middle" fill="#64748b" font-size="9">returns BoundingBox[]</text>
+    </g>
+    <line x1="520" y1="290" x2="555" y2="290" stroke="#0e7490" stroke-width="1.4" marker-end="url(#ar-cy)"/>
+
+    <!-- 2c per-bbox -->
+    <g transform="translate(555, 260)">
+      <rect width="385" height="60" rx="5" fill="white" stroke="#0e7490" stroke-width="1.5"/>
+      <text x="192" y="20" text-anchor="middle" font-weight="700" fill="#155e75" font-size="11">2c.  per bbox centroid (cu, cv):  /pixel_to_3d</text>
+      <text x="192" y="36" text-anchor="middle" fill="#0e7490" font-size="9.5">depth_processor: 5×5 windowed median Z · back-project via K</text>
+      <text x="192" y="48" text-anchor="middle" fill="#0e7490" font-size="9.5" font-family="monospace">X = (u−cx)·Z/fx,  Y = (v−cy)·Z/fy,  Z = depth</text>
+      <text x="192" y="58" text-anchor="middle" fill="#64748b" font-size="9">TF transform camera_optical_frame → world</text>
+    </g>
+
+    <!-- inner loop indicator -->
+    <g>
+      <rect x="60" y="335" width="880" height="42" rx="5" fill="#cffafe" stroke="#0891b2" stroke-width="1.2" stroke-dasharray="4 3"/>
+      <text x="500" y="352" text-anchor="middle" font-weight="700" fill="#155e75" font-size="11">accumulate raw detections — each item: (world xyz, confidence, pose_label, pixel)</text>
+      <text x="500" y="367" text-anchor="middle" fill="#0e7490" font-size="9.5">loop body runs ~15 × (#bolls visible per pose) times — typically 30–60 raw detections per scan</text>
+    </g>
+
+    <text x="500" y="400" text-anchor="middle" fill="#155e75" font-size="11" font-style="italic">↻ next pose</text>
+
+    <g>
+      <rect x="60" y="412" width="880" height="42" rx="5" fill="white" stroke="#0e7490" stroke-width="1.2"/>
+      <text x="500" y="432" text-anchor="middle" font-weight="700" fill="#155e75" font-size="11">2d.  return arm to SCOUT pose · sweep done</text>
+      <text x="500" y="446" text-anchor="middle" fill="#0e7490" font-size="9.5">wall-clock budget: ~25–35 s for the full sweep (arm settle dominates)</text>
+    </g>
+  </g>
+
+  <line x1="500" y1="466" x2="500" y2="494" stroke="#475569" stroke-width="1.5" marker-end="url(#ar)"/>
+
+  <!-- ======================= Step 3 — dedup ======================= -->
+  <g>
+    <rect x="40" y="496" width="920" height="58" rx="6" fill="#fff7ed" stroke="#b45309" stroke-width="1.8"/>
+    <text x="55" y="515" font-weight="700" fill="#7c2d12" font-size="11">③ dedup raw detections (3D proximity, default radius = 5 cm)</text>
+    <text x="55" y="532" fill="#9a3412" font-size="10">absorbed detections boost confidence + pose-membership of the survivor centroid; ~30–60 raw → 5–15 unique bolls per cluster</text>
+    <text x="942" y="532" text-anchor="end" fill="#b45309" font-size="9" font-family="monospace">cluster_scanner._dedup</text>
+    <text x="55" y="547" fill="#9a3412" font-size="10">parameter: <tspan font-family="monospace">dedup_radius_m</tspan> · default 0.05 m</text>
+  </g>
+  <line x1="500" y1="554" x2="500" y2="582" stroke="#475569" stroke-width="1.5" marker-end="url(#ar)"/>
+
+  <!-- ======================= Step 4 — gap-rule ======================= -->
+  <g>
+    <rect x="40" y="584" width="920" height="86" rx="6" fill="#fff7ed" stroke="#b45309" stroke-width="1.8"/>
+    <text x="55" y="603" font-weight="700" fill="#7c2d12" font-size="11">④ gap-rule cluster bounding</text>
+    <text x="55" y="621" fill="#9a3412" font-size="10">sort unique detections along cluster_axis (default world X) · split where gap > 1.0 m (orchard tree pitch ≈ 1.5 m)</text>
+    <text x="55" y="637" fill="#9a3412" font-size="10">take LARGEST contiguous group as the TARGET cluster · remaining groups = neighbor-tree outliers (rejected)</text>
+    <text x="55" y="653" fill="#9a3412" font-size="10">compute axis-aligned bbox = min/max/center/extent of the target group's world xyz</text>
+    <text x="942" y="663" text-anchor="end" fill="#b45309" font-size="9" font-family="monospace">cluster_scanner._find_cluster_group</text>
+  </g>
+  <line x1="500" y1="670" x2="500" y2="698" stroke="#475569" stroke-width="1.5" marker-end="url(#ar)"/>
+
+  <!-- ======================= Step 5 — output ======================= -->
+  <g>
+    <rect x="40" y="700" width="920" height="86" rx="6" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.8"/>
+    <text x="55" y="719" font-weight="700" fill="#4c1d95" font-size="11">⑤ artifacts + hand-off</text>
+    <text x="55" y="738" fill="#5b21b6" font-size="10" font-family="monospace">yolo_output/cluster_scan_&lt;ts&gt;.json    (counts, cluster.bbox, cluster.bolls[], outliers, raw_detections_full)</text>
+    <text x="55" y="753" fill="#5b21b6" font-size="10" font-family="monospace">yolo_output/cluster_topdown_&lt;ts&gt;.png   (top-down map: target green, outliers gray, bbox magenta)</text>
+    <text x="55" y="768" fill="#5b21b6" font-size="10">/cluster_scan/run response message embeds the JSON path → cluster_harvester reads it and matches detections to YAML boll ids</text>
+    <text x="942" y="778" text-anchor="end" fill="#7c3aed" font-size="9" font-family="monospace">→ cluster_harvester._match_detections_to_ids (radius 0.10 m)</text>
+  </g>
+
+  <!-- ======================= Footer ======================= -->
+  <text x="500" y="820" text-anchor="middle" fill="#9ca3af" font-size="9.5" font-style="italic">
+    detector swap (plug-and-play): cv_boll_detector (classical CV) or mock_yolo_detector (YAML projection) advertise the same /yolo/detect{,_clusters} services
+  </text>
+  <text x="500" y="835" text-anchor="middle" fill="#9ca3af" font-size="9.5" font-style="italic">
+    depth invariant — the back-projection math is identical regardless of which detector produced the bbox centroid
+  </text>
+
+  <!-- Legend -->
+  <g transform="translate(60, 858)">
+    <rect width="14" height="14" rx="2" fill="#dcfce7" stroke="#15803d" stroke-width="1.2"/>
+    <text x="20" y="11" font-size="10" fill="#334155">orchestrator I/O</text>
+    <rect x="160" y="0" width="14" height="14" rx="2" fill="#ecfeff" stroke="#0e7490" stroke-width="1.2"/>
+    <text x="180" y="11" font-size="10" fill="#334155">scanner sweep loop</text>
+    <rect x="330" y="0" width="14" height="14" rx="2" fill="#fff7ed" stroke="#b45309" stroke-width="1.2"/>
+    <text x="350" y="11" font-size="10" fill="#334155">consolidation</text>
+    <rect x="470" y="0" width="14" height="14" rx="2" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.2"/>
+    <text x="490" y="11" font-size="10" fill="#334155">artifacts</text>
+    <rect x="600" y="0" width="14" height="14" rx="2" fill="#fefce8" stroke="#a16207" stroke-width="1.2"/>
+    <text x="620" y="11" font-size="10" fill="#334155">static inputs (camera/TF)</text>
+  </g>
+</svg>

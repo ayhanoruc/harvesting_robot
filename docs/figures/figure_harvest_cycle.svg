@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 920" font-family="'Segoe UI', system-ui, sans-serif" font-size="11">
+  <rect width="1000" height="920" fill="white"/>
+
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L9,3 L0,6 Z" fill="#475569"/>
+    </marker>
+    <marker id="ar-rose" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L9,3 L0,6 Z" fill="#be123c"/>
+    </marker>
+    <marker id="ar-purple" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L9,3 L0,6 Z" fill="#7c3aed"/>
+    </marker>
+  </defs>
+
+  <!-- ======================= Title ======================= -->
+  <text x="500" y="30" text-anchor="middle" font-size="17" font-weight="700" fill="#1f2937">
+    Harvest Cycle — per-boll pick &amp; place
+  </text>
+  <text x="500" y="48" text-anchor="middle" font-size="11" fill="#6b7280">
+    one /simple_harvest/start call for a batch of N boll ids · mock-grip teleport · concurrent carry threads
+  </text>
+
+  <!-- ======================= Input ======================= -->
+  <g>
+    <rect x="40" y="68" width="920" height="52" rx="6" fill="#f1f5f9" stroke="#475569" stroke-width="1.4"/>
+    <text x="55" y="87" font-weight="700" fill="#1e293b" font-size="11">INPUT FROM cluster_harvester</text>
+    <text x="55" y="104" fill="#334155" font-size="10" font-family="monospace">
+      boll_ids_runtime = [b0, b1, …, bN]   (already sorted by reach distance to base_0)   ·   tree_id = current cluster
+    </text>
+    <text x="942" y="114" text-anchor="end" fill="#475569" font-size="9" font-family="monospace">orchestrator/simple_cluster_harvester.py</text>
+  </g>
+  <line x1="500" y1="120" x2="500" y2="148" stroke="#475569" stroke-width="1.5" marker-end="url(#ar)"/>
+
+  <!-- ======================= Setup ======================= -->
+  <g>
+    <rect x="40" y="150" width="920" height="50" rx="6" fill="#fdf2f8" stroke="#be185d" stroke-width="1.6"/>
+    <text x="55" y="170" font-weight="700" fill="#9d174d" font-size="11">SETUP</text>
+    <text x="55" y="186" fill="#9f1239" font-size="10">spawn reservoir-carry thread (2 Hz) — keeps every already-dropped boll glued to <tspan font-family="monospace">reservoir_link</tspan> while Husky drives between clusters</text>
+  </g>
+  <line x1="500" y1="200" x2="500" y2="228" stroke="#475569" stroke-width="1.5" marker-end="url(#ar)"/>
+
+  <!-- ======================= Per-boll loop frame ======================= -->
+  <g>
+    <rect x="40" y="230" width="920" height="540" rx="10" fill="#fff1f2" stroke="#be123c" stroke-width="2"/>
+    <text x="55" y="252" font-weight="700" fill="#881337" font-size="12">FOR EACH boll_id IN batch  (loop body):</text>
+    <text x="942" y="252" text-anchor="end" fill="#be123c" font-size="9" font-family="monospace">SimpleClusterHarvester._on_start</text>
+
+    <!-- 1 -->
+    <g>
+      <rect x="60" y="268" width="900" height="48" rx="5" fill="white" stroke="#be123c" stroke-width="1.4"/>
+      <text x="75" y="287" font-weight="700" fill="#9f1239" font-size="11">①  /go_to_pose (boll.x, boll.y, boll.z, approach_orientation=True)</text>
+      <text x="75" y="303" fill="#9f1239" font-size="10">arm_commander: KDL IK (multi-seed) → JointTrajectory direct publish · MoveGroup fallback if IK seed cost > threshold</text>
+    </g>
+    <line x1="500" y1="316" x2="500" y2="334" stroke="#be123c" stroke-width="1.3" marker-end="url(#ar-rose)"/>
+
+    <!-- 2 -->
+    <g>
+      <rect x="60" y="336" width="900" height="44" rx="5" fill="white" stroke="#be123c" stroke-width="1.4"/>
+      <text x="75" y="355" font-weight="700" fill="#9f1239" font-size="11">②  /gripper/close  (visual close — fingers animate, sim physics not load-bearing)</text>
+      <text x="75" y="370" fill="#9f1239" font-size="10">gripper_controller publishes Float64MultiArray{[0.022]} · polls /joint_states for settle · ~0.5 s</text>
+    </g>
+    <line x1="500" y1="380" x2="500" y2="398" stroke="#be123c" stroke-width="1.3" marker-end="url(#ar-rose)"/>
+
+    <!-- 3 -->
+    <g>
+      <rect x="60" y="400" width="900" height="62" rx="5" fill="white" stroke="#be123c" stroke-width="1.4"/>
+      <text x="75" y="419" font-weight="700" fill="#9f1239" font-size="11">③  carry_start thread (10 Hz)  — boll glued to TCP</text>
+      <text x="75" y="435" fill="#9f1239" font-size="10">teleport boll model via Gazebo set_pose, world XYZ = TF lookup of <tspan font-family="monospace">tcp</tspan> frame</text>
+      <text x="75" y="451" fill="#9f1239" font-size="10">runs concurrently with the arm motion in step ④ — mock physics, never drops mid-flight</text>
+    </g>
+    <line x1="500" y1="462" x2="500" y2="480" stroke="#be123c" stroke-width="1.3" marker-end="url(#ar-rose)"/>
+
+    <!-- 4 -->
+    <g>
+      <rect x="60" y="482" width="900" height="84" rx="5" fill="white" stroke="#be123c" stroke-width="1.4"/>
+      <text x="75" y="501" font-weight="700" fill="#9f1239" font-size="11">④  /go_to_reservoir  — 3-stage arm heuristic</text>
+      <text x="75" y="517" fill="#9f1239" font-size="10.5">Stage 1:  go to HOME pose  (folds arm, joint5=−1.3)</text>
+      <text x="75" y="532" fill="#9f1239" font-size="10.5">Stage 2:  rotate joint1 by ±π · base rotates so the wrist faces backward toward the reservoir bin</text>
+      <text x="75" y="547" fill="#9f1239" font-size="10.5">Stage 3:  unfold elbow joint3 → drops TCP into hover region above the reservoir top</text>
+      <text x="75" y="562" fill="#9f1239" font-size="10">direct JointTrajectory publish (bypasses MoveGroup; planning_scene is stale due to missing wheel /joint_states)</text>
+    </g>
+    <line x1="500" y1="566" x2="500" y2="584" stroke="#be123c" stroke-width="1.3" marker-end="url(#ar-rose)"/>
+
+    <!-- 5 -->
+    <g>
+      <rect x="60" y="586" width="900" height="44" rx="5" fill="white" stroke="#be123c" stroke-width="1.4"/>
+      <text x="75" y="605" font-weight="700" fill="#9f1239" font-size="11">⑤  carry_stop  +  /gripper/open</text>
+      <text x="75" y="620" fill="#9f1239" font-size="10">stop the per-boll carry thread; gripper opens to position 0.0 (animates only — boll is mock-coupled)</text>
+    </g>
+    <line x1="500" y1="630" x2="500" y2="648" stroke="#be123c" stroke-width="1.3" marker-end="url(#ar-rose)"/>
+
+    <!-- 6 -->
+    <g>
+      <rect x="60" y="650" width="900" height="58" rx="5" fill="white" stroke="#be123c" stroke-width="1.4"/>
+      <text x="75" y="669" font-weight="700" fill="#9f1239" font-size="11">⑥  teleport boll → reservoir bin  (grid scatter)</text>
+      <text x="75" y="685" fill="#9f1239" font-size="10">set_pose to <tspan font-family="monospace">reservoir_link</tspan> world XY + slot offset + Z clearance · slot index increments per drop</text>
+      <text x="75" y="700" fill="#9f1239" font-size="10">register the dropped boll with the reservoir-carry thread → it stays glued as Husky drives away</text>
+    </g>
+    <line x1="500" y1="708" x2="500" y2="730" stroke="#be123c" stroke-width="1.3" marker-end="url(#ar-rose)"/>
+
+    <!-- loop back -->
+    <text x="500" y="750" text-anchor="middle" fill="#9f1239" font-size="11" font-style="italic">↻ next boll_id</text>
+
+    <!-- batch end -->
+    <text x="500" y="765" text-anchor="middle" fill="#881337" font-size="10">batch end: report "picked N/M (failed K)" on /simple_harvest/status</text>
+  </g>
+
+  <line x1="500" y1="770" x2="500" y2="788" stroke="#475569" stroke-width="1.5" marker-end="url(#ar)"/>
+
+  <!-- ======================= Hand-back ======================= -->
+  <g>
+    <rect x="40" y="790" width="920" height="48" rx="6" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.6"/>
+    <text x="55" y="810" font-weight="700" fill="#4c1d95" font-size="11">HAND-BACK TO cluster_harvester</text>
+    <text x="55" y="826" fill="#5b21b6" font-size="10">cluster_harvester re-scans the cluster · if new bolls appear, loops back to ① with the next id list · else: DONE for this cluster, row_navigator moves to the next</text>
+  </g>
+
+  <!-- Footer -->
+  <text x="500" y="868" text-anchor="middle" fill="#9ca3af" font-size="9.5" font-style="italic">
+    real-hardware swap: replace gripper_controller with a Robotiq Hand-E Modbus RTU driver — every other step (motion, teleport carry-on-mock) is sim-only and would be removed in the deploy build
+  </text>
+
+  <!-- Legend -->
+  <g transform="translate(60, 890)">
+    <rect width="14" height="14" rx="2" fill="#fdf2f8" stroke="#be185d" stroke-width="1.2"/>
+    <text x="20" y="11" font-size="10" fill="#334155">setup (carry-thread spawn)</text>
+    <rect x="200" y="0" width="14" height="14" rx="2" fill="#fff1f2" stroke="#be123c" stroke-width="1.2"/>
+    <text x="220" y="11" font-size="10" fill="#334155">per-boll loop body</text>
+    <rect x="370" y="0" width="14" height="14" rx="2" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.2"/>
+    <text x="390" y="11" font-size="10" fill="#334155">hand-back</text>
+    <rect x="490" y="0" width="14" height="14" rx="2" fill="#f1f5f9" stroke="#475569" stroke-width="1.2"/>
+    <text x="510" y="11" font-size="10" fill="#334155">input / output</text>
+  </g>
+</svg>

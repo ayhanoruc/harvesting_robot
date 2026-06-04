@@ -2,16 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>RoboCot Report Figures Preview</title>
+  <title>RoboCot Architecture Figures Preview</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      max-width: 900px;
+      max-width: 1100px;
       margin: 40px auto;
       padding: 20px;
       background: #f5f5f5;
     }
     h1 { color: #333; border-bottom: 2px solid #2563eb; padding-bottom: 10px; }
+    h2 { margin-top: 0; color: #2563eb; font-size: 16px; }
     .figure-container {
       background: white;
       border: 1px solid #ddd;
@@ -20,46 +21,58 @@
       margin: 20px 0;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    .figure-container h2 {
-      margin-top: 0;
-      color: #2563eb;
-      font-size: 16px;
+    object, img { width: 100%; height: auto; display: block; }
+    .meta { color: #6b7280; font-size: 12px; margin-bottom: 12px; }
+    .jsx-note {
+      background: #fff7ed;
+      border-left: 3px solid #ea580c;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: #7c2d12;
+      margin: 10px 0;
     }
-    object, img {
-      width: 100%;
-      height: auto;
-    }
+    code { background: #f1f5f9; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
   </style>
 </head>
 <body>
-  <h1>RoboCot Report Figures</h1>
+  <h1>RoboCot - Architecture Figures</h1>
+  <p class="meta">Generated for the ME492 final deliverables. Updated 2026-06-04 for the Husky + M1013 + Hand-E stack with the layered orchestrator pipeline.</p>
 
+  <!-- ===================== 1. System Architecture (JSX) ===================== -->
   <div class="figure-container">
-    <h2>Figure 4: Kinematic Chain (6-DOF Braccio Arm)</h2>
-    <object type="image/svg+xml" data="figure_04_kinematic_chain.svg">
-      <img src="figure_04_kinematic_chain.svg" alt="Figure 4: Kinematic Chain">
+    <h2>Figure 1 - System Architecture (4 layers: operator → compute → hardware interface → physical)</h2>
+    <div class="meta">Source: <code>SystemArchitecture.jsx</code>.
+    <object type="image/png" data="robocot_system_architecture.png">
+      <img src="robocot_system_architecture.png" alt="System architecture PNG (render SystemArchitecture.jsx to produce)">
     </object>
   </div>
 
+  <!-- ===================== 2. Software Architecture ===================== -->
   <div class="figure-container">
-    <h2>Figure 10: Snake Traversal Pattern (Boustrophedon)</h2>
-    <object type="image/svg+xml" data="figure_10_snake_pattern.svg">
-      <img src="figure_10_snake_pattern.svg" alt="Figure 10: Snake Pattern">
+    <h2>Figure 2 - Software Architecture (layered ROS 2 nodes + service edges)</h2>
+    <div class="meta">Source: <code>figure_software_architecture.svg</code>. Levels 3→0 of the orchestrator pipeline, plus external dependencies (MoveIt 2, ros2_control, Gazebo).</div>
+    <object type="image/svg+xml" data="figure_software_architecture.svg">
+      <img src="figure_software_architecture.svg" alt="Figure 2 — Software Architecture">
     </object>
   </div>
 
+  <!-- ===================== 3. Vision Pipeline ===================== -->
   <div class="figure-container">
-    <h2>Figure 2: Node Interaction Architecture</h2>
-    <object type="image/svg+xml" data="figure_02_node_interaction.svg">
-      <img src="figure_02_node_interaction.svg" alt="Figure 2: Node Interaction">
+    <h2>Figure 3 - Vision &amp; Spatial-Detection Pipeline</h2>
+    <div class="meta">Source: <code>figure_vision_pipeline.svg</code>. One <code>/cluster_scan/run</code> call — 15-pose sweep, YOLO, depth back-projection, world-space dedup, gap-rule cluster bounding.</div>
+    <object type="image/svg+xml" data="figure_vision_pipeline.svg">
+      <img src="figure_vision_pipeline.svg" alt="Figure 3 — Vision Pipeline">
     </object>
   </div>
 
+  <!-- ===================== 4. Harvest Cycle ===================== -->
   <div class="figure-container">
-    <h2>Figure 3: Data Flow Pipeline</h2>
-    <object type="image/svg+xml" data="figure_03_data_flow.svg">
-      <img src="figure_03_data_flow.svg" alt="Figure 3: Data Flow Pipeline">
+    <h2>Figure 4 - Harvest Cycle (per-boll pick &amp; place)</h2>
+    <div class="meta">Source: <code>figure_harvest_cycle.svg</code>. One <code>/simple_harvest/start</code> call — per-boll go-to-pose, mock close, carry thread, reservoir 3-stage drop, set_pose teleport scatter.</div>
+    <object type="image/svg+xml" data="figure_harvest_cycle.svg">
+      <img src="figure_harvest_cycle.svg" alt="Figure 4 — Harvest Cycle">
     </object>
   </div>
+
 </body>
 </html>
