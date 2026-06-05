@@ -1,0 +1,10 @@
+predicted_label,true_label,count
+cotton_boll,cotton_boll,229
+cotton_boll,unripe-cotton,1
+cotton_boll,background,28
+unripe-cotton,cotton_boll,0
+unripe-cotton,unripe-cotton,19
+unripe-cotton,background,0
+background,cotton_boll,13
+background,unripe-cotton,0
+background,background,0

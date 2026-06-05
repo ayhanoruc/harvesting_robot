@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+*.pyc
+.ultralytics/
+runs/
+dataset/
+*.onnx
+*.engine

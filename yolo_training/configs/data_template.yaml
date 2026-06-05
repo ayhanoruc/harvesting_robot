@@ -1,0 +1,15 @@
+# Copy this file to data.yaml if you want a portable dataset layout.
+# Expected folder:
+# dataset/
+#   train/images, train/labels
+#   valid/images, valid/labels
+#   test/images,  test/labels
+path: ../dataset
+train: train/images
+val: valid/images
+test: test/images
+
+nc: 2
+names:
+  0: cotton_boll
+  1: unripe-cotton

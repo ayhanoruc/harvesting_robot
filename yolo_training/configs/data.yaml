@@ -1,0 +1,16 @@
+# Latest local dataset used for the 2026-05-30 training run.
+# If this folder is moved to another computer, update only this path.
+path: ../../YOLO_2026-05-30
+train: train/images
+val: valid/images
+test: test/images
+
+nc: 2
+names: ['cotton_boll', 'unripe-cotton']
+
+roboflow:
+  workspace: deniz-drin5
+  project: cotton-boll-and-cluster
+  version: 5
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/deniz-drin5/cotton-boll-and-cluster/dataset/5

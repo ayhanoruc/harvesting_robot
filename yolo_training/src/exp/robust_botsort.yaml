@@ -1,0 +1,17 @@
+# BoT-SORT "Shape Shifter" Settings
+tracker_type: botsort
+track_high_thresh: 0.4  # Lower confidence allowed
+track_low_thresh: 0.1
+new_track_thresh: 0.5
+track_buffer: 300      # Memory of 4 seconds (Very sticky!)
+
+# CRITICAL: Loosen the matching rules
+match_thresh: 0.5       # Default is 0.8. Lowering to 0.5 allows MAJOR shape changes.
+
+# Motion settings
+gmc_method: sparseOptFlow
+proximity_thresh: 0.6   # Focus more on distance than box overlap
+appearance_thresh: 0.25
+with_reid: True
+model: yolo11n-cls.pt
+fuse_score: True

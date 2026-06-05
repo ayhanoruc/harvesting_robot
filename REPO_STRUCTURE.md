@@ -11,6 +11,7 @@ harvesting_ws/
 │   ├── robot_arm/                  URDF, world, Gazebo bridges, launch
 │   ├── robot_arm_moveit_config/    MoveIt 2 config + arm_commander
 │   ├── orchestrator/               All harvest + perception + UI nodes
+│   ├── yolo_training/              Reproducible YOLO11n training package
 │   ├── docs/                       Reports, deployment spec, figures
 │   ├── scripts/                    Docker entrypoint, env-verify scripts
 │   ├── Dockerfile, Dockerfile.test
@@ -63,6 +64,32 @@ Robot description, Gazebo world, controller config, top-level sim launch.
 | `launch/husky_orchard_demo.launch.py` | Top-level sim launch. Spawns Gazebo, the Husky+arm URDF, the GZ↔ROS bridges, and the three controller spawners (sequenced) |
 | `robot_arm/landmark_publisher.py` | Publishes static TF + collision objects from `environment_config.yaml`. Currently dormant (collision objects yaml entry is `{}`) but still installed by `CMakeLists.txt` |
 | `scripts/generate_*.py`           | Generators that emit `*.world` + `*.yaml` from template variants. Used at content-authoring time, not at runtime |
+
+### `yolo_training`
+Not a ROS package — the reproducible training pipeline for the YOLO11n
+weights consumed by `real_yolo_detector`. Owned by the project's ML side
+(Deniz). Self-contained: a Python venv + the entrypoints + the dataset
+config + the metrics from the most recent run.
+
+| Path | Purpose |
+|---|---|
+| `weights/best.pt`             | YOLO11n weights the orchestrator loads (identical bytes as `orchestrator/models/best.pt`) |
+| `weights/yolo11n.pt`          | Base model used for fine-tuning, kept for reproducibility |
+| `configs/data.yaml`           | Roboflow dataset config — `deniz-drin5/cotton-boll-and-cluster v5`, 2 classes |
+| `configs/training_args.yaml`  | Frozen Ultralytics args from the 80-epoch run (imgsz 512, batch 4, seed 42) |
+| `metrics/results.csv` + PNGs  | Loss / mAP / precision / recall curves + confusion matrix |
+| `src/train.py`                | Training entrypoint |
+| `src/validate.py`             | Val/test metrics entrypoint |
+| `src/predict.py`              | Inference on image / folder / video / webcam |
+| `src/summarize_results.py`    | Quick summary of `metrics/results.csv` |
+| `src/exp/`                    | Older webcam + BoT-SORT tracking experiments, kept for reference |
+| `requirements.txt`            | Standalone deps (ultralytics + opencv + numpy etc.) for the training venv |
+| `README.md`                   | Full walkthrough: setup, dataset, train, validate, infer |
+
+To retrain or re-validate, see the package's own
+[yolo_training/README.md](yolo_training/README.md). The active ROS demo
+does not require this folder — `best.pt` is already installed under
+`orchestrator/models/`.
 
 ### `robot_arm_moveit_config`
 MoveIt 2 motion planning config + the arm commander node.

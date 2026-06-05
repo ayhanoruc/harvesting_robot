@@ -1,0 +1,25 @@
+tracker_type: botsort
+
+# --- THE "FLUENCY" SETTINGS ---
+# 1. HARD TO START: Only create a new ID if confidence is super high (0.7).
+# This prevents noise/flicker from creating "ID 2", "ID 3", etc.
+new_track_thresh: 0.7
+
+# 2. EASY TO STAY: Keep tracking even if detection confidence drops to 0.15.
+# This bridges the gap when the cotton gets blurry or rotates.
+track_high_thresh: 0.15
+track_low_thresh: 0.05   # Almost zero! Trust everything.
+
+# --- MEMORY ---
+track_buffer: 300       # 4 seconds of memory
+
+# --- STABILITY ---
+match_thresh: 0.4        # Very loose shape matching
+proximity_thresh: 0.7    # Trust location
+gmc_method: sparseOptFlow
+fuse_score: True
+
+# --- RE-ID ---
+appearance_thresh: 0.5   
+with_reid: True
+model: yolo11n-cls.pt

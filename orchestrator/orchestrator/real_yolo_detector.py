@@ -6,16 +6,24 @@ Runs actual YOLO inference on camera images for cotton detection.
 
 Services:
     /yolo/detect (harvester_interfaces/srv/YoloDetect)
-        - Returns raw YOLO detections (cotton_boll, cotton_boll-cluster)
-        - Used for: individual boll picking in CLUSTER_VIEW
+        - Returns raw YOLO detections (classes: cotton_boll, unripe-cotton)
+        - Used by cluster_scanner per scan pose; only `cotton_boll` is
+          treated as a pickable target downstream.
 
     /yolo/detect_clusters (harvester_interfaces/srv/YoloDetect)
         - Returns merged cluster bboxes derived from grouped boll detections
-        - Used for: panoramic scan cluster finding
+        - Used for: cluster-level grouping at scout pose
+
+Model: weights/best.pt (YOLO11n, trained on the Roboflow cotton-boll-and-
+cluster v5 dataset; see src/yolo_training/ for the full training package,
+dataset config, metrics, and reproducible commands).
 
 Parameters:
-    - model_path: Path to YOLO model (.pt file)
-    - confidence: Detection confidence threshold (default: 0.7)
+    - model_path: Path to YOLO model (.pt file). Defaults to the model
+      installed under share/orchestrator/models/best.pt.
+    - confidence: Detection confidence threshold (default: 0.7;
+      harvester_modules.launch.py overrides to 0.30 for the sim, the
+      training author recommends 0.54 as a balanced baseline).
     - camera_topic: Camera image topic (default: /camera/color/image_raw)
     - cluster_pixel_distance: Max pixel distance to group bolls (default: 80)
 """
