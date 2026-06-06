@@ -95,6 +95,17 @@ def generate_launch_description():
             planning_scene_monitor,
             {'use_sim_time': use_sim_time},
         ],
+        # Silence the constant "The complete state of the robot is not yet
+        # known. Missing *_wheel_joint" WARN spam. The 4 Husky wheel joints
+        # are driven by the DiffDrive gz plugin and never appear on
+        # /joint_states (only joint_state_broadcaster's arm+gripper joints
+        # do), so planning_scene_monitor flags the state as incomplete on
+        # every update. The wheels are irrelevant to arm planning, so just
+        # raise that one logger to ERROR to keep the CLI readable.
+        arguments=[
+            '--ros-args', '--log-level',
+            'moveit_ros.planning_scene_monitor.planning_scene_monitor:=ERROR',
+        ],
     )
 
     # RViz
