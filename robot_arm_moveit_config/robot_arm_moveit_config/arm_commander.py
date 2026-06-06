@@ -539,9 +539,10 @@ class ArmCommander(Node):
             response.message = "Set data=true to trigger"
             return response
 
-        # Stage 1: HOME for safe transit
+        # Stage 1: HOME for safe transit. Slowed (0.7) — same heavy-base
+        # reaction concern as the joint1 sweep below.
         self.get_logger().info("[RESERVOIR] Stage 1/3: fold to HOME")
-        if not self.send_joint_goal(self.HOME_JOINTS):
+        if not self.send_joint_goal(self.HOME_JOINTS, vel_scale=0.7, acc_scale=0.7):
             response.success = False
             response.message = "FAIL: HOME fold"
             return response
@@ -555,7 +556,9 @@ class ArmCommander(Node):
         self.get_logger().info(
             f"[RESERVOIR] Stage 2/3: rotate joint1 {current[0]:.2f} → {target_j1:.2f} rad "
             f"(other joints unchanged)")
-        if not self.send_joint_goal(rotated):
+        # Slowed (0.7): full-speed 180° base sweep overshoots and rocks the
+        # free-floating Husky; gentler decel keeps it smooth and consistent.
+        if not self.send_joint_goal(rotated, vel_scale=0.7, acc_scale=0.7):
             response.success = False
             response.message = "FAIL: joint1 rotation"
             return response
@@ -633,9 +636,12 @@ class ArmCommander(Node):
         # Check position error
         err = self._check_tcp_error(x, y, z)
 
-        # Fallback: if error > 5cm, go HOME and retry
-        if err is not None and err > 0.05:
-            self.get_logger().warn(f"[RETRY] Error {err:.3f}m > 5cm — going HOME then retrying")
+        # Fallback: if error > 7cm, go HOME and retry. 7cm (was 5cm): the
+        # pick is mock/teleport (boll snaps to TCP), so the gate is a quality
+        # check, not a grasp requirement — 5cm rejected high/far edge-of-reach
+        # bolls that landed ~6cm off even though the mock pick tolerates it.
+        if err is not None and err > 0.07:
+            self.get_logger().warn(f"[RETRY] Error {err:.3f}m > 7cm — going HOME then retrying")
             home_ok = self.send_joint_goal(self.HOME_JOINTS)
             if not home_ok:
                 self.get_logger().error("[RETRY] Failed to reach HOME")
@@ -651,7 +657,7 @@ class ArmCommander(Node):
             success = self.send_joint_goal(joint_values)
             if success:
                 err2 = self._check_tcp_error(x, y, z)
-                if err2 is not None and err2 > 0.05:
+                if err2 is not None and err2 > 0.07:
                     self.get_logger().warn(f"[RETRY] Still off: {err2:.3f}m")
                     return False
             else:
@@ -677,16 +683,22 @@ class ArmCommander(Node):
 
     # ─── Joint goal execution ──────────────────────────────────
 
-    def send_joint_goal(self, joint_values):
-        """Send joint-space goal via MoveGroup action."""
+    def send_joint_goal(self, joint_values, vel_scale=1.0, acc_scale=1.0):
+        """Send joint-space goal via MoveGroup action.
+
+        vel_scale/acc_scale (0..1) scale the planned velocity/acceleration.
+        Defaults to full speed; callers that swing the heavy base (the
+        reservoir joint1 ~180° sweep) pass a lower value so the gentler
+        deceleration doesn't overshoot and rock the free-floating Husky.
+        """
         from moveit_msgs.msg import JointConstraint
 
         goal_msg = MoveGroup.Goal()
         goal_msg.request.group_name = "arm"
         goal_msg.request.num_planning_attempts = 3
         goal_msg.request.allowed_planning_time = 3.0
-        goal_msg.request.max_velocity_scaling_factor = 1.0
-        goal_msg.request.max_acceleration_scaling_factor = 1.0
+        goal_msg.request.max_velocity_scaling_factor = float(vel_scale)
+        goal_msg.request.max_acceleration_scaling_factor = float(acc_scale)
 
         goal_constraints = Constraints()
         for name, value in zip(self.arm_joint_names, joint_values):
