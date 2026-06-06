@@ -44,7 +44,13 @@ class GripperController(Node):
         self.declare_parameter('open_position', 0.0)
         self.declare_parameter('close_position', 0.022)
         self.declare_parameter('position_tolerance', 0.002)
-        self.declare_parameter('settle_timeout', 1.5)  # seconds
+        self.declare_parameter('settle_timeout', 3.0)  # seconds (wall-clock;
+        # bumped from 1.5 → 3.0 so a low real-time-factor dip during a pick
+        # doesn't time out the finger before it travels the full 22 mm and
+        # /joint_states reports it — the old 1.5 s caused spurious close
+        # failures that "fixed themselves" on the retry. Normal close settles
+        # in ~0.6 s, so 3 s is comfortable headroom without blocking long on a
+        # genuine failure.)
 
         self.open_pos = float(self.get_parameter('open_position').value)
         self.close_pos = float(self.get_parameter('close_position').value)
@@ -84,10 +90,25 @@ class GripperController(Node):
 
     def _wait_until_at(self, target: float) -> bool:
         """Poll /joint_states until the joint is within tolerance of target,
-        or timeout. Returns the final |error| achieved."""
-        deadline = time.time() + self.timeout
+        or timeout. Returns (reached, final |error|).
+
+        The timeout is measured in SIM time (the node runs use_sim_time), not
+        wall-clock. The finger is driven by Gazebo and /joint_states is stamped
+        in sim time, so both are paced by the real-time-factor. Using the
+        wall-clock here (the old `time.time()` version) meant that whenever RTF
+        dipped — e.g. right after a heavy reservoir motion + OMPL plan + the
+        `ign set_pose` teleport subprocesses all hammered the CPU — 1.5 s of
+        wall-clock bought almost no sim time, the finger hadn't travelled the
+        full 22 mm yet, and close() timed out and reported a spurious failure
+        (the command persists, so the *next* attempt then 'succeeds' once the
+        finger has crept into tolerance). Pacing the deadline by the ROS clock
+        makes the budget RTF-independent. A wall-clock backstop (4× the budget)
+        guards against a stalled /clock so we never block forever."""
+        timeout = rclpy.duration.Duration(seconds=self.timeout)
+        sim_deadline = self.get_clock().now() + timeout
+        wall_deadline = time.time() + max(4.0 * self.timeout, 10.0)
         last_err = float('inf')
-        while time.time() < deadline:
+        while self.get_clock().now() < sim_deadline and time.time() < wall_deadline:
             if self.current_position is not None:
                 last_err = abs(self.current_position - target)
                 if last_err < self.tolerance:

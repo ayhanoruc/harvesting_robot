@@ -47,6 +47,8 @@ import numpy as np
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
+from rclpy.executors import MultiThreadedExecutor
+from rclpy.callback_groups import ReentrantCallbackGroup
 
 from std_msgs.msg import String
 from std_srvs.srv import Trigger
@@ -165,6 +167,13 @@ class RosBridge(QtCore.QObject):
             durability=DurabilityPolicy.VOLATILE,
             depth=1)
 
+        # The camera-image callback does real work (numpy reshape, percentile,
+        # colormap). Put it in its own reentrant group so a burst of frames
+        # can't starve the service-trigger response or the telemetry/status
+        # callbacks under a MultiThreadedExecutor — the GUI then never looks
+        # "hung" or drops a trigger reply just because images are flowing.
+        self._img_cb_group = ReentrantCallbackGroup()
+
         self._image_sub = None
         self._image_topic = ''
 
@@ -195,18 +204,24 @@ class RosBridge(QtCore.QObject):
         self.run_cli = self.node.create_client(Trigger, '/row_nav/run')
 
         self._spin = True
+        self._executor = MultiThreadedExecutor(num_threads=3)
+        self._executor.add_node(self.node)
         self._thread = threading.Thread(target=self._spin_loop, daemon=True)
         self._thread.start()
 
     # ---- spinning ----
     def _spin_loop(self):
         while self._spin and rclpy.ok():
-            rclpy.spin_once(self.node, timeout_sec=0.1)
+            self._executor.spin_once(timeout_sec=0.1)
 
     def shutdown(self):
         self._spin = False
         try:
             self._thread.join(timeout=1.0)
+        except Exception:
+            pass
+        try:
+            self._executor.shutdown(timeout_sec=1.0)
         except Exception:
             pass
         try:
@@ -247,7 +262,8 @@ class RosBridge(QtCore.QObject):
         self._image_topic = topic
         if topic:
             self._image_sub = self.node.create_subscription(
-                Image, topic, self._on_image, self._sensor_qos)
+                Image, topic, self._on_image, self._sensor_qos,
+                callback_group=self._img_cb_group)
 
     def _on_image(self, msg: Image):
         try:
@@ -639,18 +655,33 @@ class ControlPanel(QtWidgets.QMainWindow):
         launch_box = QtWidgets.QGroupBox('Launch / Pipeline')
         lb = QtWidgets.QVBoxLayout(launch_box)
         lb.setSpacing(6)
+        # Buttons are ordered top→bottom to mirror the proven manual terminal
+        # startup sequence so the user clicks straight down the list:
+        #   1. Sim            (husky_orchard_demo — Gazebo + Husky)
+        #   2. car engine     (row_navigator — publishes world→odom, the TF
+        #                      link MoveIt needs; MUST be up before the arm)
+        #   3. arm            (moveit.launch.py — move_group + arm_commander)
+        #   4. harvester mods  (YOLO + scanner + harvesters — started LAST)
+        # Previously the arm button sat above the engine button, which nudged
+        # users into starting MoveIt before row_navigator → move_group came up
+        # without world→odom and planning in the world frame broke.
         self.sim_btn = QtWidgets.QPushButton('Sim: husky_orchard_demo (auto)')
         self.sim_btn.setObjectName('primaryBtn')
+        self.engine_btn = QtWidgets.QPushButton('🚜 Start the car engine  (row_navigator)')
+        self.engine_btn.setObjectName('successBtn')
         self.arm_launch_btn = QtWidgets.QPushButton('🦾 Start the arm  (MoveIt)')
         self.arm_launch_btn.setObjectName('infoBtn')
-        self.engine_btn = QtWidgets.QPushButton('🚜 Start the car engine')
-        self.engine_btn.setObjectName('successBtn')
-        for b in (self.sim_btn, self.arm_launch_btn, self.engine_btn):
+        self.harvester_btn = QtWidgets.QPushButton('🌱 Start harvester modules  (run last)')
+        self.harvester_btn.setObjectName('accentBtn')
+        for b in (self.sim_btn, self.engine_btn,
+                  self.arm_launch_btn, self.harvester_btn):
             b.setMinimumHeight(34)
             lb.addWidget(b)
         _eng_hint = QtWidgets.QLabel(
-            '“car engine” = row_navigator + harvester_modules')
+            'Start in order, top → bottom. “car engine” = row_navigator only '
+            '(owns world→odom). Harvester modules go last.')
         _eng_hint.setObjectName('hint')
+        _eng_hint.setWordWrap(True)
         lb.addWidget(_eng_hint)
         right.addWidget(launch_box)
 
@@ -795,8 +826,9 @@ class ControlPanel(QtWidgets.QMainWindow):
 
         # launch buttons
         self.sim_btn.clicked.connect(self._toggle_sim)
-        self.arm_launch_btn.clicked.connect(self._toggle_arm_launch)
         self.engine_btn.clicked.connect(self._toggle_engine)
+        self.arm_launch_btn.clicked.connect(self._toggle_arm_launch)
+        self.harvester_btn.clicked.connect(self._toggle_harvester)
 
         # triggers
         self.scan_btn.clicked.connect(
@@ -947,20 +979,28 @@ class ControlPanel(QtWidgets.QMainWindow):
                 tag='arm')
 
     def _toggle_engine(self):
-        # "car engine" = row_navigator + harvester_modules together
-        running = self.procs.is_running('rownav') or self.procs.is_running('harvester')
-        if running:
+        # "car engine" = row_navigator only. It owns the world→odom static TF
+        # and must be up before the arm (MoveIt) so move_group sees a complete
+        # TF chain. harvester_modules is a SEPARATE button, started last.
+        if self.procs.is_running('rownav'):
             self.procs.stop('rownav')
+        else:
+            self.procs.start(
+                'rownav',
+                ['ros2', 'run', 'orchestrator', 'row_navigator'],
+                tag='rownav')
+
+    def _toggle_harvester(self):
+        # harvester_modules = YOLO + depth + cluster_scanner + the two
+        # harvesters. Started LAST, mirroring the manual terminal order
+        # (sim → row_navigator → MoveIt → harvester_modules).
+        if self.procs.is_running('harvester'):
             self.procs.stop('harvester')
         else:
             self.procs.start(
                 'harvester',
                 ['ros2', 'launch', 'orchestrator', 'harvester_modules.launch.py'],
                 tag='harvester')
-            self.procs.start(
-                'rownav',
-                ['ros2', 'run', 'orchestrator', 'row_navigator'],
-                tag='rownav')
 
     @staticmethod
     def _set_running(btn, running):
@@ -981,11 +1021,16 @@ class ControlPanel(QtWidgets.QMainWindow):
                 '🛑 Stop the arm (MoveIt)' if running
                 else '🦾 Start the arm  (MoveIt)')
             self._set_running(self.arm_launch_btn, running)
-        elif key in ('rownav', 'harvester'):
-            eng = self.procs.is_running('rownav') or self.procs.is_running('harvester')
+        elif key == 'rownav':
             self.engine_btn.setText(
-                '🛑 Stop the car engine' if eng else '🚜 Start the car engine')
-            self._set_running(self.engine_btn, eng)
+                '🛑 Stop the car engine (row_navigator)' if running
+                else '🚜 Start the car engine  (row_navigator)')
+            self._set_running(self.engine_btn, running)
+        elif key == 'harvester':
+            self.harvester_btn.setText(
+                '🛑 Stop harvester modules' if running
+                else '🌱 Start harvester modules  (run last)')
+            self._set_running(self.harvester_btn, running)
 
     # ---------------- telemetry ----------------
     def _on_status(self, topic, text):
@@ -1227,11 +1272,13 @@ QPushButton#dangerBtn:hover { background: #991b1b; }
 /* running = process active -> red 'click to stop' for any semantic button */
 QPushButton#primaryBtn[running="true"],
 QPushButton#infoBtn[running="true"],
+QPushButton#accentBtn[running="true"],
 QPushButton#successBtn[running="true"] {
     background: #dc2626; border-color: #f87171; color: white;
 }
 QPushButton#primaryBtn[running="true"]:hover,
 QPushButton#infoBtn[running="true"]:hover,
+QPushButton#accentBtn[running="true"]:hover,
 QPushButton#successBtn[running="true"]:hover { background: #b91c1c; }
 
 /* toggles (WASD / camera teleop on-off) */
