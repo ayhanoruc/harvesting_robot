@@ -78,6 +78,17 @@ from tf2_ros import Buffer, TransformListener
 
 from ament_index_python.packages import get_package_share_directory
 
+# Optional fast-path teleport: a persistent rclpy client on the Gazebo
+# set_pose service bridged via ros_gz_bridge. If ros_gz_interfaces isn't
+# importable, _HAVE_SETPOSE_SRV stays False and _gz_set_pose silently uses
+# the original `ign service` subprocess fallback — no behaviour change.
+try:
+    from ros_gz_interfaces.srv import SetEntityPose
+    from ros_gz_interfaces.msg import Entity
+    _HAVE_SETPOSE_SRV = True
+except Exception:
+    _HAVE_SETPOSE_SRV = False
+
 
 class SimpleClusterHarvester(Node):
 
@@ -115,7 +126,11 @@ class SimpleClusterHarvester(Node):
         self._carry_model_name: Optional[str] = None
         self._carry_thread: Optional[threading.Thread] = None
         self._carry_active = False
-        self._carry_rate_hz = 10.0
+        # 50 Hz so the carried boll visually tracks the TCP without lag.
+        # Achievable because the bridged set_pose client is fire-and-forget
+        # (~1 ms/call); with the subprocess fallback the loop self-limits to
+        # whatever the CLI can sustain, same as before.
+        self._carry_rate_hz = 50.0
 
         # Reservoir-carry thread state (already-dropped bolls stay glued to
         # reservoir_link as Husky drives between clusters). We store each
@@ -160,6 +175,17 @@ class SimpleClusterHarvester(Node):
             Trigger, '/gripper/open', callback_group=self.cb)
         self.gripper_close_cli = self.create_client(
             Trigger, '/gripper/close', callback_group=self.cb)
+
+        # ── Fast teleport client (set_pose bridged via ros_gz_bridge) ──
+        # Persistent client → ~1 ms per call vs ~80 ms for the `ign service`
+        # CLI subprocess. Only used by _gz_set_pose when the bridge is up;
+        # otherwise the subprocess fallback runs unchanged.
+        self._setpose_cli = None
+        if _HAVE_SETPOSE_SRV:
+            world = self.get_parameter('gz_world_name').value
+            self._setpose_cli = self.create_client(
+                SetEntityPose, f'/world/{world}/set_pose',
+                callback_group=self.cb)
 
         # ── Status publisher ────────────────────────────────────
         self.status_pub = self.create_publisher(String, '/simple_harvest/status', 10)
@@ -225,6 +251,25 @@ class SimpleClusterHarvester(Node):
     def _gz_set_pose(self, model_name: str, x: float, y: float, z: float,
                     qx: float = 0.0, qy: float = 0.0,
                     qz: float = 0.0, qw: float = 1.0) -> bool:
+        # Fast path: persistent client on the bridged set_pose service.
+        # Fire-and-forget — the carry loop snaps many times a second and
+        # doesn't need the boolean ack. Falls through to the subprocess
+        # below whenever the bridge isn't up (service_is_ready False).
+        cli = self._setpose_cli
+        if cli is not None and cli.service_is_ready():
+            req = SetEntityPose.Request()
+            req.entity.name = model_name
+            req.entity.type = Entity.MODEL
+            req.pose.position.x = float(x)
+            req.pose.position.y = float(y)
+            req.pose.position.z = float(z)
+            req.pose.orientation.x = float(qx)
+            req.pose.orientation.y = float(qy)
+            req.pose.orientation.z = float(qz)
+            req.pose.orientation.w = float(qw)
+            cli.call_async(req)
+            return True
+
         world = self.get_parameter('gz_world_name').value
         srv = f'/world/{world}/set_pose'
         req_txt = (

@@ -158,6 +158,20 @@ def generate_launch_description():
         ]
     )
 
+    # Service bridge: expose Gazebo's set_pose as a ROS service so the
+    # harvester's boll-carry teleport uses a persistent client (~1 ms/call)
+    # instead of spawning an `ign service` CLI subprocess per snap (~80 ms+),
+    # which is what made the carried boll visibly lag the gripper. World name
+    # matches cotton_demo.world (<world name="cotton_demo">). If a different
+    # world is launched, the harvester silently falls back to the subprocess.
+    set_pose_service_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='set_pose_service_bridge',
+        arguments=['/world/cotton_demo/set_pose@ros_gz_interfaces/srv/SetEntityPose'],
+        output='screen',
+    )
+
     joint_state_broadcaster_spawner = Node(
         package='controller_manager',
         executable='spawner',
@@ -230,6 +244,7 @@ def generate_launch_description():
         spawn_entity,
         ros_gz_bridge,
         ros_gz_image_bridge,
+        set_pose_service_bridge,
         delay_joint_state_broadcaster,
         delay_arm_controller,
         delay_gripper_controller,
