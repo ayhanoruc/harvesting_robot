@@ -318,10 +318,16 @@
 			<mass value="0.02"/>
 			<inertia ixx="1e-05" ixy="0" ixz="0" iyy="1e-05" iyz="0" izz="1e-05"/>
 		</inertial>
+		<!-- VISUAL ONLY: the SAME printed finger as the left one, rotated 180°
+		     about Z so the two jaws oppose each other (this is how the real
+		     part is mounted — one finger, used twice, second one flipped).
+		     Fixed link, no collision, function unchanged. The Rz(180) is
+		     composed onto the same stand-up rotation, with the centring
+		     translation mirrored. Tune rpy/xyz after a visual check. -->
 		<visual>
-			<origin rpy="0 0 0" xyz="0 0 0"/>
+			<origin rpy="1.5708 0 3.1416" xyz="0.0135 -0.017 -0.030"/>
 			<geometry>
-				<box size="0.010 0.025 0.080"/>
+				<mesh filename="package://robot_arm/meshes/wrist/gripper_60mm.stl" scale="0.001 0.001 0.001"/>
 			</geometry>
 			<material name="GripperFinger">
 				<color rgba="0.55 0.55 0.55 1.0"/>
@@ -347,10 +353,18 @@
 			<mass value="0.02"/>
 			<inertia ixx="1e-05" ixy="0" ixz="0" iyy="1e-05" iyz="0" izz="1e-05"/>
 		</inertial>
+		<!-- VISUAL ONLY: the from-scratch 60 mm printed finger (one part).
+		     The functional finger is still the prismatic box-kinematics above:
+		     this link has NO collision, the joint/limit/TCP/mass are unchanged,
+		     so the gripper behaves byte-identically to the box version. The
+		     mesh just rides along with the moving link. STL is in mm (corner
+		     origin, long axis = mesh Y, 60 mm) → scale 0.001; rotated so mesh
+		     +Y stands up along link +Z and centred on the link origin so it
+		     overlays the old box. Tune rpy/xyz after a visual check in RViz. -->
 		<visual>
-			<origin rpy="0 0 0" xyz="0 0 0"/>
+			<origin rpy="1.5708 0 0" xyz="-0.0135 0.017 -0.030"/>
 			<geometry>
-				<box size="0.010 0.025 0.080"/>
+				<mesh filename="package://robot_arm/meshes/wrist/gripper_60mm.stl" scale="0.001 0.001 0.001"/>
 			</geometry>
 			<material name="GripperFinger">
 				<color rgba="0.55 0.55 0.55 1.0"/>
@@ -377,37 +391,22 @@
 	</link>
 
 	<!-- ==================== Wrist-Mounted RGB-D Camera ==================== -->
-	<!-- Mounted on link6 (before gripper), offset to side to avoid occlusion -->
+	<!-- FUNCTIONAL camera geometry — identical to the proven active URDF.
+	     camera_link sits on the end of the original 0.14 m stick off link6.
+	     The stick + cube visuals are intentionally removed so nothing renders
+	     here, but the camera_link FRAME, its collision, the optical frame and
+	     the Gazebo sensor stay byte-identical to the working configuration —
+	     the camera feed and depth→3D are completely unchanged. The visible
+	     camera body is the cosmetic RealSense D435 shell added on the wrist
+	     further below. -->
 	<joint name="camera_joint" type="fixed">
 		<parent link="link6"/>
 		<child link="camera_link"/>
-		<!-- Camera +X (Gazebo look direction) aligned with link6 +Z (approach direction) -->
-		<!-- Boom 0.035 = 1/4 of the original 0.14 stick: camera rides on the
-		     end of a short stub off the wrist. Pitch tilted ~15° up
-		     (-1.5708 → -1.833). Optical frame rotates with it, so depth→3D
-		     stays correct (TF-based). Tune boom/tilt after a visual check. -->
-		<origin xyz="-0.035 0 -0.02" rpy="0 -1.833 0"/>
+		<origin xyz="-0.14 0 -0.02" rpy="0 -1.5708 0"/>
 	</joint>
 	<link name="camera_link">
-		<!-- Camera body: Intel RealSense D435 shell (VISUAL ONLY).
-		     The Gazebo <sensor> further below is attached to camera_link's
-		     FRAME, not to this mesh, so the camera feed is completely
-		     unaffected by the mesh pose — the orientation here is purely
-		     cosmetic and safe to tune. STL is in mm → scale 0.001.
-		     First-guess transform: centres the 90 mm body on camera_link
-		     with its long (width) axis along +Y. Tune rpy/xyz after a
-		     visual check (the collision box below is unchanged). -->
-		<visual>
-			<origin xyz="0.013 -0.045 -0.0125" rpy="0 0 1.5708"/>
-			<geometry>
-				<mesh filename="package://robot_arm/meshes/wrist/realsense_d435.stl" scale="0.001 0.001 0.001"/>
-			</geometry>
-			<material name="camera_black">
-				<color rgba="0.1 0.1 0.1 1"/>
-			</material>
-		</visual>
-		<!-- (Mount bracket mesh + connecting stick removed — only the D435
-		     shell is kept as the wrist-camera visual.) -->
+		<!-- visuals removed on purpose: functional camera frame is here but
+		     invisible. collision + inertial kept exactly as the active URDF. -->
 		<collision>
 			<geometry>
 				<box size="0.06 0.09 0.06"/>
@@ -419,26 +418,62 @@
 		</inertial>
 	</link>
 
-	<!-- ROS optical frame convention: Z forward, X right, Y down.
-	     X offset 0.05: the optical centre sits 5 cm AHEAD of the camera_link
-	     origin so the whole D435 shell + bracket + stick (all behind it) fall
-	     outside the forward FOV cone and never render in the feed — they stay
-	     visible in the GUI but the sensor can't "see" them. Kept in lock-step
-	     with the <sensor><pose> below so depth→3D stays correct. -->
+	<!-- ROS optical frame convention: Z forward, X right, Y down. Identical
+	     to the active URDF (no offset) so the sensor sits at camera_link. -->
 	<joint name="camera_optical_joint" type="fixed">
 		<parent link="camera_link"/>
 		<child link="camera_optical_frame"/>
-		<origin xyz="0.05 0 0.03" rpy="-1.5708 0 -1.5708"/>
+		<origin xyz="0 0 0" rpy="-1.5708 0 -1.5708"/>
 	</joint>
 	<link name="camera_optical_frame"/>
+
+	<!-- ==================== Cosmetic RealSense D435 shell ==================== -->
+	<!-- VISUAL ONLY. Parented to camera_link (the functional camera frame on
+	     the end of the original stick = up/out from the wrist), so the visible
+	     camera body sits exactly where the sensor actually looks from instead
+	     of intersecting the gripper. Centred on the optical origin (within the
+	     0.05 m near-clip) so the camera never renders its own shell.
+	     IMPORTANT: uses the DECIMATED mesh (realsense_d435_low.stl, ~1.5k tris
+	     / 75 KB) — the full 5.9 MB mesh tanked the WSL software renderer and
+	     froze both the Gazebo view and the camera feed. Tune rpy/xyz in RViz
+	     for the exact lens orientation; placement here never affects the feed. -->
+	<joint name="d435_shell_joint" type="fixed">
+		<parent link="link6"/>
+		<child link="d435_shell"/>
+		<!-- Mount flush on the wrist: link6 -X is the "up/back" side in the
+		     scout pose (the original stick went that way), and the gripper
+		     extends along link6 +Z, so a small -X offset sits the camera on
+		     top of the wrist, clear of the gripper. -->
+		<origin xyz="-0.05 0 0" rpy="0 0 0"/>
+	</joint>
+	<link name="d435_shell">
+		<visual>
+			<!-- rotz(90°): at the scout pose link6 +X points straight down, so
+			     the raw mesh (90 mm bar along mesh-X) stood vertical. Rotating
+			     +90° about Z maps the bar onto link6 +Y (world-horizontal), the
+			     lens onto link6 +Z (approach), and the camera "up" onto link6
+			     -X (world up) — a flat, horizontal RealSense bar. xyz re-centres
+			     the corner-origin mesh after the rotation. If the lens ends up
+			     facing backward, add π to the last rpy term. -->
+			<origin xyz="0.013 -0.045 -0.0125" rpy="0 0 1.5708"/>
+			<geometry>
+				<mesh filename="package://robot_arm/meshes/wrist/realsense_d435_low.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="camera_black">
+				<color rgba="0.1 0.1 0.1 1"/>
+			</material>
+		</visual>
+		<inertial>
+			<mass value="0.001"/>
+			<inertia ixx="1e-7" iyy="1e-7" izz="1e-7" ixy="0" ixz="0" iyz="0"/>
+		</inertial>
+	</link>
 
 	<!-- Gazebo Sim RGB-D sensor -->
 	<gazebo reference="camera_link">
 		<sensor type="rgbd_camera" name="wrist_rgbd_camera">
-			<!-- Optical centre 5 cm ahead of + 3 cm above camera_link so the
-			     camera's own shell/bracket/stick (all behind/below it) never
-			     enter the frame. Must match camera_optical_joint's offset. -->
-			<pose>0.05 0 0.03 0 0 0</pose>
+			<!-- No pose offset — sensor sits at camera_link, matching the
+			     active URDF and the optical frame above. -->
 			<always_on>true</always_on>
 			<update_rate>30.0</update_rate>
 			<topic>camera</topic>
