@@ -177,7 +177,9 @@ The M1013 has 1.3 m reach. The Husky deck puts the arm base at z = 0.48 m, so th
 
 `real_yolo_detector` runs Ultralytics YOLO11n with `best.pt` (Roboflow cotton-boll-and-cluster v5, classes: `cotton_boll`, `unripe-cotton`). The sim launch override sets the confidence threshold to 0.30 to recover marginal detections at scan range; the model author's recommended baseline for general use is 0.54. Reads `/camera/color/image_raw` continuously, runs inference on every `/yolo/detect` call, returns a list of `BoundingBox(u_min, v_min, u_max, v_max, confidence, label)`. Annotated frames are saved to `yolo_output/detect_*.png` and `yolo_output/clusters_*.png`.
 
-The full training package ships in [yolo_training/](yolo_training/) — dataset config, training entrypoint, validation script, metrics CSV + curves, and the 80-epoch run that produced `best.pt`. Test-split metrics on YOLO_2026-05-30 (train 603 / val 57 / test 29):
+The full training package ships in [yolo_training/](yolo_training/) — dataset config, training entrypoint, validation script, metrics CSV + curves, and the 80-epoch run that produced `best.pt`.
+The full dataset and the training details can be found here: https://universe.roboflow.com/deniz-drin5/cotton-boll-and-cluster 
+Test-split metrics on YOLO_2026-05-30 (train 603 / val 57 / test 29):
 
 | class | precision | recall | mAP50 | mAP50-95 |
 |---|---:|---:|---:|---:|
