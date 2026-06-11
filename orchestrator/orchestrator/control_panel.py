@@ -960,7 +960,7 @@ class ControlPanel(QtWidgets.QMainWindow):
     def _start_sim(self):
         self.procs.start(
             'sim',
-            ['ros2', 'launch', 'robot_arm', 'husky_orchard_demo.launch.py'],
+            ['ros2', 'launch', 'robot_arm', 'husky_orchard_demo_2.launch.py'],
             tag='sim')
 
     def _toggle_sim(self):
@@ -975,7 +975,7 @@ class ControlPanel(QtWidgets.QMainWindow):
         else:
             self.procs.start(
                 'arm',
-                ['ros2', 'launch', 'robot_arm_moveit_config', 'moveit.launch.py'],
+                ['ros2', 'launch', 'robot_arm_moveit_config', 'moveit_2.launch.py'],
                 tag='arm')
 
     def _toggle_engine(self):
